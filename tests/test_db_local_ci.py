@@ -40,7 +40,7 @@ def test_the_ci_cluster_itself_is_accepted(tmp_path):
 def test_the_child_environment_drops_every_inherited_db_variable(tmp_path):
     base = {"PATH": "x", "MONTNEY_DB": "postgres", "MONTNEY_DB_NAME": "montney", "PGPASSWORD": "real",
             "POSTGRES_SUPERUSER_PASSWORD": "real-superuser", "MONTNEY_DB_PASSWORD": "real", "PGDATA": r"D:\montney\pgdata",
-            "MONTNEY_HOME": r"C:\Users\erikj\AppData\Local\MontneyStack"}
+            "MONTNEY_HOME": os.path.join(os.path.expanduser("~"), "MontneyStack")}
     env = ci.child_env(base, port=ci.CI_PORT, password="throwaway", home=tmp_path / "h", backups=tmp_path / "b")
     assert env["PATH"] == "x"
     for k in ("MONTNEY_DB", "MONTNEY_DB_NAME", "PGPASSWORD", "PGDATA"):
