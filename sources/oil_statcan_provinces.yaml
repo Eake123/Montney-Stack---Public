@@ -1,0 +1,16 @@
+# Canadian crude oil production by province, monthly (L-106 8b): Alberta (incl. bitumen + synthetic), Saskatchewan,
+# BC, Manitoba and Canada, plus condensate / pentanes plus. ONE StatCan WDS request (table 25-10-0063-01, ~5 KB JSON),
+# every 3 days (released monthly, ~2 months behind). bbl/d. Details: montney/connectors/statcan_gas.py
+id: oil_statcan_provinces
+name: StatCan crude oil production by province (monthly)
+type: python
+module: montney.connectors.statcan_gas
+class: OilStatcanProvinces
+mode: cached
+interval: 3d
+region: ab_nebc
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; each StatCan release (as_of = its release time) is a vintage.
+retention: daily
+params:
+  months: 24

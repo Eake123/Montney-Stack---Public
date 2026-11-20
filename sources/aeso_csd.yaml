@@ -1,0 +1,106 @@
+# AESO Current Supply & Demand summary (v2). Needs an AESO API key:
+#   uv run montney secrets set AESO_API_KEY
+# Key portal: https://developer-apim.aeso.ca
+id: aeso_csd
+name: AESO Current Supply & Demand
+type: http
+mode: cached
+interval: 5m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: fast
+request:
+  url: https://apimgw.aeso.ca/public/currentsupplydemand-api/v2/csd/summary/current
+  headers:
+    API-KEY: "{secret:AESO_API_KEY}"
+    Cache-Control: no-cache     # insurance: never a gateway-cached 5-min CSD (orchestrator ruling after #324)
+extract:
+  - &csd
+    path: return
+    ts: {root: return.effective_datetime_utc, tz: UTC}
+    as_of: ts
+    id: "aeso.csd.{key}"
+    label: "AESO {label}"
+    group: AESO / Supply & Demand
+    freq: 5min
+    unit: MW
+    fields:
+      ail:            {field: alberta_internal_load, label: Alberta internal load}
+      net_generation: {field: total_net_generation, label: total net generation}
+      max_capability: {field: total_max_generation_capability, label: total max capability}
+      net_to_grid:    {field: net_to_grid_generation, label: net-to-grid generation}
+      interchange:    {field: net_actual_interchange, label: net actual interchange}
+  - <<: *csd
+    path: return.generation_data_list
+    key_field: fuel_type
+    id: "aeso.gen.{row}.{key}"
+    label: "AESO {row_name|title} {label}"
+    group: AESO / Generation by fuel
+    fields:
+      net: {field: aggregated_net_generation, label: net gen}
+      cap: {field: aggregated_maximum_capability, label: max capability}
+  - <<: *csd
+    path: return.interchange_list
+    key_field: path
+    id: "aeso.intertie.{row}"
+    label: "AESO {row_name|title} intertie flow"
+    group: AESO / Interties
+    fields:
+      flow: {field: actual_flow}
+derive:
+  - id: aeso.gen.gas_total.net
+    label: AESO gas-fired generation (cogen + CC + SC + gas steam)
+    sum: [aeso.gen.cogeneration.net, aeso.gen.combined_cycle.net, aeso.gen.simple_cycle.net,
+          aeso.gen.gas_fired_steam.net]
+    unit: MW
+    freq: 5min
+    group: AESO / Generation by fuel
+
+  # Load by fuel (PLAN step 5, L-061): AIL = sum of fuel net generation + net imports, exactly
+  # (0.0 MW over 126 live CSD stamps, 2026-11-02). The CSD interchange is + export, so net imports = -interchange.
+  - id: aeso.csd.net_imports
+    label: AESO net imports (+ import, - export; = -net actual interchange)
+    weights: {aeso.csd.interchange: -1}
+    unit: MW
+    freq: 5min
+    group: AESO / Supply & Demand
+  - id: aeso.gen.other_total.net
+    label: AESO other + energy storage net gen (storage charging reads negative)
+    sum: [aeso.gen.other.net, aeso.gen.energy_storage.net]
+    unit: MW
+    freq: 5min
+    group: AESO / Generation by fuel
+
+  # Implied gas burn for power, MMcf/d. ESTIMATE: weight = HR (GJ/MWh) x 24 / HHV (GJ/Mcf) / 1000.
+  # P5b written-down weighting (docs/research/v2/power-heat-rates.md): type defaults from 2024 MWh-weighted
+  # measured AB plants (GHGRP + NGTL stations, power.md §1.4): CC 7.5 (7.0-8.6), SC 10.8 (9.9-12.5),
+  # gas-fired steam 11.3 (10.5-12.6); cogen SITE FUEL 11.3 (8.5-15.0): the map shows gas demand (ruling after
+  # #177), so cogen counts total site fuel, steam too (Carseland measured 11.3; the rest an assumption).
+  # HHV 1.104 GJ/Mcf (39.0 MJ/m3, L-031 fallback), band 1.093-1.116 (TC border HV 38.6-39.4).
+  # The band moves every term together (conservative). Per-plant burns: sources/aeso_ets_units.yaml.
+  - &burn
+    id: power.ab.gas_burn.implied
+    label: AB power implied gas burn (estimate)
+    weights:
+      aeso.gen.combined_cycle.net: 0.163043
+      aeso.gen.simple_cycle.net: 0.234783
+      aeso.gen.gas_fired_steam.net: 0.245652
+      aeso.gen.cogeneration.net: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn
+  - <<: *burn
+    id: power.ab.gas_burn.implied_low
+    label: AB power implied gas burn, low band (all HR low, HHV high)
+    weights:
+      aeso.gen.combined_cycle.net: 0.150538
+      aeso.gen.simple_cycle.net: 0.212903
+      aeso.gen.gas_fired_steam.net: 0.225806
+      aeso.gen.cogeneration.net: 0.182796
+  - <<: *burn
+    id: power.ab.gas_burn.implied_high
+    label: AB power implied gas burn, high band (all HR high, HHV low)
+    weights:
+      aeso.gen.combined_cycle.net: 0.188838
+      aeso.gen.simple_cycle.net: 0.274474
+      aeso.gen.gas_fired_steam.net: 0.27667
+      aeso.gen.cogeneration.net: 0.329369

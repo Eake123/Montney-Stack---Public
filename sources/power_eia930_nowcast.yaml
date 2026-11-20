@@ -1,0 +1,15 @@
+# EIA-930 generation nowcast (PLAN 9): eia930.<ba>.net_gen_best and .interchange_best (MW, 1h, + net export) for every
+# BA the region files use, from 72 h ago up to the newest demand hour (~1-2 h old). Actual EIA-930 NG/TI where posted;
+# else demand(t) + yesterday's (NG - demand) at the same UTC hour (<= 3 days back), so solar's midday swing is kept.
+# EIA-930 posts NG/TI only daily (8-36 h behind), demand hourly. ZERO requests: reads power_eia930_demand/_gen back
+# from the store. Details: montney/connectors/power_eia930_nowcast.py.
+id: power_eia930_nowcast
+name: EIA-930 net generation and interchange, best (actual + nowcast; derived, 0 requests)
+type: python
+module: montney.connectors.power_eia930_nowcast
+class: Eia930Nowcast
+mode: cached
+interval: 15m
+region: rest         # reads only; covers every US region like the EIA-930 sources it reads
+retention: hourly
+stale_after: 4h       # the snapshot's stale threshold (docs/SOURCES.md): follows EIA-930 demand (~1.6-2.6 h)

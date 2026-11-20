@@ -1,0 +1,15 @@
+# Great Lakes Gas Transmission (TC Energy): St. Clair net into Ontario (L-093 part 2). ONE request per run:
+# tcplus.com's Historical Operationally Available JSON, yesterday + today, every location and cycle (like gas_gtn).
+# Details: montney/connectors/ont_dawn.py
+id: gas_glgt
+name: Great Lakes Gas Transmission (St. Clair)
+type: python
+module: montney.connectors.ont_dawn
+class: GasGreatLakes
+mode: cached
+interval: 6h          # GLGT posts 5 cycles a day; the series is daily: 4 requests/day
+region: ont
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://www.tcplus.com/Great%20Lakes/HistoricalOperationalCapacity/Generate

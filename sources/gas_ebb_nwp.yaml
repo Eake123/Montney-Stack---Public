@@ -1,0 +1,39 @@
+# Northwest Pipeline (Williams): every receipt and delivery point's scheduled quantity, summed by region and category
+# -> ebb.nwp.<region>.<category> (MMcf/d). The PacNW's measured demand off NWP: ldc + power + industrial in WA / OR /
+# ID (all of Idaho is pnw). Method, types, requests and traps: montney/connectors/gas_ebb_nwp.py.
+# Requests: 1 per run (the current gas day's OA report, ~350 KB) + 1-2 a day (previous gas day, until its Storage
+# Realignment cycle) + 1 a week (location.action, ~390 KB): ~13-15/day on www.northwest.williams.com.
+id: gas_ebb_nwp
+name: Northwest Pipeline (deliveries by point)
+type: python
+module: montney.connectors.gas_ebb_nwp
+class: EbbNwp
+mode: cached
+interval: 2h
+region: pnw           # mostly WA / OR / ID; the Rockies end (mtnw) and New Mexico (sunbelt) come from the same file
+retention: daily
+params:
+  boards:
+    - pipe: nwp
+      label: Northwest Pipeline
+      regions: [pnw, mtnw, sunbelt]
+      # Points posted in the OA report but not in the location file: in-line transfers between shippers and line /
+      # lateral constraint points. Anything else with gas and no state fails the run.
+      unlocated_ok: "IN-LINE TRANS|IN LINE TRANS|\\bLINE$|LATERAL$|^TO SPOKANE"
+      overrides:
+        # keys are NWP's Loc Prop (per direction)
+        "229": {drop: true, note: "KELSO/BEAVER: NWP's delivery into the Kelso-Beaver pipeline; the same gas comes back at 971"}
+        "971": {drop: true, note: "KELSO BEAVER RECEIPT: the Kelso-Beaver loop back onto NWP (PGE's plants are posted on their own)"}
+        "975": {type: EGN, note: "PORT WESTWARD (PGE), typed Plant"}
+        "976": {type: EGN, note: "PORT WESTWARD II (PGE), typed Plant"}
+        "978": {type: EGN, note: "BEAVER GENERATING (PGE), typed Plant"}
+        "979": {type: EGN, note: "BEAVER 8 PLANT (PGE), typed Plant"}
+        "980": {type: LDC, note: "NORTH COAST (NW Natural), typed Plant"}
+        "297": {category: import_canada, note: "SUMAS RECEIPT from Westcoast: the Huntingdon export"}
+        "620": {category: storage_wd, note: "DEER ISLAND RECEIPT from NW Natural: Mist storage gas back into NWP (NW Natural has no production)"}
+        "672": {category: storage_wd, note: "MOLALLA RECEIPT from NW Natural: Mist gas via the South Mist extension"}
+        "689": {type: IND, note: "CARDINAL GLASS METER STATION (Cardinal FG), blank type"}
+        "748": {type: STR, note: "DOUBLE D DELIVERY: Spire Storage West (WY), blank type"}
+        "599": {type: PLT, note: "FLORIDA RIVER (Simcoe), blank type: a San Juan processing plant"}
+        "726": {type: RNG, note: "CEDAR HILL RECEIPT (King County landfill RNG), blank type"}
+        "951": {type: RNG, note: "TILLAMOOK RNG, blank type"}

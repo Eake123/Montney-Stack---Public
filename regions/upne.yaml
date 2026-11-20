@@ -1,0 +1,207 @@
+# Upper NE: New England (the ISO-NE footprint; docs/QUESTIONS.md Q-R1). No feeds yet.
+id: upne
+name: Upper NE (New England)
+color: "#c0ca33"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-ME, US-NH, US-VT, US-MA, US-RI, US-CT]
+anchor: [-71.0, 44.3]
+box: {dir: E}            # PLAN 9: where its box goes when the region is too small on screen (Frontend)
+tz: America/New_York
+budget_region: upne
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/upne.md
+  # The boards post today's gas day cycle by cycle, each pipe at its own: the balance closes only on ended gas days
+  # (Reviewer on #503: 11-13 read −550 mid-day against +16 for the finished 11-12). Today's postings are on the page.
+  through: yesterday
+  production: {none: true, note: "New England produces no gas"}
+  # PLAN 9d: one footprint, the interstate boards (scheduled, gas day). Every pipe into New England posts: Algonquin,
+  # Tennessee, Iroquois's Connecticut leg, PNGTS, Maritimes & Northeast; Vermont Gas is fed by TC at Philipsburg.
+  imports: {parts: [ebb.algonquin.upne.net, ebb.tgp.border.nyc_upne, ebb.iroquois.upne.net, ebb.pngts.upne.net,
+                    ebb.mne.upne.net, tcm.east_hereford.exports, tcm.philipsburg.exports, ebb.mne.upne.import_canada,
+                    ebb.algonquin.upne.lng_in], quality: scheduled,
+            note: "from New York: Algonquin, Iroquois, PNGTS and M&NE as each pipe's net (deliveries − receipts in New
+              England) + Tennessee's 200/300 Lines into Massachusetts; from Canada: East Hereford (PNGTS, via qc; TC's
+              figure, so it mirrors qc), Philipsburg (Vermont Gas) and M&NE's southbound receipts; LNG regas into
+              Algonquin (Everett, the buoys). Iroquois's net reads ~0: its Connecticut deliveries are fed by its
+              receipt from Algonquin at Brookfield, and its mainline crosses back into New York (Long Island)"}
+  exports: {parts: [ebb.mne.upne.export_canada], quality: scheduled,
+            note: "M&NE northbound into New Brunswick at Baileyville (it flows both ways; southbound is in imports)"}
+  demand: {parts: [ebb.algonquin.upne.ldc, ebb.algonquin.upne.power, ebb.algonquin.upne.industrial,
+                   ebb.tgp.upne.ldc, ebb.tgp.upne.power, ebb.tgp.upne.industrial,
+                   ebb.iroquois.upne.ldc, ebb.iroquois.upne.power,
+                   ebb.pngts.upne.ldc, ebb.pngts.upne.power, ebb.pngts.upne.industrial,
+                   ebb.mne.upne.ldc, ebb.mne.upne.power, ebb.mne.upne.industrial,
+                   tcm.philipsburg.exports], quality: scheduled,
+           note: "measured: the deliveries scheduled on every pipe into New England (LDC citygates, power plants,
+             industry) + Vermont Gas (its whole supply, TC at Philipsburg). LDC takes include fills of the LDCs' own
+             LNG tanks. The daily model (gas.upne.demand_est) stays on the page as a cross-check"}
+  storage: {none: true, note: "no underground storage in New England (its peak supply is LNG: Everett, Canaport via
+              M&NE), so the fourth row is the boards' closure: interconnects with pipes that post no split
+              (Tennessee's) and linepack"}
+power:
+  # ISO-NE's own real-time feeds (power_isone, PLAN 9): hourly means of complete hours, written ~15-30 min after
+  # the hour ends (EIA-930's generation ran 11-38 h behind). Load = ISO-NE Total Load (generation + net imports,
+  # incl. pumped-storage pumping and storage charging). isone.interchange.net is already net imports (+ in): minus
+  # the sum of New England's seven external ties (NY x3, Quebec x3, New Brunswick), so it isn't negated here.
+  fuels_note: "ISO-NE's fuel mix: hydro includes pumped-storage generation; biomass = wood + refuse + landfill gas; solar is grid-connected only."
+  load: {parts: [isone.load], note: "ISO-NE = the six states"}
+  generation: {parts: [isone.gen.total]}
+  interchange: {parts: [isone.interchange.net]}
+  fuels:
+    gas: {parts: [isone.gen.gas]}
+    nuclear: {parts: [isone.gen.nuclear]}
+    hydro: {parts: [isone.gen.hydro], note: "incl. pumped-storage generation (ISO-NE doesn't split it out)"}
+    wind: {parts: [isone.gen.wind]}
+    solar: {parts: [isone.gen.solar], note: "grid-connected only (behind-the-meter solar isn't generation here)"}
+    battery: {parts: [isone.gen.battery]}
+    oil: {parts: [isone.gen.oil]}
+    coal: {parts: [isone.gen.coal], note: "~0: New England's last coal unit (Merrimack) is retiring"}
+    biomass: {parts: [isone.gen.wood, isone.gen.refuse, isone.gen.landfill_gas], note: "wood + refuse + landfill gas"}
+    other: {parts: [isone.gen.other]}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_upne.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_upne
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.boston.tmean
+    - wx.providence.tmean
+    - wx.hartford.tmean
+    - wx.bridgeport.tmean
+    - wx.new_haven.tmean
+    - wx.worcester.tmean
+    - wx.springfield_ma.tmean
+    - wx.portland_me.tmean
+    - wx.manchester_nh.tmean
+    - wx.burlington_vt.tmean
+  hdd: wx.region.upne.hdd
+  cdd: wx.region.upne.cdd
+  normals: [wx.region.upne.hdd_normal, wx.region.upne.cdd_normal]
+  realized: [wx.region.upne.hdd.realized, wx.region.upne.cdd.realized]
+  outlook: [wx.region.upne.hdd_1_7, wx.region.upne.hdd_8_15, wx.region.upne.cdd_1_7, wx.region.upne.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/upne.md (shown on the page)
+  - "1-7 and 8-15 day HDD outlook vs normal: a cold revision signals Algonquin spikes, oil switching and LNG calls"
+  - "Gas and oil generation: oil above ~0 means the gas system is tight"
+  - "Net imports by neighbour (Québec, New York, New Brunswick): Québec falling means more gas and oil burn"
+  - "East Hereford (PNGTS) receipts: steady Canadian base supply that matters most on peak days"
+  - "Load vs the temperature outlook: cold sends gas to heating, not power, so oil burn and imports rise"
+  - "Millstone and Seabrook nuclear output: ~25 % of generation, so watch for outages"
+  - "1-7 day CDD outlook in summer: heat waves mean ISO-NE peaks"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.upne.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.upne.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.upne.industrial_est}
+        - {label: "LDC citygates on Algonquin", series: ebb.algonquin.upne.ldc}
+        - {label: "Power plants on Algonquin", series: ebb.algonquin.upne.power}
+        - {label: "LDC citygates on Tennessee", series: ebb.tgp.upne.ldc}
+        - {label: "Power plants on Tennessee", series: ebb.tgp.upne.power}
+        - {label: "LDC citygates on Iroquois (Connecticut)", series: ebb.iroquois.upne.ldc}
+        - {label: "Power plants on Iroquois (Connecticut)", series: ebb.iroquois.upne.power}
+        - {label: "LDC citygates on PNGTS", series: ebb.pngts.upne.ldc}
+        - {label: "Power plants on PNGTS", series: ebb.pngts.upne.power}
+        - {label: "LDC citygates on M&NE", series: ebb.mne.upne.ldc}
+        - {label: "Power plants on M&NE", series: ebb.mne.upne.power}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Algonquin into New England (net)", series: ebb.algonquin.upne.net}
+        - {label: "Tennessee New York → New England", series: ebb.tgp.border.nyc_upne}
+        - {label: "Iroquois in Connecticut (net)", series: ebb.iroquois.upne.net}
+        - {label: "PNGTS at East Hereford (from Québec)", series: ebb.pngts.east_hereford.receipts}
+        - {label: "M&NE from Canada", series: ebb.mne.upne.import_canada}
+        - {label: "LNG regas into Algonquin (Everett, buoys)", series: ebb.algonquin.upne.lng_in}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "M&NE at Baileyville (net to Canada)", series: ebb.mne.baileyville.net_exports}
+  power:
+    - id: load_by_zone
+      title: Load by zone
+      note: "ISO-NE's 8 load zones (estimated native load, i.e. without pumping and storage charging), so they sum to
+        native load, not the Total Load line; pumping/charging is its own row."
+      rows:
+        - {label: "NE Massachusetts + Boston", series: isone.load.nema_boston}
+        - {label: Connecticut, series: isone.load.connecticut}
+        - {label: "W/Central Massachusetts", series: isone.load.wcma}
+        - {label: SE Massachusetts, series: isone.load.sema}
+        - {label: Maine, series: isone.load.maine}
+        - {label: New Hampshire, series: isone.load.new_hampshire}
+        - {label: Rhode Island, series: isone.load.rhode_island}
+        - {label: Vermont, series: isone.load.vermont}
+        - {label: "Pumping + storage charging (in Total Load)", series: isone.load.asset_related}
+    - id: interchange_by_tie
+      title: Interchange by neighbour (+ into New England)
+      rows:
+        - {label: "Québec (Phase II + Highgate + NECEC)", series: isone.interchange.hq}
+        - {label: "New York (AC + Cross-Sound + 1385)", series: isone.interchange.ny}
+        - {label: New Brunswick, series: isone.interchange.nb}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Millstone (nuclear)", value: 2260, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Canal (oil)", value: 1495, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Seabrook (nuclear)", value: 1242, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Northfield Mountain (pumped storage)", value: 1168, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Fore River Generating Station (gas)", value: 872, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "William F Wyman Hybrid (oil)", value: 863, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "CPV Towantic Energy Center (gas)", value: 842, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Lake Road Generating Plant (gas)", value: 840, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Vineyard Wind 1 (wind)", value: 800, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Salem Harbor Power Development LP (gas)", value: 798, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 3 units, 3,355 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "Millstone 2 (MW est.)", series: nrc.millstone_2.mw_est}
+        - {label: "Millstone 3 (MW est.)", series: nrc.millstone_3.mw_est}
+        - {label: "Seabrook 1 (MW est.)", series: nrc.seabrook_1.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.upne.gas}
+        - {label: "Oil", series: cap.upne.oil}
+        - {label: "Solar", series: cap.upne.solar}
+        - {label: "Nuclear", series: cap.upne.nuclear}
+        - {label: "Wind", series: cap.upne.wind}
+        - {label: "Hydro", series: cap.upne.hydro}
+        - {label: "Pumped storage", series: cap.upne.pumped_storage}
+        - {label: "Biomass", series: cap.upne.biomass}
+        - {label: "Battery storage", series: cap.upne.battery}
+        - {label: "Coal", series: cap.upne.coal}
+        - {label: "Other", series: cap.upne.other}
+        - {label: Total, series: cap.upne.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists for New England. Static estimates; operating and proposed load kept apart."
+      rows:
+        - {label: Estimated data-centre load (avg), value: 158, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: MA 121, CT 30, ME 3, NH 2, RI 2 avg MW"}
+        - {label: Proposed large loads in ISO-NE's first large-load forecast, value: 285, unit: MW, as_of: "2026-05",
+           source: "ISO-NE 2026 CELT large-load forecast (a 200 MW data centre in NEMA/Boston + an 85 MW load; proposed)"}
+  oil:
+    - id: refinery_runs
+      title: Refinery runs, PADD 1 East Coast (18 states + DC)
+      note: "EIA weekly, week ending Friday. New England has no refinery: PADD 1 (New England to Florida) runs are its
+        nearest supply (refineries mostly in NJ, PA and DE). EIA has no sub-PADD refinery data."
+      rows:
+        - {label: PADD 1 crude oil input, series: oil.padd1.refinery_crude_input}
+        - {label: PADD 1 utilization, series: oil.padd1.utilization}
+    - id: stocks
+      title: Stocks, PADD 1A New England + PADD 1
+      note: "EIA weekly, end of week. PADD 1A = CT, ME, MA, NH, RI, VT (the region exactly). Crude stocks exist only for
+        all of PADD 1 (commercial, excl. SPR)."
+      rows:
+        - {label: "PADD 1A total motor gasoline (New England)", series: oil.padd1a.gasoline_stocks}
+        - {label: "PADD 1A distillate fuel oil (New England)", series: oil.padd1a.distillate_stocks}
+        - {label: "PADD 1 crude oil (all East Coast)", series: oil.padd1.crude_stocks}

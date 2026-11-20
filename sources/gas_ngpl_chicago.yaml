@@ -1,0 +1,15 @@
+# NGPL (Kinder Morgan) deliveries to the Chicago LDCs: Nicor + Peoples + North Shore citygate aggregates (L-101 part 2).
+# Includes their storage injection: a citygate number, not demand. TWO requests per run: the public OA-by-point page
+# and its Excel download (~40 KB, delivery points, today's gas day, latest cycle). Details: montney/connectors/midwest_demand.py
+id: gas_ngpl_chicago
+name: NGPL Chicago citygate (Nicor, Peoples, North Shore)
+type: python
+module: montney.connectors.midwest_demand
+class: GasNgplChicago
+mode: cached
+interval: 6h          # 8 requests/day
+region: midwest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://pipeline2.kindermorgan.com/Capacity/OpAvailPoint.aspx?code=NGPL

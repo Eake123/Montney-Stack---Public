@@ -1,0 +1,77 @@
+# 16-day forecast via Open-Meteo (free, no key; non-commercial terms - Erik confirmed personal use,
+# see docs/research/DECISIONS.md). Add or remove locations freely.
+# `composites` builds a weighted average (e.g. a population-weighted Alberta HDD) plus HDD outlook
+# sums for days 1-7 and 8-15 (wx.<comp>.hdd_1_7 / hdd_8_15) for the forecast-revision box.
+id: weather
+name: Weather - 16 day forecast
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 3h
+# Every point (forecast days, the past_days model analysis, normals, HDD windows) is stamped as_of = fetch hour,
+# so each run is a vintage: tier `forecast` (L-038). That means every run is kept 14 d, then one per day, then
+# dropped after 1 y 7 d. Unchanged values (e.g. normals) write no new row (change-only writes).
+# Exception (L-039): wx.<loc>.tmean.realized / hdd.realized are ended days only, stamped as_of = ts: actual
+# history, `daily`, kept forever (~11 places x 2 x 365 = 8 k rows/yr). They keep the past_days "actuals"
+# after the forecast runs are dropped.
+retention:
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true          # L-106: one request per run for every location (was one per location)
+  forecast_days: 16
+  past_days: 7          # recent days (model analysis) come back with each fetch
+  hdd_base: 18          # degC; Canadian convention
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  # Daily values use local calendar days. Alberta is permanently UTC-6 from 2026-11-01 (tzdata
+  # 2026e); BC's Peace region (Dawson Creek, Fort St. John) has been UTC-7 year-round since 1972.
+  # Fixed offsets keep us independent of the provider's tz data, and the connector checks the
+  # response's utc_offset_seconds. Note the "Etc/GMT+6" sign convention: it means UTC-6.
+  tz: Etc/GMT+6
+  locations:
+    - {name: Calgary,        lat: 51.05, lon: -114.07}
+    - {name: Edmonton,       lat: 53.55, lon: -113.49}
+    - {name: Red Deer,       lat: 52.27, lon: -113.81}
+    - {name: Lethbridge,     lat: 49.69, lon: -112.84}
+    - {name: Medicine Hat,   lat: 50.04, lon: -110.68}
+    - {name: Grande Prairie, lat: 55.17, lon: -118.79}
+    - {name: Fort McMurray,  lat: 56.73, lon: -111.38}
+    - {name: Fort St John,   lat: 56.25, lon: -120.85, tz: Etc/GMT+7}
+    - {name: Dawson Creek,   lat: 55.76, lon: -120.24, tz: Etc/GMT+7}
+    # East of the AB/BC view (L-080): named zones (America/Regina is UTC-6 all year; Winnipeg/Toronto observe DST),
+    # so local days follow each city's own clock. Only the AB/BC cities above keep the fixed Etc windows (AGENTS.md).
+    - {name: Regina,         lat: 50.45, lon: -104.61, tz: America/Regina}
+    - {name: Saskatoon,      lat: 52.13, lon: -106.67, tz: America/Regina}
+    - {name: Winnipeg,       lat: 49.90, lon: -97.14, tz: America/Winnipeg}
+    - {name: Thunder Bay,    lat: 48.38, lon: -89.25, tz: America/Toronto}
+    - {name: Sudbury,        lat: 46.49, lon: -80.99, tz: America/Toronto}
+    - {name: North Bay,      lat: 46.31, lon: -79.46, tz: America/Toronto}
+    # L-106 region cities (docs/REGIONS.md): wcan's BC interior, mbnwo's Manitoba / NW Ontario
+    - {name: Kelowna,        lat: 49.89, lon: -119.50, tz: America/Vancouver}
+    - {name: Kamloops,       lat: 50.67, lon: -120.33, tz: America/Vancouver}
+    - {name: Prince George,  lat: 53.92, lon: -122.75, tz: America/Vancouver}
+    - {name: Brandon,        lat: 49.85, lon: -99.95, tz: America/Winnipeg}
+    - {name: Kenora,         lat: 49.77, lon: -94.49, tz: America/Winnipeg}
+  composites:
+    # Weights = population of each census metro area / agglomeration: Statistics Canada estimates
+    # for 2022-07-01 (2021 Census boundaries), as tabulated by citypopulation.de. Only the ratios
+    # matter. Population stands in for residential/commercial gas heating load.
+    - id: alberta
+      name: Alberta (7-city pop. wtd)
+      weights: {calgary: 1587723, edmonton: 1500864, lethbridge: 130818, red_deer: 105653,
+                medicine_hat: 79057, fort_mcmurray: 76748, grande_prairie: 66029}
+    - id: nebc
+      name: NE BC / Montney (FSJ + Dawson Creek)
+      weights: {fort_st_john: 30111, dawson_creek: 19096}
+    # L-106 region composites, population-weighted HDD / CDD for Gas and Power's demand estimates (wx.region.<r>.*).
+    # Weights = 2021 Census population of each CMA / CA (Statistics Canada table 98-10-0005-01). Only the ratios matter.
+    - id: region.wcan
+      name: AB · BC · SK (14-city pop. wtd)
+      weights: {calgary: 1481806, edmonton: 1418118, red_deer: 100844, lethbridge: 123847, medicine_hat: 76376,
+                grande_prairie: 64141, fort_mcmurray: 73837, regina: 249217, saskatoon: 317480, kelowna: 222162,
+                kamloops: 114142, prince_george: 89490, fort_st_john: 28729, dawson_creek: 17878}
+    - id: region.mbnwo
+      name: Manitoba & NW Ontario (4-city pop. wtd)
+      weights: {winnipeg: 834678, brandon: 54268, thunder_bay: 123258, kenora: 14967}

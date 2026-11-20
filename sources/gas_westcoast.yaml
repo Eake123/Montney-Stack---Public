@@ -1,0 +1,19 @@
+# Westcoast (Enbridge BC Pipeline) critical notices: Station 2 South and Huntingdon daily
+# capacity (parsed from notice text, GJ -> MMcf/d at Westcoast's published 40.000 MJ/m3), plus
+# every critical notice as an event (T-South/T-North constraints, linepack status, outages).
+# Source: the JSON behind https://infopost.enbridge.com/bu/WE/Notices/CRI (no key).
+# Details, parser rules and severity rules: montney/connectors/gas_westcoast.py
+id: gas_westcoast
+name: Westcoast critical notices (Station 2 / Huntingdon)
+type: python
+module: montney.connectors.gas_westcoast
+class: WestcoastNotices
+mode: cached
+interval: 30m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# daily, not forecast: capacity is posted ahead of the gas day (as_of = notice posting time, not fetch);
+# measured 1.46 vintages/point, ~1.1k rows/yr, so every posted revision is kept. Notices are events.
+retention: daily
+params:
+  heat_value_mj_m3: 40.0   # Station 2 / Huntingdon, HV_2026_2027.pdf (effective 2026-11-01)
+  days: 45                 # notices younger than this become events

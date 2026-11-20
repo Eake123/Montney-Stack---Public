@@ -1,0 +1,29 @@
+# Alliance Pipeline US: the Canadian border at Sherwood ND, Bakken receipts (Tioga, Bantry) and the flow ND -> MN
+# (L-106 bakken / umw). Pembina's public informational-postings API, one POST per gas day. Its robots.txt blocks AI
+# crawlers; this is a scheduled data connector (not a crawler, not AI training) and sends the runner's plain
+# User-Agent. Details: montney/connectors/gas_ebb_bakken.py. All values SCHEDULED (MMBtu at 1,037 Btu/cf -> MMcf/d),
+# gas day = ts, as_of = Alliance's post time. The Canadian side (alliance.receipts.total, Mcf/d) is gas_alliance.
+id: gas_ebb_alliance_us
+name: Interstate EBBs - Alliance Pipeline US
+type: python
+module: montney.connectors.gas_ebb_bakken
+class: EbbAllianceUs
+mode: cached
+interval: 2h           # 1 request per run + 1 once a day (yesterday): ~13 a day
+region: bakken
+retention: daily
+params:
+  yesterday_after_ct: 11
+  title: Alliance US
+  emit:
+    bakken: [import_canada, production, industrial, other, net]
+    umw: [int_in, net]
+  points:
+    "UX": {cat: import_canada, label: Border USA (Sherwood ND)}
+    "ND08": {cat: production, label: Bantry (Aux Sable Prairie Rose, Bakken gas)}
+    "ND11": {cat: production, label: Tioga (Hess Tioga lateral)}
+    "ND07": {cat: industrial, label: Hankinson (ethanol)}
+  borders:
+    canada_nd: {points: ["UX"], flow: R, label: "Canada -> North Dakota (Sherwood border receipt)"}
+    nd_mn: {state_net: [ND], label: "North Dakota -> Minnesota (ND receipts - deliveries)"}
+    mn_ia: {state_net: [ND, MN], label: "Minnesota -> Iowa (ND + MN receipts - deliveries)"}

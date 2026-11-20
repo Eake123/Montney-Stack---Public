@@ -1,0 +1,40 @@
+# 16-day city forecasts for the US Pacific Northwest (L-090) via Open-Meteo, as sources/weather_cal.yaml: series
+# wx.seattle.* / wx.portland.* and the composite wx.pnw.* (population-weighted). Named zone America/Los_Angeles.
+# Lean: every 6 h, ONE batched request a run for all 6 cities (~0.17 req/h, L-106); normals one batched request per
+# 30 d. HDD/CDD base 18 degC. + the region composite wx.region.pnw.* (L-106; Vancouver / Victoria: BC's Lower Mainland).
+id: weather_pnw
+name: Weather - PacNW cities (Seattle, Portland), 16 day forecast
+region: pnw            # budget/attribution region (sources/BUDGET.yaml); the runner reads it once Database wires it
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true          # L-106: one request per run for every location (was one per location)
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Los_Angeles
+  locations:
+    - {name: Seattle,  lat: 47.61, lon: -122.33}
+    - {name: Portland, lat: 45.52, lon: -122.68}
+    - {name: Spokane,   lat: 47.66, lon: -117.43}          # L-106: the rest of the pnw region
+    - {name: Boise,     lat: 43.62, lon: -116.20, tz: America/Boise}
+    - {name: Vancouver, lat: 49.25, lon: -123.05, tz: America/Vancouver}   # BC's Lower Mainland is in pnw
+    - {name: Victoria,  lat: 48.43, lon: -123.37, tz: America/Vancouver}
+  composites:
+    # Weights = 2020 US Census population of each metropolitan statistical area. Only the ratios matter.
+    - id: pnw
+      name: PacNW (Seattle + Portland pop. wtd)
+      weights: {seattle: 4018762, portland: 2512859}
+    # L-106 region composite (wx.region.pnw.*): 2020 US Census MSA + 2021 Census CMA population. wx.pnw is unchanged.
+    - id: region.pnw
+      name: PacNW (6-city pop. wtd)
+      weights: {seattle: 4018762, portland: 2512859, spokane: 585784, boise: 764718, vancouver: 2642825,
+                victoria: 397237}

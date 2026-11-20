@@ -1,0 +1,15 @@
+# Northern Border (TC Energy): Bakken receipts, Ventura, the Chicago leg and its Chicago-market deliveries (L-095).
+# TWO requests per run: TC eConnects' Operationally Available Capacity report (SSRS, asset 3029), the viewer page then
+# its CSV export (~270 KB), today's gas day, Timely cycle. Details: montney/connectors/midwest_gas.py
+id: gas_nbpl
+name: Northern Border Pipeline (Bakken, Chicago)
+type: python
+module: montney.connectors.midwest_gas
+class: GasNbpl
+mode: cached
+interval: 12h         # the report's default is today's Timely cycle: 4 requests/day
+region: midwest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://ebb.tceconnects.com/infopost/ReportViewer.aspx?/InfoPost/OperationallyAvailableCapacity&pAssetNbr=3029

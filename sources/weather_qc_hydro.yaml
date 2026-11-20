@@ -1,0 +1,16 @@
+# Quebec hydro at a glance (L-091): a natural-inflow index from 9 unregulated northern rivers (MELCCFP provincial
+# network, CC BY 4.0), % of normal. A PROXY: Quebec publishes no reservoir storage (Hydro-Quebec's open data keeps
+# 10 days of levels, no storage; details in the connector). ONE station-layer CSV a day (~110 KB); normals from the
+# rivers' daily-mean history files, cached 30 d (9 requests a month, ~1 MB each). Region qc.
+# Degraded mode (2026-11-13): while the station layer is down (since 2026-11-11 it answers an OWS ExceptionReport), the
+# values are each river's latest provisional daily mean from those same files (1-2 days behind), re-checked every 12 h
+# with If-Modified-Since: up to 9 requests per 12 h, mostly 304 with no body, ~9 MB once a day when the files change.
+id: weather_qc_hydro
+name: Rivers - Quebec hydro at a glance (northern inflow index)
+region: qc
+type: python
+module: montney.connectors.weather_qc_hydro
+class: QuebecHydro
+mode: cached
+interval: 1d
+retention: daily       # daily readings of actuals (as_of = ts), kept forever

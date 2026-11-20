@@ -1,0 +1,16 @@
+# Ontario (IESO) intertie flows, hourly (L-103): Quebec (all PQ.* interties), Manitoba, Manitoba SK, Michigan,
+# Minnesota, New York and net. Sign as IESO publishes it: + export from Ontario, - import. Source: IESO
+# IntertieScheduleFlow (today's report, re-issued through the day; 5-min actuals -> complete-hour means), keyless,
+# 1 request/h. Stored (the trend is the point). History + trend means: sources/power_ieso_interties_daily.yaml.
+# IESO time is EST all year (fixed UTC-5). Details: montney/connectors/power_ieso_interties.py.
+id: power_ieso_interties
+name: IESO intertie flows, hourly (+ export, - import)
+type: python
+module: montney.connectors.power_ieso_interties
+class: IesoInterties
+mode: cached
+interval: 1h
+region: ont          # sources/BUDGET.yaml (L-091)
+retention: hourly
+params:
+  report: hourly

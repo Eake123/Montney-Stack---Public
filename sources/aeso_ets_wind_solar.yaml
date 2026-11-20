@@ -1,0 +1,16 @@
+# AESO wind + solar power forecasts: short-term (10-min, ~12 h) and 7-day (hourly), min/likely/max.
+# Forecasts are stored per fetch (as_of: fetch), future slots only; actuals from the short-term file.
+id: aeso_ets_wind_solar
+name: AESO wind & solar forecast
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 30m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention:
+  default: forecast
+  "aeso.*.actual": fast
+params:
+  report: wind_solar
+  horizons: [st, lt]

@@ -1,0 +1,54 @@
+[
+ {
+  "id": "dev:1",
+  "source": "dev",
+  "kind": "outage",
+  "title": "East Gate compressor maintenance (dev)",
+  "body": "Synthetic outage for UI development.",
+  "url": null,
+  "starts_h": -20,
+  "ends_h": 70,
+  "refs": [
+   "gas.ngtl.egat"
+  ],
+  "severity": "warn"
+ },
+ {
+  "id": "dev:2",
+  "source": "dev",
+  "kind": "bulletin",
+  "title": "NGTL bulletin: weekend border capability (dev)",
+  "body": "Synthetic bulletin.",
+  "url": null,
+  "starts_h": -3,
+  "ends_h": null,
+  "refs": [],
+  "severity": "info"
+ },
+ {
+  "id": "dev:3",
+  "source": "dev",
+  "kind": "alert",
+  "title": "AIES event log: supply shortfall watch (dev)",
+  "body": "Synthetic alert.",
+  "url": null,
+  "starts_h": -1,
+  "ends_h": 6,
+  "refs": [],
+  "severity": "critical"
+ },
+ {
+  "id": "dev:4",
+  "source": "dev",
+  "kind": "outage",
+  "title": "Empress meter station work (dev)",
+  "body": "Synthetic outage.",
+  "url": null,
+  "starts_h": 30,
+  "ends_h": 54,
+  "refs": [
+   "gas.empress"
+  ],
+  "severity": "info"
+ }
+]

@@ -1,0 +1,230 @@
+# Upper Sunbelt: NV + AZ + NM. No feeds yet.
+id: sunbelt
+name: Upper Sunbelt
+color: "#a1887f"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-NV, US-AZ, US-NM]
+anchor: [-111.2, 34.6]
+tz: America/Phoenix
+budget_region: sunbelt
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/sunbelt.md
+  production: {parts: [{series: eia.nm.marketed_production, fill: latest}],
+               covers: [US-NM], note: "NV and AZ: EIA withholds their small output"}
+  # PLAN 9d: the borders from the interstate boards, scoped: Kern River (Las Vegas's supply) blocks automated reads and
+  # New Mexico's Permian gas mostly leaves through Texas intrastates, so no same-basis daily balance is reachable.
+  through: yesterday
+  imports: {parts: [ebb.epng.border.tx_sunbelt, ebb.tw.border.co_nm, gtn.tuscarora.deliveries, cal.imports.kern_mojave,
+                    -ebb.mopc.border.sunbelt_cal], scope: posted pipes, quality: scheduled,
+            note: "El Paso Texas → New Mexico, Transwestern from Colorado (San Juan), GTN → Tuscarora (Reno), and Kern
+              River's transit into Nevada, taken as what it delivers into California (California's Kern River / Mojave
+              receipts less Mojave's posted Arizona → California flow), the same gas as in exports. Kern River's own
+              deliveries in Nevada (Las Vegas) post nothing we may read, so net imports read low by that much"}
+  exports: {parts: [cal.imports.topock, cal.imports.ehrenberg, cal.imports.kern_mojave, ebb.tw.border.nm_tx,
+                    ebb.tcp.border.sunbelt_mtnw, ebb.epng.sunbelt.export_mexico, ebb.sgp.sunbelt.export_mexico],
+            scope: posted pipes, quality: scheduled,
+            note: "the whole California border as California receives it (cal's imports: Topock / Needles, Ehrenberg /
+              Blythe, Kern River / Mojave) + Transwestern New Mexico → Texas + TransColorado New Mexico → Colorado +
+              Mexico (El Paso in Arizona, Sierrita at Sasabe)"}
+  demand: {parts: [gas.sunbelt.demand_est], quality: estimate, unproven: true,
+           note: "NV + AZ + NM: a daily model (gas_region_demand, est.): EIA-930 gas generation x a fitted heat rate
+             + residential/commercial from population-weighted HDD + industrial (same month last year); back-test
+             monthly p90 8.2 %; NV/NM industrial from older EIA years (withheld). Unproven until checked against
+             daily measured demand, so no storage implied yet"}
+  storage: {lag: 100d, parts: [{series: eia.nm.storage.net_withdrawal, sign: -1, fill: month}],
+            note: "New Mexico's storage (EIA monthly, + injection)"}
+  inventory: {parts: [{series: eia.nm.storage.working_gas, fill: latest}], unit: Bcf}
+oil:
+  production: {parts: [{series: eia.nm.crude_production, fill: latest},
+                       {series: eia.az.crude_production, fill: latest},
+                       {series: eia.nv.crude_production, fill: latest}],
+               note: "crude + condensate (EIA crude oil includes lease condensate)"}
+power:
+  # EIA-930 per BA. Demand is hourly (~1-2 h behind); net generation, interchange and fuels come in EIA's DAILY file
+  # only (8-36 h behind), so load / generation / interchange read power_eia930_nowcast's *_best series: the actual
+  # where posted, else live demand + the BA's net export at the same hour on the latest day (est., ~2 h behind;
+  # backtest MAE 5-13 % of NG). Fuels stay on EIA's daily file (lag: 2d). Interchange: EIA's TI is + export, so each
+  # part is negated (net imports, REGIONS §4); flows between BAs inside the region cancel.
+  fuels_note: "EIA-930's daily fuel file: about a day behind the generation line (a nowcast), so shares are of the fuels' own total."
+  load: {parts: [eia930.azps.demand_best, eia930.srp.demand_best, eia930.tepc.demand_best, eia930.walc.demand_best, eia930.nevp.demand_best, eia930.pnm.demand_best], quality: estimate, lag: 2h, note: "EIA-930 APS, SRP, TEP, WAPA Desert SW, NV Energy, PNM, Arlington Valley; El Paso Electric is in tx"}
+  generation: {parts: [eia930.azps.net_gen_best, eia930.srp.net_gen_best, eia930.tepc.net_gen_best, eia930.walc.net_gen_best, eia930.nevp.net_gen_best, eia930.pnm.net_gen_best, eia930.deaa.net_gen_best], quality: estimate, lag: 2h}
+  interchange: {parts: [-eia930.azps.interchange_best, -eia930.srp.interchange_best, -eia930.tepc.interchange_best, -eia930.walc.interchange_best, -eia930.nevp.interchange_best, -eia930.pnm.interchange_best, -eia930.deaa.net_gen_best], quality: estimate, lag: 2h, note: "gen-only BAs (DEAA): interchange = -net generation (they export all they make)"}
+  fuels:
+    gas: {parts: [eia930.azps.gen.gas, eia930.srp.gen.gas, eia930.tepc.gen.gas, eia930.walc.gen.gas, eia930.nevp.gen.gas, eia930.pnm.gen.gas, eia930.deaa.gen.gas], lag: 2d}
+    coal: {parts: [eia930.azps.gen.coal, eia930.srp.gen.coal, eia930.tepc.gen.coal, eia930.nevp.gen.coal, eia930.pnm.gen.coal], lag: 2d}
+    nuclear: {parts: [eia930.azps.gen.nuclear, eia930.srp.gen.nuclear], lag: 2d}
+    hydro: {parts: [eia930.azps.gen.hydro, eia930.srp.gen.hydro, eia930.walc.gen.hydro, eia930.nevp.gen.hydro, eia930.pnm.gen.hydro], lag: 2d}
+    wind: {parts: [eia930.azps.gen.wind, eia930.srp.gen.wind, eia930.tepc.gen.wind, eia930.walc.gen.wind, eia930.nevp.gen.wind, eia930.pnm.gen.wind], lag: 2d}
+    solar: {parts: [eia930.azps.gen.solar, eia930.srp.gen.solar, eia930.tepc.gen.solar, eia930.walc.gen.solar, eia930.nevp.gen.solar, eia930.pnm.gen.solar], lag: 2d}
+    battery: {parts: [eia930.azps.gen.battery, eia930.srp.gen.battery, eia930.tepc.gen.battery, eia930.nevp.gen.battery, eia930.pnm.gen.battery], lag: 2d}
+    oil: {parts: [eia930.azps.gen.oil, eia930.nevp.gen.oil], lag: 2d}
+    geothermal: {parts: [eia930.pnm.gen.geothermal], lag: 2d}
+    other: {parts: [eia930.azps.gen.other, eia930.nevp.gen.other], lag: 2d}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_sunbelt.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_sunbelt
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.phoenix.tmean
+    - wx.tucson.tmean
+    - wx.las_vegas.tmean
+    - wx.reno.tmean
+    - wx.albuquerque.tmean
+    - wx.santa_fe.tmean
+  hdd: wx.region.sunbelt.hdd
+  cdd: wx.region.sunbelt.cdd
+  normals: [wx.region.sunbelt.hdd_normal, wx.region.sunbelt.cdd_normal]
+  realized: [wx.region.sunbelt.hdd.realized, wx.region.sunbelt.cdd.realized]
+  outlook: [wx.region.sunbelt.hdd_1_7, wx.region.sunbelt.hdd_8_15, wx.region.sunbelt.cdd_1_7, wx.region.sunbelt.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/sunbelt.md (shown on the page)
+  - "1-7 day CDD outlook vs normal and yesterday: a multi-day heat wave means evening peaks and gas burn"
+  - "Palo Verde units: one unit down is ~1.4 GW"
+  - "California border flows at Topock, Ehrenberg and Kern River / Mojave: the daily view of the region"
+  - "Net power exports: exports falling in summer mean the region needs its own gas"
+  - "APS, SRP and NV Energy load vs the outlook: load nearly doubles from spring to July"
+  - "Gas vs solar generation, a day late: gas and batteries take over in the evening after solar falls"
+  - "EIA monthly New Mexico production: the supply read when a new month lands"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.sunbelt.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.sunbelt.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.sunbelt.industrial_est}
+        - {label: "Power plants on Kinder Morgan pipes", series: ebb.km.sunbelt.power}
+        - {label: "LDC citygates on Kinder Morgan pipes", series: ebb.km.sunbelt.ldc}
+        - {label: "Industrial on Kinder Morgan pipes", series: ebb.km.sunbelt.industrial}
+        - {label: "Power plants on Transwestern", series: ebb.tw.sunbelt.power}
+        - {label: "LDC citygates on Transwestern", series: ebb.tw.sunbelt.ldc}
+        - {label: "Industrial on Transwestern", series: ebb.tw.sunbelt.industrial}
+        - {label: "Reno area off GTN → Tuscarora", series: gtn.tuscarora.deliveries}
+    - id: production_by_area
+      title: Production by area
+      note: "New Mexico's receipts on El Paso and Transwestern (Permian and San Juan); much NM Permian gas leaves
+        through Texas intrastates instead. Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "New Mexico marketed production (EIA monthly)", series: eia.nm.marketed_production}
+        - {label: "El Paso receipts in New Mexico", series: ebb.epng.sunbelt.production}
+        - {label: "Transwestern receipts in New Mexico", series: ebb.tw.sunbelt.production}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Kern River (into Las Vegas) blocks automated reads, so Nevada's main supply is missing. Scheduled
+        quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "El Paso Texas → New Mexico", series: ebb.epng.border.tx_sunbelt}
+        - {label: "Transwestern from Colorado (San Juan)", series: ebb.tw.border.co_nm}
+        - {label: "GTN → Tuscarora (into Nevada)", series: gtn.tuscarora.deliveries}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "El Paso Arizona → California", series: ebb.epng.border.sunbelt_cal}
+        - {label: "Mojave Arizona → California (Topock)", series: ebb.mopc.border.sunbelt_cal}
+        - {label: "Transwestern Arizona → California", series: ebb.tw.border.az_ca}
+        - {label: "Transwestern New Mexico → Texas", series: ebb.tw.border.nm_tx}
+        - {label: "TransColorado New Mexico → Colorado", series: ebb.tcp.border.sunbelt_mtnw}
+        - {label: "Mexico on El Paso (Arizona)", series: ebb.epng.sunbelt.export_mexico}
+        - {label: "Mexico on Sierrita (Sasabe)", series: ebb.sgp.sunbelt.export_mexico}
+    - id: storage
+      title: Storage
+      note: "Washington Ranch (NM) on El Paso (scheduled, MMcf/d); EIA monthly working gas (Bcf)."
+      rows:
+        - {label: "Injections on El Paso", series: ebb.epng.sunbelt.storage_inj}
+        - {label: "Withdrawals on El Paso", series: ebb.epng.sunbelt.storage_wd}
+        - {label: "New Mexico working gas (EIA monthly, Bcf)", series: eia.nm.storage.working_gas}
+        - {label: "Arizona working gas (EIA monthly, Bcf)", series: eia.az.storage.working_gas}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area
+      of: load
+      note: "EIA-930 demand (nowcast-cleaned). Arlington Valley (DEAA) is generation-only."
+      rows:
+        - {label: "Arizona Public Service", series: eia930.azps.demand_best}
+        - {label: "Salt River Project", series: eia930.srp.demand_best}
+        - {label: "NV Energy", series: eia930.nevp.demand_best}
+        - {label: "Tucson Electric Power", series: eia930.tepc.demand_best}
+        - {label: "PNM (New Mexico)", series: eia930.pnm.demand_best}
+        - {label: "WAPA Desert Southwest", series: eia930.walc.demand_best}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Palo Verde (nuclear)", value: 4210, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "SunZia Wind South (wind)", value: 2561, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Springerville (coal)", value: 1779, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Four Corners (coal)", value: 1636, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Chuck Lenzie Generating Station (gas)", value: 1466, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Clark (NVE) (gas)", value: 1376, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Santan (gas)", value: 1326, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Glen Canyon Dam (hydro)", value: 1312, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Harquahala Generating Project (gas)", value: 1277, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "West Phoenix (gas)", value: 1207, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 3 units, 3,937 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "Palo Verde 1 (MW est.)", series: nrc.palo_verde_1.mw_est}
+        - {label: "Palo Verde 2 (MW est.)", series: nrc.palo_verde_2.mw_est}
+        - {label: "Palo Verde 3 (MW est.)", series: nrc.palo_verde_3.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.sunbelt.gas}
+        - {label: "Solar", series: cap.sunbelt.solar}
+        - {label: "Battery storage", series: cap.sunbelt.battery}
+        - {label: "Wind", series: cap.sunbelt.wind}
+        - {label: "Coal", series: cap.sunbelt.coal}
+        - {label: "Nuclear", series: cap.sunbelt.nuclear}
+        - {label: "Hydro", series: cap.sunbelt.hydro}
+        - {label: "Geothermal", series: cap.sunbelt.geothermal}
+        - {label: "Pumped storage", series: cap.sunbelt.pumped_storage}
+        - {label: "Oil", series: cap.sunbelt.oil}
+        - {label: "Biomass", series: cap.sunbelt.biomass}
+        - {label: "Other", series: cap.sunbelt.other}
+        - {label: Total, series: cap.sunbelt.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists. The APS and SRP rows are measured load at each utility's summer peak (different years); Nevada's is operating capacity, not load."
+      rows:
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.sunbelt.it_mw}
+        - {label: "APS data-centre load at its July 2026 peak", value: 630, unit: MW, as_of: "2026-07",
+           source: "KJZZ, 2026-07-29: APS data centres used up to ~630 MW at the July 2026 record peak"}
+        - {label: "SRP data-centre load at its 2025 summer peak", value: 441, unit: MW, as_of: "2025-07",
+           source: "SRP data-centre facts: 441 MW at the 2025 peak (SRP's last measured figure; 2026 only as a % share)"}
+        - {label: Nevada data-centre operating capacity, value: 713, unit: MW, as_of: "2026-01",
+           source: "DRI, Data Center Water and Electricity Consumption in Nevada (Jan 2026)"}
+        - {label: Arizona data-centre capacity planned (queued), value: 10600, unit: MW, as_of: "2026-04",
+           source: "Arizona Corporation Commission large-load workshop, 2026-04-20"}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "EIA monthly, crude incl. lease condensate (~2 months behind). Arizona and Nevada round to 0."
+      rows:
+        - {label: "New Mexico crude incl. lease condensate (EIA)", series: eia.nm.crude_production}
+        - {label: "Arizona crude (EIA)", series: eia.az.crude_production}
+        - {label: "Nevada crude (EIA)", series: eia.nv.crude_production}
+    - id: refinery_runs
+      title: Refinery runs, PADD 3 + PADD 5
+      note: "EIA weekly, week ending Friday. NM is in PADD 3 Gulf Coast (TX, LA, NM, MS, AL, AR); AZ and NV in PADD 5
+        West Coast (CA, WA, OR, AZ, NV, AK, HI). Whole PADDs, far wider than the region."
+      rows:
+        - {label: "PADD 3 Gulf Coast crude oil input", series: oil.padd3.refinery_crude_input}
+        - {label: "PADD 3 Gulf Coast utilization", series: oil.padd3.utilization}
+        - {label: "PADD 5 West Coast crude oil input", series: oil.padd5.refinery_crude_input}
+        - {label: "PADD 5 West Coast utilization", series: oil.padd5.utilization}
+    - id: stocks
+      title: Stocks, PADD 3 + PADD 5
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR). Whole PADDs (see refinery runs)."
+      rows:
+        - {label: "PADD 3 crude oil (excl. SPR)", series: oil.padd3.crude_stocks}
+        - {label: PADD 3 total motor gasoline, series: oil.padd3.gasoline_stocks}
+        - {label: PADD 3 distillate fuel oil, series: oil.padd3.distillate_stocks}
+        - {label: "PADD 5 crude oil", series: oil.padd5.crude_stocks}
+        - {label: PADD 5 total motor gasoline, series: oil.padd5.gasoline_stocks}
+        - {label: PADD 5 distillate fuel oil, series: oil.padd5.distillate_stocks}

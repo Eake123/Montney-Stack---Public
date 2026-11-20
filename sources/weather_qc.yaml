@@ -1,0 +1,42 @@
+# 16-day city forecasts for Quebec (L-091) via Open-Meteo, as sources/weather_ont.yaml: wx.montreal.* /
+# wx.quebec_city.* and the composite wx.qc.* (population-weighted). Named zone America/Toronto (Quebec keeps the same
+# Eastern time and DST rules; America/Montreal is a tzdata link to it).
+# Lean: every 6 h, ONE batched request a run for all 6 cities (~0.17 req/h, L-106); normals one batched request per
+# 30 d. HDD/CDD base 18 degC, as for every city. + the region composite wx.region.qc.* (L-106).
+id: weather_qc
+name: Weather - Quebec cities (Montreal, Quebec City), 16 day forecast
+region: qc
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true          # L-106: one request per run for every location (was one per location)
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Toronto
+  locations:
+    - {name: Montreal,     lat: 45.50, lon: -73.57}
+    - {name: Quebec City,  lat: 46.85, lon: -71.30}     # L-106: inside the region outline (Sainte-Foy area)
+    - {name: Gatineau,       lat: 45.50, lon: -75.65}     # L-106: the rest of Quebec
+    - {name: Sherbrooke,     lat: 45.40, lon: -71.89}
+    - {name: Saguenay,       lat: 48.43, lon: -71.07}
+    - {name: Trois-Rivieres, lat: 46.35, lon: -72.55}
+  composites:
+    # Weights = 2021 Census population of each census metropolitan area (Statistics Canada). Only the ratios matter.
+    - id: qc
+      name: Quebec (Montreal + Quebec City pop. wtd)
+      weights: {montreal: 4291732, quebec_city: 839311}
+    # L-106 region composite (wx.region.qc.*): 2021 Census CMA population; Gatineau = the QUEBEC part of Ottawa-Gatineau.
+    # wx.qc above is unchanged.
+    - id: region.qc
+      name: Quebec (6-city pop. wtd)
+      weights: {montreal: 4291732, quebec_city: 839311, gatineau: 353293, sherbrooke: 227398, saguenay: 161567,
+                trois_rivieres: 161489}

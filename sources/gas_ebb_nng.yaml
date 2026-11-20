@@ -1,0 +1,91 @@
+# Northern Natural Gas (NNG): Iowa -> Minnesota, the Twin Cities, northwest Wisconsin, the Michigan Upper Peninsula and
+# southern Wisconsin -> ebb.nng.zone.<abc|d|ef> (zone totals), ebb.nng.umw.<category> (points posted one by one: a
+# breakdown inside Zone EF / D, never added to them), named groups and border proxies. MMcf/d = Dth / 1,037, gas day,
+# as_of = NNG's post time, all SCHEDULED. Research: docs/research/pipelines/east_and_rockies.md §5; method, cycles,
+# zone states and traps: montney/connectors/gas_ebb_nng.py.
+# Requests: 1 GET per run (the cycle listing) + 1 POST per new cycle (~4/day) + 1 POST/day (yesterday's Intraday 3)
+# + 1 POST/week (locations): ~17-18/day on www.northernnaturalgas.com.
+id: gas_ebb_nng
+name: Northern Natural Gas (Iowa into Minnesota, Wisconsin, Michigan UP)
+type: python
+module: montney.connectors.gas_ebb_nng
+class: EbbNng
+mode: cached
+interval: 2h
+region: midwest       # umw's budget region (regions/umw.yaml budget_region)
+retention: daily
+params:
+  boards:
+    - pipe: nng
+      label: Northern Natural
+      regions: [umw]
+      overrides:
+        # power plants the location file types LDC (or END with a name POWER_RE can't read)
+        "79396": {category: power, note: "Mankato Energy Center-S (typed LDC)"}
+        "62890": {category: power, note: "Cottage Grove MN (LS Power), typed LDC"}
+        "79381": {category: power, note: "Baraga #2 MI PP: the A.J. Mihm RICE plant (UPPCO)"}
+        "79385": {category: power, note: "Baraga #2 MI OSE (MISO-hour row of the same plant)"}
+        "79382": {category: power, note: "Negaunee #2 MI PP: the F.D. Kuester RICE plant"}
+        "79386": {category: power, note: "Negaunee #2 MI OSE (MISO-hour row of the same plant)"}
+        # direct-connect industrials typed LDC (MERC / CenterPoint as the shipper's agent)
+        "2249": {category: industrial, note: "U.S. Steel #1 (Minntac taconite)"}
+        "25084": {category: industrial, note: "U.S. Steel #2"}
+        "2244": {category: industrial, note: "United Taconite"}
+        "2345": {category: industrial, note: "National Steel Pellet (U.S. Steel Keetac)"}
+        "3499": {category: industrial, note: "Cleveland-Cliffs Northshore"}
+        "25081": {category: industrial, note: "Hibbing Taconite"}
+        "2248": {category: industrial, note: "Inland Steel (Cleveland-Cliffs Minorca)"}
+        "2250": {category: industrial, note: "Cleveland-Cliffs Empire (Michigan UP)"}
+        "78853": {category: industrial, note: "Guardian Energy Janesville (ethanol)"}
+        "62497": {category: industrial, note: "Al-Corn Clean Fuel (ethanol)"}
+        "78992": {category: industrial, note: "Highwater Ethanol"}
+        "79200": {category: industrial, note: "Flint Hills Pine Bend refinery, Rosemount MN (typed VIR)"}
+        # Wisconsin Gas master meters typed OTH: city gates
+        "71439": {type: LDC, note: Black River Falls master meter}
+        "78170": {type: LDC, note: Richland Center master meter}
+        "71253": {type: LDC, note: Tomah master meter}
+        "71254": {type: LDC, note: Ladysmith master meter}
+        "71419": {type: LDC, note: Monroe master meter}
+        "71255": {type: LDC, note: Frederic master meter}
+      named:
+        # allocation-zone totals (each zone's states from the location file's zone accounts; see the module)
+        ebb.nng.zone.ef:
+          label: "Zone EF deliveries: Minnesota, northwest Wisconsin, Michigan Upper Peninsula (all umw; includes the points posted one by one)"
+          plus: ["453:G"]
+        ebb.nng.zone.d:
+          label: "Zone D deliveries: eastern Iowa, northwest Illinois, southern Wisconsin (part umw)"
+          plus: ["456:G"]
+        ebb.nng.zone.abc:
+          label: "Zone ABC deliveries: Nebraska, Iowa, South Dakota (outside umw)"
+          plus: ["454:G"]
+        # border proxies from allocation groups (scheduled flow past a station, in the direction of physical flow)
+        ebb.nng.border.ia_mn:
+          label: "Iowa -> Minnesota (proxy: Ventura North + Welcome North groups; Ventura is ~60 km into Iowa)"
+          plus: ["1021:G", "809:G"]
+        ebb.nng.border.il_wi:
+          label: "Illinois -> Wisconsin on the East Leg (proxy: Galena East group)"
+          plus: ["463:G"]
+        ebb.nng.group.ventura_north:
+          label: "Ventura North group (flow north past Ventura, IA)"
+          plus: ["1021:G"]
+        ebb.nng.group.welcome_north:
+          label: "Welcome North group (West Leg, flow north past Welcome, MN)"
+          plus: ["809:G"]
+        ebb.nng.group.farmington_north:
+          label: "Farmington North group (into the Twin Cities from the south)"
+          plus: ["750:G"]
+        ebb.nng.group.carlton_south:
+          label: "Carlton South receipt group (Great Lakes gas from Carlton, MN, flowing south)"
+          plus: ["811:G"]
+        ebb.nng.group.carlton_east:
+          label: "Carlton East group (toward Superior, WI and the Michigan UP)"
+          plus: ["1020:G"]
+        ebb.nng.group.wakefield_east:
+          label: "Wakefield East group (Michigan Upper Peninsula)"
+          plus: ["1030:G"]
+        ebb.nng.group.galena_east:
+          label: "Galena East group (East Leg past Galena, IL)"
+          plus: ["463:G"]
+        ebb.nng.group.belleville_east:
+          label: "Belleville East group (East Leg past Belleville, WI)"
+          plus: ["488:G"]

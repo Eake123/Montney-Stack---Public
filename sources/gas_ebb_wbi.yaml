@@ -1,0 +1,32 @@
+# WBI Energy Transmission (MT / ND / WY / SD): daily scheduled quantities by point, summed for bakken (L-106).
+# WBI's own informational postings (ASP.NET postback: GET the form + POST a download; no login). Details, traps and the
+# category rules: montney/connectors/gas_ebb_bakken.py and ebb.py. All values SCHEDULED (MMBtu at 1,037 Btu/cf -> MMcf/d),
+# gas day = ts, as_of = WBI's post time.
+id: gas_ebb_wbi
+name: Interstate EBBs - WBI Energy Transmission
+type: python
+module: montney.connectors.gas_ebb_bakken
+class: EbbWbi
+mode: cached
+interval: 2h           # 2 requests per run + 1 once a day (yesterday) + 2 a week (locations): ~25 a day
+region: bakken
+retention: daily
+params:
+  yesterday_after_ct: 11
+  title: WBI
+  emit:
+    bakken: [production, ldc, power, industrial, storage_inj, storage_wd, int_in, int_out, other, net]
+  groups:
+    to_nbpl: {counterparty: "Northern Border", flow: D, region: bakken,
+              label: "deliveries to Northern Border inside ND (an internal transfer, not an export)"}
+    from_nbpl: {counterparty: "Northern Border", flow: R, region: bakken, label: "receipts from Northern Border"}
+  points:
+    "77776": {cat: skip, optional: true, label: WBI-Agg Storage (Cap.) - certificated inventory, not a flow}
+    "05800": {cat: storage_inj, region: bakken, label: WBI aggregate storage injection (non-geographical)}
+    "05801": {cat: storage_wd, region: bakken, label: WBI aggregate storage withdrawal (non-geographical)}
+    "01775": {cat: power, label: GRE Spiritwood}                     # counterparty Great River Energy
+    "00990": {cat: production, label: Hess Tioga plant}
+  borders:
+    mn_nd: {state_net: [MN], label: "Minnesota -> North Dakota (Viking at Felton, net)"}
+    bakken_wy: {state_net: [WY], sign: -1, label: "Bakken -> Wyoming (Wyoming deliveries - receipts)"}
+    bakken_sd: {state_net: [SD], sign: -1, label: "Bakken -> South Dakota (South Dakota deliveries - receipts)"}

@@ -1,0 +1,16 @@
+# TC Customer Express bulletins for NGTL, Foothills BC and Foothills Saskatchewan, as events
+# (ticker + area pins). Includes the "Weekend Border Capability Forecast (EGAT/WGAT)".
+# No personal data is stored (contact name/phone and publisher are dropped).
+# Details and severity rules: montney/connectors/ngtl_bulletins.py
+id: ngtl_bulletins
+name: NGTL / Foothills bulletins
+type: python
+module: montney.connectors.ngtl_bulletins
+class: NgtlBulletins
+mode: cached
+interval: 15m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: events
+params:
+  page_size: 25    # newest 25 across all TC providers (~1-2 days)
+  max_bodies: 8    # bodies fetched per run, operational types only

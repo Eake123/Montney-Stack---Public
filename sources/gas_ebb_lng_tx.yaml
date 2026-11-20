@@ -1,0 +1,18 @@
+# Texas LNG feedgas from interstate EBBs (L-106 tx exports): Freeport via Gulf South (Stratton Ridge) and Golden Pass
+# via Golden Pass Pipeline (gasnom). Both SCHEDULED, interstate part only (MMBtu at 1,037 Btu/cf -> MMcf/d), gas day =
+# ts, as_of = the pipeline's post time. Corpus Christi (Cheniere CCPL) is a separate source; Trans-Pecos is in gas_ebb_et.
+# Details: montney/connectors/gas_ebb_lng_tx.py
+id: gas_ebb_lng_tx
+name: Texas LNG feedgas (Gulf South -> Freeport, Golden Pass Pipeline)
+type: python
+module: montney.connectors.gas_ebb_lng_tx
+class: EbbLngTx
+mode: cached
+interval: 2h           # Gulf South list 1 + 0-2 CSVs (only new postings) + Golden Pass 1: ~30-35 requests a day
+region: tx
+retention: daily
+params:
+  yesterday_after_ct: 11
+  gs_tsp: 1                  # GasQuest tspId: Gulf South
+  freeport_loc: "24329"      # Stratton Ridge (To Freeport Lng)
+  golden_pass_loc: "1097217" # Terminal

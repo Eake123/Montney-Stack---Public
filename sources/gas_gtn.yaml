@@ -1,0 +1,19 @@
+# Gas Transmission Northwest (TC Energy): Kingsgate receipts, Stanfield to NWP, Malin and Tuscarora deliveries, the
+# sum of GTN's local deliveries (L-085; without its deliveries into NWP at Spokane / Palouse, stored on their own), the
+# other receipts (Turquoise Flats off Ruby, Ridge Road, RNG) and GTN's fuel + linepack (receipts − deliveries). One request per run: tcplus.com's Historical Operationally Available JSON for
+# yesterday + today (every location and cycle, ~200 KB); each gas day's latest cycle wins. MMBtu -> MMcf/d at 1,037.
+# Details: montney/connectors/pnw_gas.py
+id: gas_gtn
+name: Gas Transmission Northwest (Kingsgate, Stanfield, Malin)
+type: python
+module: montney.connectors.pnw_gas
+class: GasGtn
+mode: cached
+# GTN posts 5 cycles a day (TIM ~16:35, EVE ~20:35 the day before; ID1 12:35, ID2 17:05, ID3 21:35 Central).
+interval: 3h
+region: pnw          # sources/BUDGET.yaml; the source -> region mapping is Database's (L-085)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily scheduled values; each cycle's posting is a vintage (as_of = posting time).
+retention: daily
+params:
+  url: https://www.tcplus.com/GTN/HistoricalOperationalCapacity/Generate

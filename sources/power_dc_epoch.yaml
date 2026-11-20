@@ -1,0 +1,18 @@
+# Frontier AI data-centre IT power by region, MONTHLY (PLAN 9: "the total data center production" per region). No grid
+# operator publishes a live data-centre load series, so this is Epoch AI's "Frontier Data Centers" hub
+# (https://epoch.ai/data/ai-data-centers, CC BY 4.0, credit Epoch AI): per-site current IT power + dated timelines.
+# A FLOOR, not a total: only the largest AI campuses (96 sites worldwide, Nov 2026). Sites are placed by the state in
+# their address and summed per region; history back to `from` from the timelines (value at each month's end).
+# Requests: 1 a day, https://epoch.ai/data/data_centers/data_centers.zip (~120 KB, ETag: a 304 when unchanged; Epoch
+# rebuilds it about weekly). Details: montney/connectors/power_dc_epoch.py.
+id: power_dc_epoch
+name: Epoch AI frontier data centres, IT power by region (monthly, a floor)
+type: python
+module: montney.connectors.power_dc_epoch
+class: EpochDataCentres
+mode: cached
+interval: 1d
+region: rest         # sources/BUDGET.yaml: every US/Canadian region at once
+retention: daily
+params:
+  from: "2022-01"

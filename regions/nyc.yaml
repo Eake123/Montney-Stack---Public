@@ -1,0 +1,216 @@
+# NYC: New York State (the NYISO footprint; docs/QUESTIONS.md Q-R1).
+id: nyc
+name: NYC (New York)
+color: "#f06292"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-NY]
+anchor: [-75.8, 42.6]
+box: {dir: S}            # PLAN 9: where its box goes when the region is too small on screen (Frontend)
+tz: America/New_York
+budget_region: nyc
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/nyc.md
+  # production: New York's small marketed production is withheld on EIA's state page
+  why: {production: "New York's small output (~10-20 MMcf/d) is withheld by EIA and posts nowhere daily"}
+  imports: {parts: [tcm.iroquois.exports, tcm.napierville.exports], scope: Canada, quality: scheduled,
+            note: "from Canada only: Iroquois at Waddington (from sont) + Napierville (from qc). The big supply from
+              the south and west (Transco, Tennessee, Millennium, Dominion, Constitution's area: Marcellus gas) has
+              no stored daily total"}
+  exports: {parts: [tcm.niagara.imports], scope: Canada, quality: scheduled,
+            note: "to Ontario at Niagara / Chippawa (TC's net receipts there: sont's import)"}
+  demand: {parts: [gas.nyc.demand_est], quality: estimate, unproven: true,
+           note: "New York: a daily model (gas_region_demand, est.): EIA-930 gas generation x a fitted heat rate +
+             residential/commercial from population-weighted HDD + industrial (same month last year); back-test
+             monthly p90 8.2 %; dual-fuel oil may read as gas on the coldest days. Unproven until checked against
+             daily measured demand, so no storage implied yet"}
+  storage: {lag: 100d, parts: [{series: eia.ny.storage.net_withdrawal, sign: -1, fill: month}],
+            note: "EIA monthly (+ injection)"}
+  inventory: {parts: [{series: eia.ny.storage.working_gas, fill: latest}], unit: Bcf}
+power:
+  # NYISO's own real-time files (power_nyiso), hourly means of 5-min rows: load ~15 min, generation ~20 min and tie
+  # flows ~5 min after the hour. NYISO is the one balancing authority for all of New York State. Generation + net
+  # imports = load within ~150 MW most hours (Nov 2026); off-peak hours run up to ~650 MW over (likely pumped-storage
+  # pumping, which PAL load leaves out).
+  fuels_note: "NYISO's fuel mix: gas includes NYISO's dual fuel; oil = other fossil; other = other renewables (grid solar, biomass, landfill gas: NYISO doesn't split them)."
+  load: {parts: [nyiso.load], note: "NYISO actual load (PAL, 11 zones) = the state"}
+  generation: {parts: [nyiso.gen.total], note: "NYISO's fuel mix, all 7 categories; excl. behind-the-meter solar"}
+  interchange: {parts: [nyiso.interchange.net],
+                note: "NYISO's 11 external ties (+ into New York): Quebec, New England, Ontario, PJM"}
+  fuels:
+    gas: {parts: [nyiso.gen.gas, nyiso.gen.dual_fuel],
+          note: "natural gas + NYISO's dual fuel (gas/oil units, mostly burning gas)"}
+    nuclear: {parts: [nyiso.gen.nuclear]}
+    hydro: {parts: [nyiso.gen.hydro]}
+    wind: {parts: [nyiso.gen.wind]}
+    oil: {parts: [nyiso.gen.other_fossil], note: "NYISO's other fossil fuels (oil; New York has no coal since 2020)"}
+    other: {parts: [nyiso.gen.other_renewables],
+            note: "NYISO's other renewables: grid-scale solar, biomass, landfill gas (not split, so no solar row)"}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_nyc.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_nyc
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.new_york.tmean
+    - wx.buffalo.tmean
+    - wx.rochester.tmean
+    - wx.albany.tmean
+    - wx.syracuse.tmean
+  hdd: wx.region.nyc.hdd
+  cdd: wx.region.nyc.cdd
+  normals: [wx.region.nyc.hdd_normal, wx.region.nyc.cdd_normal]
+  realized: [wx.region.nyc.hdd.realized, wx.region.nyc.cdd.realized]
+  outlook: [wx.region.nyc.hdd_1_7, wx.region.nyc.hdd_8_15, wx.region.nyc.cdd_1_7, wx.region.nyc.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/nyc.md (shown on the page)
+  - "1-7 and 8-15 day HDD outlook vs normal: cold revisions lead Transco Zone 6 NY spikes and oil switching"
+  - "NYC (zone J) load vs the temperature outlook: NYC load swings 5 GW between mild and hot or cold days"
+  - "Québec imports incl. CHPE: low or zero imports mean downstate gas burns more"
+  - "Gas + dual-fuel generation: rising with flat load means less nuclear, hydro or imports"
+  - "Nuclear output: a unit trip moves gas burn the same day"
+  - "Iroquois at Waddington and Niagara: Niagara flow to Ontario shrinks when New York needs the gas"
+  - "1-7 day CDD outlook in summer: heat waves mean NYISO peaks and in-city gas burn"
+  - "Québec HDD outlook: Québec cold is a signal for fewer imports"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.nyc.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.nyc.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.nyc.industrial_est}
+        - {label: "LDC citygates on Transco (NYC)", series: ebb.transco.nyc.ldc}
+        - {label: "LDC citygates on Texas Eastern", series: ebb.tetco.nyc.ldc}
+        - {label: "LDC citygates on Iroquois", series: ebb.iroquois.nyc.ldc}
+        - {label: "Power plants on Iroquois", series: ebb.iroquois.nyc.power}
+        - {label: "LDC citygates on Kinder Morgan pipes", series: ebb.km.nyc.ldc}
+        - {label: "Power plants on Kinder Morgan pipes", series: ebb.km.nyc.power}
+        - {label: "LDC citygates on Millennium", series: ebb.millennium.nyc.ldc}
+        - {label: "Power plants on Millennium", series: ebb.millennium.nyc.power}
+        - {label: "LDC citygates on Algonquin (NY)", series: ebb.algonquin.nyc.ldc}
+        - {label: "Power plants on Empire", series: ebb.empire.nyc.power}
+        - {label: "LDC citygates on Empire", series: ebb.empire.nyc.ldc}
+        - {label: "LDC citygates on National Fuel (western NY)", series: ebb.natfuel.nyc.ldc}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Columbia (~50 MMcf/d) isn't built; EGTS's robots.txt forbids reads. Free table: pipes' border flows and
+        nets overlap. Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Transco past Linden, NJ (into NYC)", series: ebb.transco.linden.flow}
+        - {label: "Texas Eastern into New York (net)", series: ebb.tetco.nyc.net}
+        - {label: "Tennessee into New York (approx.)", series: ebb.tgp.border.pa_nyc}
+        - {label: "Millennium Pennsylvania receipts", series: ebb.millennium.pa.receipts}
+        - {label: "Stagecoach Pennsylvania → New York", series: ebb.stag.border.pa_nyc}
+        - {label: "Iroquois at Waddington (from Canada)", series: ebb.iroquois.waddington.receipts}
+        - {label: "Empire: Pennsylvania gas in Tioga Co.", series: ebb.empire.border.pa_nyc}
+        - {label: "Empire at Chippawa (from Canada)", series: ebb.empire.chippawa.receipts}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Tennessee New York → New England", series: ebb.tgp.border.nyc_upne}
+        - {label: "Algonquin in New York (net; − = out to NE)", series: ebb.algonquin.nyc.net}
+        - {label: "Tennessee New York → Ontario (Niagara)", series: ebb.tgp.border.nyc_sont}
+        - {label: "Empire at Chippawa (to Ontario, net)", series: ebb.empire.border.nyc_sont}
+    - id: storage
+      title: Storage
+      note: "Storage on the boards (scheduled, MMcf/d); EIA monthly working gas (Bcf)."
+      rows:
+        - {label: "Withdrawals on Kinder Morgan pipes", series: ebb.km.nyc.storage_wd}
+        - {label: "Injections on Kinder Morgan pipes", series: ebb.km.nyc.storage_inj}
+        - {label: "Withdrawals on Millennium", series: ebb.millennium.nyc.storage_wd}
+        - {label: "Injections on Millennium", series: ebb.millennium.nyc.storage_inj}
+        - {label: "New York working gas (EIA monthly, Bcf)", series: eia.ny.storage.working_gas}
+        - {label: "National Fuel withdrawals (NY + PA fields)", series: ebb.natfuel.storage.withdrawals}
+        - {label: "National Fuel injections (NY + PA fields)", series: ebb.natfuel.storage.injections}
+  power:
+    - id: load_by_zone
+      title: Load by zone
+      of: load
+      note: "NYISO's 11 load zones (PAL), hourly means. J = New York City, K = Long Island."
+      rows:
+        - {label: "J: New York City", series: nyiso.load.nyc}
+        - {label: "K: Long Island", series: nyiso.load.longil}
+        - {label: "A: West", series: nyiso.load.west}
+        - {label: "B: Genesee", series: nyiso.load.genese}
+        - {label: "C: Central", series: nyiso.load.centrl}
+        - {label: "D: North", series: nyiso.load.north}
+        - {label: "E: Mohawk Valley", series: nyiso.load.mhk_vl}
+        - {label: "F: Capital", series: nyiso.load.capitl}
+        - {label: "G: Hudson Valley", series: nyiso.load.hud_vl}
+        - {label: "H: Millwood", series: nyiso.load.millwd}
+        - {label: "I: Dunwoodie", series: nyiso.load.dunwod}
+    - id: interchange_by_tie
+      title: Interchange by neighbour (+ into New York)
+      rows:
+        - {label: "Québec (incl. CHPE into NYC)", series: nyiso.interchange.hq}
+        - {label: New England, series: nyiso.interchange.isone}
+        - {label: Ontario, series: nyiso.interchange.ieso}
+        - {label: "PJM (incl. Neptune, HTP, VFT)", series: nyiso.interchange.pjm}
+        - {label: "  CHPE (HVDC, Québec → NYC)", series: nyiso.tie.hq_chpe.flow}
+        - {label: "  Neptune (HVDC, PJM → Long Island)", series: nyiso.tie.pjm_neptune.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Robert Moses Niagara (hydro)", value: 2429, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Ravenswood (gas)", value: 2096, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Nine Mile Point Nuclear Station (nuclear)", value: 1901, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Oswego Harbor Power (oil)", value: 1804, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Northport (gas)", value: 1564, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Cricket Valley Energy (gas)", value: 1312, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Bowline Point (gas)", value: 1242, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Roseton Generating Facility (gas)", value: 1242, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Athens Generating Plant (gas)", value: 1222, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Sithe Independence Station (gas)", value: 1158, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 4 units, 3,326 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "FitzPatrick (MW est.)", series: nrc.fitzpatrick.mw_est}
+        - {label: "Ginna (MW est.)", series: nrc.ginna.mw_est}
+        - {label: "Nine Mile Point 1 (MW est.)", series: nrc.nine_mile_point_1.mw_est}
+        - {label: "Nine Mile Point 2 (MW est.)", series: nrc.nine_mile_point_2.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.nyc.gas}
+        - {label: "Hydro", series: cap.nyc.hydro}
+        - {label: "Nuclear", series: cap.nyc.nuclear}
+        - {label: "Oil", series: cap.nyc.oil}
+        - {label: "Solar", series: cap.nyc.solar}
+        - {label: "Wind", series: cap.nyc.wind}
+        - {label: "Pumped storage", series: cap.nyc.pumped_storage}
+        - {label: "Biomass", series: cap.nyc.biomass}
+        - {label: "Battery storage", series: cap.nyc.battery}
+        - {label: Total, series: cap.nyc.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists for New York. Static estimates; operating load and queued load kept apart."
+      rows:
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.nyc.it_mw}
+        - {label: Estimated data-centre load (avg), value: 464, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: 4.07 TWh in NY (2.84 % of state load)"}
+        - {label: Large-load requests seeking interconnection by 2030, value: 12670, unit: MW, as_of: "2026-05-01",
+           source: "NYISO Power Trends 2026, Fig. 10 (51 projects; queued, not operating)"}
+  oil:
+    - id: refinery_runs
+      title: Refinery runs, PADD 1 East Coast (18 states + DC)
+      note: "EIA weekly, week ending Friday. PADD 1 = New England to Florida (CT, DE, DC, FL, GA, ME, MD, MA, NH, NJ, NY,
+        NC, PA, RI, SC, VT, VA, WV); its refineries are mostly in NJ, PA and DE. EIA has no sub-PADD refinery data."
+      rows:
+        - {label: PADD 1 crude oil input, series: oil.padd1.refinery_crude_input}
+        - {label: PADD 1 gross input, series: oil.padd1.refinery_gross_input}
+        - {label: PADD 1 operable capacity, series: oil.padd1.refinery_capacity}
+        - {label: PADD 1 utilization, series: oil.padd1.utilization}
+    - id: stocks
+      title: Stocks, PADD 1B Central Atlantic + PADD 1
+      note: "EIA weekly, end of week. PADD 1B = DE, DC, MD, NJ, NY, PA. Crude stocks exist only for all of PADD 1
+        (commercial, excl. SPR)."
+      rows:
+        - {label: "PADD 1B total motor gasoline (DE DC MD NJ NY PA)", series: oil.padd1b.gasoline_stocks}
+        - {label: "PADD 1B distillate fuel oil (DE DC MD NJ NY PA)", series: oil.padd1b.distillate_stocks}
+        - {label: "PADD 1 crude oil (all East Coast)", series: oil.padd1.crude_stocks}

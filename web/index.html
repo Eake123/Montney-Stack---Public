@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- phone (L-068): the map owns pinch-zoom, so the page itself never zooms -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Montney Stack</title>
+  <!-- app icon (Art, docs/art/APP_ICON.md): ICO with exact 16/32/48 frames, plus the PNG sizes -->
+  <link rel="icon" href="/static/sprites/app-icon/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/sprites/app-icon/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/sprites/app-icon/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/static/sprites/app-icon/favicon-48.png">
+  <link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">
+  <link rel="stylesheet" href="/static/vendor/uPlot.min.css">
+  <link rel="stylesheet" href="/static/map.css">
+</head>
+<body>
+  <!-- Box borders by system (PLAN 4b, step 7): the callout frame's keyline mapped to gas #ff6b1a / power #3d9bff, see map.css -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <filter id="tint-gas" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.3115 1.0480 0.1058 0 0 0.1307 0.4397 0.0444 0 0 0.0318 0.1069 0.0108 0 0 0 0 0 1 0"/></filter>
+    <filter id="tint-power" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.0745 0.2507 0.0253 0 0 0.1894 0.6370 0.0643 0 0 0.3115 1.0480 0.1058 0 0 0 0 0 1 0"/></filter>
+  </defs></svg>
+  <div id="map"></div>
+  <canvas id="wind"></canvas>
+  <div id="overlay"><svg id="leaders"></svg><div id="callouts"></div></div>
+  <div id="hover" hidden></div>
+
+  <header class="hud brandbox">
+    <div class="brand"><button class="menubtn" id="menubtn" type="button" title="Sources and system" aria-label="Sources and system" aria-expanded="false" aria-controls="sysmenu">&#9776;</button>&#9650; MONTNEY<span class="sl">//</span>STACK <span class="runner" id="runner" hidden></span></div>
+    <div class="clock" id="clock"></div>
+    <div class="devbanner" id="devbanner" hidden>DEV FIXTURES: synthetic data (?dev=1)</div>
+  </header>
+
+  <!-- small screens (L-068): the layers list and legend fold behind this button -->
+  <!-- a stacked-layers icon, not ☰: the ☰ is the Sources / System menu (L-097) -->
+  <button class="hud hudtoggle" id="hudtoggle" title="Layers and legend" aria-label="Layers and legend" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 21 8 12 13 3 8Z"/><path d="M3 12.5 12 17.5 21 12.5"/><path d="M3 16.5 12 21.5 21 16.5"/></svg></button>
+  <!-- Search (L-076): an input in the top bar; on a small screen a 🔍 that opens a full-width bar (web/search.js) -->
+  <div class="hud search" id="search">
+    <button class="sbtn" type="button" title="Search" aria-label="Search">&#128269;</button>
+    <form role="search" autocomplete="off"><input type="search" enterkeyhint="search" placeholder="Search nodes, plants, gauges, wells…"
+      aria-label="Search the map" spellcheck="false" autocapitalize="off"><button class="sx" type="button" title="Close" aria-label="Close">✕</button></form>
+    <div class="sres" hidden></div>
+  </div>
+  <aside class="hud layers" id="layers"></aside>
+  <aside class="hud panel" id="panel" hidden></aside>
+  <!-- the ☰ menu (L-097): Sources and System tabs (web/sysmenu.js) -->
+  <aside class="hud sysmenu" id="sysmenu" hidden aria-label="Sources and system"></aside>
+  <div class="hud legend" id="legend"></div>
+
+  <footer class="hud timebar">
+    <div class="tb">
+      <button id="play" title="Play forecast">&#9654;</button>
+      <div class="track">
+        <input type="range" id="slider" min="0" max="1" step="1" value="0" aria-label="Weather forecast time">
+        <div class="ticks" id="ticks"></div><div class="nowmark" id="nowmark"></div>
+      </div>
+      <div class="when"><div id="when">WX --</div><div id="netlive" class="netlive"></div></div>
+      <button id="now" class="nowbtn" title="Back to now">NOW</button>
+    </div>
+    <div class="tb2"><span class="wxstatus" id="wxstatus">loading weather…</span><div class="ticker" id="ticker"></div></div>
+  </footer>
+
+  <div class="empty" id="empty" hidden>No network yet: geometry lands in <code>network/gas</code> and <code>network/power</code>.
+    Callouts for system-wide values still show.</div>
+  <div class="empty" id="nogl" hidden>This map needs WebGL2. Enable hardware acceleration or try another browser.</div>
+
+  <script src="/static/vendor/uPlot.iife.min.js"></script>
+  <script type="module" src="/static/map.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Petrinex Alberta: monthly sales gas per gas plant / gathering system (masked pipeline dispositions), plus the facility
+# list for names, operators and locations. PLAN 5a; docs/research/v2/gas-petrinex.md. Personal use (L-006), never
+# redistributed. The ~120 MB monthly CSVs are streamed and aggregated in memory, never saved (PLAN P3).
+# History back to 2022-01 is a one-off load: uv run python -m montney.importers.gas_petrinex --from 2022-01
+# Method and guards: montney/connectors/gas_petrinex.py
+id: gas_petrinex
+name: Petrinex AB plant sales gas (monthly)
+type: python
+module: montney.connectors.gas_petrinex
+class: GasPetrinex
+mode: cached
+interval: 7d
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; Petrinex's monthly re-cuts are vintages, kept forever.
+retention: daily
+params:
+  api: https://www.petrinex.gov.ab.ca/publicdata/API/Files/AB
+  months_back: 4

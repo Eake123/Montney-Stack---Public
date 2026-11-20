@@ -1,0 +1,167 @@
+# Upstream request budget per region (L-081, docs/ARCHITECTURE-REQUESTS.md §3).
+# One cap per region in requests/hour, regions as in the `region` table (a source's region is source.region_id,
+# the same mapping as the storage budget). `montney du` and `montney db check` compare it with the MEASURED rate
+# (fetch_run.n_requests over the last 24 h) and warn when a region is over, naming its top sources.
+# A warning, never a block. Adding a region: add its line here, then check `montney du` a day later.
+# Sizing (L-081 caps day, 2026-11-04, schedule + refresh runs over 24 h): cap = 1.5 x the measured 24 h mean, rounded
+# up, floor 3. The check judges the 24 h MEAN, so hourly spikes (a GFS run's probes, a restart's catch-ups: ab_nebc's
+# busiest hour was 273 against a 138 mean) average out; 1.5x absorbs a day with a couple of restarts or a slow-feed
+# retry storm, and a sustained rise past it (a new source, a cadence regression) warns. A region without a measured
+# day keeps a provisional floor until it has one.
+# L-107 (Erik, 2026-11-13): "the request limits I imposed before are too strict… increase them quite substantially.
+# Don't be DDoSing people, but we can do much more than we're doing." Kraken is dedicated to this and the runner goes out
+# through a VPN. Every region outside ab_nebc goes from 3-16 to 120 req/h, ab_nebc from 210 to 400, `rest` (sources that
+# cover many regions at once) to 120. These are ceilings to watch, not targets: the rules that bind are per HOST
+# (docs/REGIONS.md §6) and the client's pace (MONTNEY_HOST_GAP_S: at most 2 requests a second to one host).
+# The per-source notes below are history: what each source cost when it was added.
+requests_per_hour:
+  ab_nebc: 400     # caps day: measured 137.6 req/h (weather_gfs 14.4, aeso_csd 12.0, aeso_ets_events 11.9 ...); Phase 0 ~285.
+                   # Earlier notes: measured after L-081: see the PR; Phase 0 (before) was ~285
+                   # L-091 Weather: + weather_mb_hydro 1 req/day + ~16 per 30 d for HYDAT normals (~0.06 req/h).
+                   # L-106 (Gas): + oil_statcan_provinces 1 per 3 days (StatCan WDS, ~5 KB; AB/SK/BC/MB crude).
+                   # L-106 8c (Power, wcan): + power_bch_interties 1 req/h (~180 KB) + power_bch_load 1/day + power_saskpower
+                   # 2/day (~8 KB): ~1.13 req/h.
+                   # PLAN 9 (Power, wcan): + power_caiso_weim_load 4 req/h (oasis.caiso.com, one ~4 KB zip per 15 min run
+                   # with every WEIM area's actual load; OASIS asks for <= 1 request per 5 s, no in-run retries).
+                   # PLAN 9 (Power, wcan): power_saskpower 2/day -> 1/h (~8 KB) so saskpower.*_best follows the clock (+0.9).
+                   # PLAN 9 (Power): + power_capacity_ca 1 request a week (StatCan WDS, one POST, ~50 KB; installed
+                   # capacity by type for AB/BC/SK/MB/ON/QC): ~0.006 req/h.
+  rest: 120        # caps day: no sources (everything has a region now); floor, so a stray source warns.
+                   # L-106 (Gas): + gas_eia_states 9 per 3 days (every US state on 9 EIA pages, ~40 KB each; 5 until
+                   # the end-use split for gas_region_demand) + gas_eia_storage_weekly 1/day (~12 KB): ~0.17 req/h,
+                   # multi-region (every US region at once). gas_region_demand reads the store (0).
+                   # They replace gas_eia_midwest (5 per 3 days, midwest) and gas_eia_mist (1/day, pnw).
+                   # L-106 (Power): + power_eia930_demand 1 req/h + power_eia930_gen 2 per 6 h (~1.8 MB/run) =
+                   # ~1.33 req/h, multi-region (every US balancing authority in one request). With Gas's ~0.17 =
+                   # ~1.5 req/h.
+                   # PLAN 9 (Gas): + the upne / nyc EBBs, ~95-120 requests/day (~4-5 req/h, <= 14 a run, <= 6 per host,
+                   # >= 1 s apart): gas_ebb_enbridge (Algonquin, Texas Eastern, M&NE US), gas_ebb_pngts, gas_ebb_iroquois,
+                   # gas_ebb_transco, gas_ebb_millennium; location files weekly.
+                   # PLAN 9 (Gas): + gas_ebb_km ~300 requests/day (~13 req/h, <= 60 a run, >= 1 s apart; 12 Kinder Morgan
+                   # boards on one host, pipeline2.kindermorgan.com; ~20 MB/day), tx / sunbelt / mtnw / nyc / upne / umw.
+                   # PLAN 9 (Power): the all-BA requests hang (2026-11-13), so each goes in 3 batches of <= 15 BAs, and
+                   # gen goes 6 h -> 1 h (the daily drop lands within the hour): power_eia930_demand 3 req/h +
+                   # power_eia930_gen 6 req/h (~0.9 MB/run) = 9 req/h; + power_eia930_nowcast 0 (reads the store).
+                   # Power ~9 req/h + Gas's above.
+                   # PLAN 9 (Power): + power_nrc ~1-2 downloads/day (~0.1 req/h; hourly runs skip the request once
+                   # today's report date is parsed; www.nrc.gov, ~100 KB gzipped each), every US region with reactors.
+                   # PLAN 9 (Power): + power_capacity_us 1 request/day (EIA's 860M page, ~94 KB) + one ~14 MB workbook a
+                   # month (only a month not yet cached; the 12-month back-fill takes 2 a day for ~6 days): ~0.04 req/h,
+                   # every US region in one file.
+                   # PLAN 9 (Gas): + oil_eia_wpsr ~4 requests/week (5-6 in a holiday week; ir.eia.gov/wpsr, four
+                   # 2-8 KB CSVs, conditional GETs): runs every 6 h but makes no request until a WPSR release is due
+                   # (Wed 10:30 ET), probes 1 file, pulls 3 more on a new week; <= 4 a run: ~0.03 req/h, every US region.
+  pnw: 120         # caps day: measured 2.1 req/h.
+                   # Earlier notes: L-085: gas_nwp ~10 + gas_gtn 8 requests/day (~0.8 req/h, ~5 MB/day) at 3 h; Weather's Columbia
+                   # hydro ~1.2 req/h (weather_usgs 1/h, weather_columbia_hydro 2 per 12 h, weather_usgs_daily 1 per 30 d).
+                   # Measure a day after Database maps the sources (spec `region: pnw`).
+                   # L-090: + weather_pnw (Seattle, Portland) 2 per 6 h (~0.3 req/h).
+                   # PLAN 9 (Power): + power_bpa 4 req/h (BPA baltwg3.txt every 15 min, ~90 KB, If-Modified-Since;
+                   # transmission.bpa.gov). ~6.4 req/h with the measured 2.1: far under 120.
+                   # PLAN 9 (Gas): + gas_ebb_nwp ~13-15 requests/day (~0.6 req/h; ~5 MB/day): NWP's OA report every
+                   # 2 h (~350 KB) + the previous gas day 1-2/day (until its Storage Realignment cycle) + location.action
+                   # weekly (~390 KB). www.northwest.williams.com then carries ~28/day with gas_nwp (<= 3/h, >= 1 s apart).
+  cal: 120         # caps day: measured 10.6 req/h.
+                   # Earlier notes: L-090: weather_gfs_south ~8 req/h (43 per new GFS run x 4 + probes, like weather_gfs_east) +
+                   # weather_cal 5 per 6 h (~0.8 req/h). Gas: gas_pge 12 + gas_socalgas 12 requests/day (~1 req/h,
+                   # ~0.4 MB/day) at 2 h; gas_cal_balance reads the store (0). Measure a day after the region row lands.
+                   # + Power 6: power_caiso_hourly 2 req/h (+2/day for yesterday, then cached); power_caiso_daily
+                   # 62/day (~2.6 req/h) during the 2020 back-fill (~84 days at 30 days/run), then 2/day.
+                   # PLAN 9 (Power): power_caiso_hourly 1 h -> 15 min (the cal box's live generation): 8 req/h (+6).
+  ont: 120         # caps day: measured 1.7 req/h.
+                   # Earlier notes: L-091 Ontario: `ont`, not `on` (YAML reads a bare `on` as true). Provisional until the specs
+                   # land; Gas, Power and Weather add their per-source estimates here as for pnw/cal, and Database
+                   # sets it from a measured day.
+                   # Gas: gas_statcan_onqc 1 request/day (StatCan WDS, ~2 KB; Ontario + Québec in one call). The daily
+                   # Ontario/Québec series come from tc_mainline's existing request (ab_nebc): no new requests.
+                   # L-093: + gas_glgt 4/day (6 h) + gas_vector 2/day (12 h, ~580 KB) + gas_pepl_ojibway 2/day (12 h,
+                   # ~1 MB); gas_ont_supply reads the store. Gas total ~9 requests/day (~0.4 req/h, ~3.5 MB/day).
+                   # + Power ~1.1 req/h: power_ieso_hourly 1 req/h (today's GenOutputCapability; the per-plant
+                   # output comes from the same file, no extra request) + yesterday's file once a day (cached);
+                   # power_ieso_daily 1/day (YTD fuel file; yearly files cached after the first run).
+                   # + L-103: power_ieso_interties 1 req/h (today's IntertieScheduleFlow XML); power_ieso_interties_daily
+                   # 1/day (YTD IntertieScheduleFlowYear CSV, ~1 MB; past years cached once). ~1.04 req/h on top of
+                   # the measured 1.7 = ~2.7 req/h, under the cap of 3 (tight: Database's call to raise it).
+                   # Weather (L-091): weather_ont 2 per 6 h (~0.3 req/h).
+                   # L-106 8c (Power): + power_ieso_zonal 1/day (~0.55 MB; past years cached once).
+  qc: 120          # caps day: measured 1.9 req/h; L-106 8c (Power) + power_hq_interchange 1 req/h = ~2.9 (cap 3 -> 4).
+                   # Earlier notes: L-091 Quebec: provisional, as for `ont`.
+                   # Gas: none of its own (Québec rides on tc_mainline and gas_statcan_onqc).
+                   # + Power ~2.1 req/h: power_hq_hourly 2 req/h (demand + production rolling exports);
+                   # power_hq_daily 2/day, plus the 2 history exports once (~2 x 9 MB, cached).
+                   # Weather: weather_qc 2 per 6 h (~0.3 req/h) + weather_qc_hydro 1 req/day + 9 history files
+                   # per 30 d (~0.05 req/h): ~0.4 req/h.
+                   # L-106 8c (Power): + power_hq_interchange 1 req/h (HQ's rolling import/export export, ~48 KB).
+                   # PLAN 9 (Power): power_hq_hourly 1 h -> 15 min (the qc box): 8 req/h (+6).
+  rockies: 120     # caps day: no measured day yet: provisional floor.
+                   # Earlier notes: L-094: provisional and deliberately low (Erik: "really limit the requests"). Kern River, NWP east
+                   # of Stanfield, Opal: Gas adds per-source estimates under it; Database sets it from a measured day.
+                   # PLAN 9 (Power, map region mtnw, whose budget_region is rockies): + power_spp_west 8 req/h (SPP
+                   # gen-mix-swpw ~2.6 KB + interchange-trend-swpw ~246 KB every 15 min; portal.spp.org, no-store,
+                   # no conditional GET; ~24 MB/day). Under 120.
+  midwest: 120     # caps day: measured 1.5 req/h over 24 h (~1.9 with the newest sources).
+                   # Earlier notes: L-095: provisional and deliberately low, as for rockies. GLGT, Viking, ANR, Northern Border,
+                   # Chicago, WI, MI, Bakken (Gas) and MISO (Power) add their estimates under it.
+                   # + Power ~1 req/h (L-096): power_miso 2 small JSON requests (/api/FuelMix + /api/Snapshot) every 2 h.
+                   # + Power ~0.04 req/h (L-100): power_miso_regions 1 df_al.xls a day (cached; runs every 6 h).
+                   # Gas (L-095) ~0.4 req/h: gas_nbpl 4/day + gas_anr 4/day (TC eConnects: the viewer page + its CSV
+                   # export, 12 h; ~270 KB / ~110 KB) (gas_eia_midwest retired in L-106: gas_eia_states); gas_midwest_balance
+                   # reads the store. Great Lakes' Emerson / Farwell / Muttonville ride on gas_glgt's request (ont) and
+                   # Viking's Emerson 1 on tc_mainline's (ab_nebc): no new requests. Gas total ~10 requests/day, ~1.6 MB.
+                   # L-101 part 2: + gas_midwest_weather 4/day (one Open-Meteo forecast request for Chicago, Milwaukee
+                   # and Detroit, 6 h, ~2 KB) + gas_ngpl_chicago 8/day (Kinder Morgan's NGPL OA page + its Excel
+                   # download, 6 h, ~210 KB a run). Gas total ~22 requests/day (~0.9 req/h).
+  upne: 120        # L-106 Upper NE / New England (ISO-NE): provisional floor until a measured day; Gas, Power and
+                   # Weather add their per-source estimates here (REGIONS.md §6: prefer one request for many regions).
+                   # Weather (L-106): weather_upne (10 cities) 1 batched Open-Meteo request per 6 h (~0.17 req/h) + 1 per 30 d.
+                   # PLAN 9 (Power): + power_isone every 15 min, 4 ISO Express CSVs (~60 KB each), each re-read only
+                   # when it can hold a newly ended hour: ~8 req/h, + yesterday's 4 once a day, + the ~93 KB warm-up
+                   # page when the isox_token cookie is lost (worst case, a stalled feed: 4-5 per run = ~20 req/h).
+  nyc: 120         # L-106 New York (NYISO): provisional floor, as for upne.
+                   # Weather (L-106): weather_nyc (5 cities) 1 batched request per 6 h (~0.17 req/h) + 1 per 30 d.
+                   # PLAN 9 (Power): + power_nyiso, today's 3 NYISO MIS files every 15 min = 12 req/h (conditional
+                   # GET, but the files post every 5 min, so 304s are rare) + yesterday's 3 until final (~15/day):
+                   # ~12.6 req/h, ~30 KB/run on the wire.
+                   # PLAN 9 (Gas): + gas_ebb_natfuel (National Fuel Supply + Empire, one PeopleSoft host,
+                   # sbsprd2.natfuel.com) every 2 h: per board 1 page (2 server hits: the guest session's 302) when
+                   # nothing is new, + 2 (download POST, CSV) for a new cycle, + 1 Retrieve before 09:00 CT, + 3 a day
+                   # for yesterday's final: <= 14 hits a run, ~70-80 hits/day (~3 req/h counted, ~60 KB per new cycle).
+  bakken: 120      # L-106 Bakken (MT, ND): provisional floor, as for upne.
+                   # Weather (L-106): weather_bakken (6 cities) 1 batched request per 6 h (~0.17 req/h) + 1 per 30 d.
+  sunbelt: 120     # L-106 Upper Sunbelt (NV, AZ, NM): provisional floor, as for upne.
+                   # Weather (L-106): weather_sunbelt (6 cities) 1 batched request per 6 h (~0.17 req/h) + 1 per 30 d.
+  tx: 120          # L-106 Texas: provisional floor, as for upne.
+                   # Weather (L-106): weather_tx (9 cities) 1 batched request per 6 h (~0.17 req/h) + 1 per 30 d.
+                   # Gas: gas_cheniere_ccl 1 per 12 h (Cheniere's CCPL capacity JSON, ~7 KB; +1 per missed gas day,
+                   # at most 3) ~0.08 req/h.
+                   # Power (PLAN 9): power_ercot 3 dashboard JSONs every 15 min = 12 req/h (conditional GETs; ERCOT
+                   # re-issues them every 5 min, so most are 200s, ~25-250 KB a run) + system-wide-demand ~1/day.
+                   # PLAN 9e (Power): + power_ercot_outages 1 req/h (generation-outages.json, ~0.5 MB, conditional GET).
+# L-106 (Weather), the existing regions (notes here, not in their blocks, so concurrent edits don't collide):
+#   ab_nebc: weather (20 cities incl. the new region.wcan / region.mbnwo) is now ONE batched request per 3 h run, was one per
+#            city: 15 per 3 h = 5 req/h -> 0.33 req/h (-4.7 req/h). The 5 new cities (Kelowna, Kamloops, Prince George,
+#            Brandon, Kenora) cost nothing extra.
+#   pnw / cal / ont / qc: weather_pnw (6 cities), weather_cal (7), weather_ont (6), weather_qc (6) batched: 1 request per 6 h
+#            each (~0.17 req/h; was 2 / 5 / 2 / 2 per 6 h).
+#   rockies: + weather_mtnw (8 WY / UT / CO cities) ~0.17 req/h.   midwest: + weather_umw (7 MN / WI / MI cities) ~0.17 req/h.
+#   GFS: weather_gfs_south (cal) and weather_gfs_east now reach 25.5 N (Texas, the Sunbelt, NYC, Long Island) and -66.5
+#        (Maine): 0 added requests per run (the NOMADS subregion is one request per step at any extent); payload only.
+# PLAN 9 (Gas), interstate EBBs (research docs/research/pipelines/energy_transfer_and_south.md):
+#   rest:   + gas_ebb_et 5 per 2 h run + 5/day (yesterday's Final) + 4 location files/week = ~65/day (~2.7 req/h), multi-region
+#           (sunbelt, umw, tx).
+#   bakken: + gas_ebb_wbi 2 per run + 1/day + 2/week (~1.05 req/h) + gas_ebb_alliance_us 1 per run + 1/day (~0.54 req/h):
+#           ~1.6 req/h.
+#   tx:     + gas_ebb_lng_tx: Gulf South list 1 + 0-2 new CSVs + Golden Pass 1 per 2 h run, ~30-35/day (~1.4 req/h).
+#   midwest: + gas_ebb_nng (umw): the 12 KB cycle listing 1 per 2 h run + 1 OA CSV (~357 KB) per new cycle (~4/day)
+#           + 1/day (yesterday's Intraday 3) + 1/week (locations, ~500 KB) = ~17-18/day (~0.75 req/h, <= 3 a run,
+#           www.northernnaturalgas.com, ~2 MB/day).
+#   rest:   + gas_ebb_dtm (Guardian + Viking, umw + bakken): 2 session pages + 2 report lists per 2 h run + 1 XML per
+#           pipe per new cycle (~8/day) + 2/day (yesterday's Intraday 3) = ~58/day (~2.4 req/h, <= 8 a run,
+#           dtmidstream.trellisenergy.com, ~1.2 MB/day).
+# PLAN 9 (Power), data centres (monthly/periodic; no live data-centre series exists anywhere):
+#   rest:    + power_dc_epoch 1/day (Epoch AI ZIP, ~120 KB, a 304 when unchanged): ~0.04 req/h, every region at once.
+#   tx:      + power_ercot_lli 1/day (ERCOT board page, ~74 KB) + 1 PDF (~1.4 MB) per new monthly issue (+1/day for last
+#            year's page in January only): ~0.05 req/h. First run back-fills ~21 PDFs (~25 MB) once; results cached.
+#   ab_nebc: + power_aeso_dc_queue 1/day (AESO index, ~79 KB) + 1 XLSX (~50 KB) per new monthly list: ~0.04 req/h.
+#            First run back-fills ~24 lists (~1.2 MB) once; results cached.
+#   Caps unchanged.

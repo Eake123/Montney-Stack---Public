@@ -1,0 +1,295 @@
+# AB · BC · SK (docs/REGIONS.md). The most detailed region. Gas fills gas: and oil:, Power fills power:.
+id: wcan
+name: AB · BC · SK
+color: "#f2c94c"          # region border + tint on the map (Erik, 2026-11-07)
+members: [CA-AB, CA-SK, CA-BC]
+clips:
+  - member: CA-BC
+    to: pnw
+    note: "Lower Mainland, Fraser Valley and south Vancouver Island: Erik's PacNW line (FortisBC's Lower Mainland load)"
+    polygon: [[-128.6, 48.2], [-121.2, 48.2], [-121.2, 49.6], [-122.6, 49.95], [-124.6, 50.6], [-127.2, 50.9],
+              [-128.6, 50.7], [-128.6, 48.2]]
+anchor: [-113.5, 55.2]
+tz: America/Edmonton
+budget_region: ab_nebc
+coverage: full
+gas:
+  # PLAN 9d: the balance on ONE measured footprint, AB + BC transmission (NGTL, Westcoast, Alliance, Foothills BC, CGL's
+  # producer gas), so storage implied is a real number and NGTL's measured storage gives a real residual (Erik's ask).
+  # Saskatchewan (monthly production, modelled demand) and Alberta's off-NGTL production + use are outside the footprint
+  # on BOTH sides: they're on the region page, labelled. Research: docs/research/regions/wcan.md ("The balance").
+  through: yesterday
+  production: {parts: [ngtl.gdsr.field_receipts.flow, westcoast.oa.tnorth.production_est, alliance.receipts.total,
+                       lng.export.dc], scope: AB+BC pipes, quality: estimate,
+               note: "gas entering AB + BC transmission from the field: NGTL's field receipts (measured, TC's GDSR) +
+                 Westcoast T-North's (scheduled out − Aitken Creek est.) + Alliance's Canadian receipts (scheduled) +
+                 producers straight into Coastal GasLink (derived, ±166). Not in it: Alberta gas produced and used off
+                 NGTL (~1.3 Bcf/d, carried from the regulator month) and Saskatchewan (~0.17, StatCan monthly), both
+                 out of demand too"}
+  imports: {none: true, note: "no gas enters AB + BC by pipeline: every border point flows out"}
+  exports: {parts: [ngtl.gdsr.empress.flow, ngtl.gdsr.mcneill.flow, gtn.kingsgate.receipts, alliance.receipts.total,
+                    nwp.sumas.receipts, fortisbc.lower_mainland.demand_est, lng.export.total], scope: AB+BC pipes,
+            quality: estimate,
+            note: "gas leaving AB + BC transmission: NGTL at Empress (TC Mainline) and McNeill (Foothills SK), both into
+              Saskatchewan, whose own deliveries and exits (Welwyn into Manitoba, Monchy) sit downstream; Kingsgate (GTN);
+              Alliance (its receipts: they include its Canadian compressor fuel); Huntingdon (T-South to NWP); the Lower
+              Mainland (FortisBC est., in pnw); LNG Canada (Willow Valley + Sunset Creek + producers direct)"}
+  demand: {parts: [ngtl.gdsr.intraprovincial.flow, demand.bc.implied_est, -fortisbc.lower_mainland.demand_est,
+                   ngtl.gdsr.alberta_bc.flow, -gtn.kingsgate.receipts, balance.ab.unaccounted.ngtl_closure],
+           scope: AB+BC pipes, quality: estimate,
+           note: "measured deliveries off transmission: Alberta on NGTL (intraprovincial: oil sands, petrochemicals,
+             power, utilities) + BC off T-South less the Lower Mainland (FortisBC interior, Island, PNG, T-South fuel)
+             + the Kootenays off Foothills BC (AB-BC border − Kingsgate) + NGTL's own closure (TC's GDSR receipts −
+             deliveries: its compressor fuel, linepack change and unaccounted gas, measured; Reviewer on #515), so
+             linepack doesn't land in storage implied. Not in it: Westcoast T-North's and Alliance's fuel (~0.15
+             Bcf/d, the steady residual), NE BC industry off transmission, Alberta use off NGTL, Saskatchewan (its
+             daily model is on the page)"}
+  storage: {parts: [{series: ngtl.gdsr.net_storage.flow, sign: -1}, {series: westcoast.oa.aitken_storage_est, sign: -1}],
+            scope: AB+BC pipes,
+            note: "net injection (+ in): NGTL's Alberta storage (measured) + Aitken Creek (est., ±164). With NGTL's
+              closure in demand, the residual (implied − measured) is a steady ~0.15 Bcf/d (sd ~0.05): Westcoast
+              T-North's and Alliance's fuel and the estimated parts"}
+  inventory: {parts: [{series: statcan.ab.storage, fill: latest}, {series: statcan.bc.storage, fill: latest}],
+              unit: Bcf, scope: AB+BC pipes, note: "StatCan month end, Alberta + BC (Saskatchewan's is on the page)"}
+oil:
+  production: {parts: [{series: statcan.ab.crude_production, fill: latest},
+                       {series: statcan.ab.condensate_production, fill: latest},
+                       {series: statcan.sk.crude_production, fill: latest},
+                       {series: statcan.sk.condensate_production, fill: latest},
+                       {series: statcan.bc.crude_production, fill: latest},
+                       {series: statcan.bc.condensate_production, fill: latest}],
+               note: "crude (incl. bitumen + synthetic) + condensate / pentanes plus, StatCan monthly"}
+power:
+  lag: 2h                       # every part reaches ~now: AB live, BC ~1 h (OASIS), SK's latest daily mean held forward
+  # AB (AESO, live) + BC (load: CAISO OASIS's BCHA actual load, ~1 h late; interties: BC Hydro, hourly) + SK (SaskPower:
+  # one daily mean, ~1.5-2 days late: saskpower.*_best holds the latest day's mean forward to the current hour, est.,
+  # and the real mean overwrites it when SaskPower publishes the day; PLAN 9). So the lines reach ~now; SK's part of
+  # them is a day-old average. BC's load (BC Hydro's BA, as reported to the Western EIM) is province-wide, including the
+  # Lower Mainland / south Island that the map clips to pnw (EIA-930 has no BC data, so pnw doesn't count it twice):
+  # the scope "BC incl. LM" says so on every line that includes BC's numbers.
+  fuels_note: "Alberta live (AESO) + Saskatchewan's daily mean held forward (est.); BC Hydro publishes no generation by fuel (BC is ~90 % hydro), so BC isn't in these rows."
+  load: {parts: [aeso.csd.ail, weim.bcha.load, saskpower.demand_best], quality: estimate, held: true, scope: "BC incl. LM",
+         note: "AB live; BC Hydro's load via CAISO OASIS (WEIM), ~1 h late; SaskPower's latest daily mean held forward"}
+  generation: {parts: [aeso.csd.net_generation, weim.bcha.load, bch.intertie.bc_us, bch.intertie.bc_ab,
+                       saskpower.generation_best],
+               quality: estimate, held: true, scope: "BC incl. LM", note: "BC Hydro publishes no generation: BC = its load + its net exports"}
+  interchange: {parts: [aeso.csd.net_imports, -bch.intertie.bc_us, -bch.intertie.bc_ab, saskpower.net_imports_best],
+                quality: estimate, held: true, scope: "BC incl. LM",
+                note: "net imports across wcan's borders (MATL, BC-US, SK-MB, SK-ND); the AB-BC and AB-SK ties cancel"}
+  fuels:
+    gas: {parts: [aeso.gen.gas_total.net, saskpower.gen.gas_best], covers: [CA-AB, CA-SK], quality: estimate, held: true}
+    coal: {parts: [saskpower.gen.coal_best], covers: [CA-SK], quality: estimate, held: true}
+    wind: {parts: [aeso.gen.wind.net, saskpower.gen.wind_best], covers: [CA-AB, CA-SK], quality: estimate, held: true}
+    solar: {parts: [aeso.gen.solar.net, saskpower.gen.solar_best], covers: [CA-AB, CA-SK], quality: estimate, held: true}
+    hydro: {parts: [aeso.gen.hydro.net, saskpower.gen.hydro_best], covers: [CA-AB, CA-SK], quality: estimate, held: true,
+            note: "BC Hydro publishes no generation by fuel (BC is ~90 % hydro)"}
+    battery: {parts: [aeso.gen.energy_storage.net], covers: [CA-AB]}   # AESO alone: live
+    other: {parts: [aeso.gen.other.net, saskpower.gen.other_best], covers: [CA-AB, CA-SK], quality: estimate, held: true}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.calgary.tmean
+    - wx.edmonton.tmean
+    - wx.red_deer.tmean
+    - wx.lethbridge.tmean
+    - wx.medicine_hat.tmean
+    - wx.grande_prairie.tmean
+    - wx.fort_mcmurray.tmean
+    - wx.regina.tmean
+    - wx.saskatoon.tmean
+    - wx.kelowna.tmean
+    - wx.kamloops.tmean
+    - wx.prince_george.tmean
+    - wx.fort_st_john.tmean
+    - wx.dawson_creek.tmean
+  hdd: wx.region.wcan.hdd
+  cdd: wx.region.wcan.cdd
+  normals: [wx.region.wcan.hdd_normal, wx.region.wcan.cdd_normal]
+  realized: [wx.region.wcan.hdd.realized, wx.region.wcan.cdd.realized]
+  outlook: [wx.region.wcan.hdd_1_7, wx.region.wcan.hdd_8_15, wx.region.wcan.cdd_1_7, wx.region.wcan.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/wcan.md (shown on the page)
+  - "NGTL linepack vs target, and East Gate or USJR capability: low linepack precedes AECO spikes"
+  - "1-7 and 8-15 day HDD outlook vs normal and yesterday: a big upward revision leads AECO and AESO"
+  - "Alberta gas outages vs load: under ~500 MW of cushion at the evening peak makes price spikes likely"
+  - "Alberta wind on a cold evening: low wind is the tight-hour setup"
+  - "The exits (TC into Manitoba, Kingsgate, Alliance, Huntingdon, LNG Canada, Monchy): which one moved"
+  - "Alberta demand on NGTL vs the HDD outlook: heating rides on a steady ~3 Bcf/d oil sands base"
+  - "NGTL net storage and Aitken Creek: the turn from injection to withdrawal, and inventory vs last year"
+  - "BC-AB and BC-US tie flows: a BC-AB import cut removes ~800 MW of cheap supply at peak"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: production_by_area
+      title: Production by area
+      note: "The balance line counts transmission receipts only (NGTL field receipts, Westcoast T-North, Alliance,
+        CGL direct); Saskatchewan and Alberta off NGTL are outside it. AB and BC are daily estimates from NGTL's GDSR (ngtl_split; ±4-5 %); the NGTL areas and the Montney Area overlap
+        the province rows (they're cuts of the same gas). SK is StatCan monthly marketable."
+      rows:
+        - {label: Alberta, series: production.ab.daily_est}
+        - {label: British Columbia, series: production.bc.daily_est}
+        - {label: Saskatchewan (monthly), series: statcan.sk.production}
+        - {label: "Montney Area receipts, AB + BC (all formations)", series: montney.receipts.total_est}
+        - {label: NGTL Upstream James River, series: ngtl.area.usjr.receipt_est, note: "Peace River, Montney, north Deep Basin"}
+        - {label: NGTL field receipts outside USJR, series: ngtl.area.rest.receipt_est}
+        - {label: "Westcoast T-North (NE BC into Station 2)", series: westcoast.oa.tnorth.production_est}
+        - {label: Alliance Zone 1 (NE BC + NW AB), series: alliance.zone1.receipts}
+        - {label: Alliance Zone 2 (Alberta), series: alliance.zone2.receipts}
+        - {label: Alberta off NGTL and Alliance, series: production.ab.other_est, note: carried from the last regulator month}
+    - id: exports_by_point
+      title: Exports by point
+      of: exports
+      rows:
+        - {label: "TC Mainline into Manitoba (Welwyn)", series: tcm.area.sk.outflow_est}
+        - {label: "Kingsgate (Foothills BC → GTN)", series: gtn.kingsgate.receipts}
+        - {label: "Alliance (to Chicago)", series: alliance.receipts.total}
+        - {label: "LNG Canada (Kitimat, via CGL)", series: lng.export.total}
+        - {label: "Huntingdon export (T-South → NWP at Sumas)", series: nwp.sumas.receipts}
+        - {label: "Lower Mainland (FortisBC, in pnw)", series: fortisbc.lower_mainland.demand_est}
+        - {label: "Monchy (Northern Border receipts at Port of Morgan)", series: nbpl.port_of_morgan.receipts}
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Alberta's split is NGTL's intraprovincial deliveries cut by sector (est.): industrial includes oil sands, the
+        Heartland and power; 'of which' rows are inside it. BC and SK have no daily sector split."
+      rows:
+        - {label: Alberta on NGTL (measured), series: ngtl.gdsr.intraprovincial.flow}
+        - {label: "  Residential + commercial (est.)", series: demand.ab.population_est}
+        - {label: "  Industrial incl. oil sands, Heartland, power (est.)", series: demand.ab.industry_est}
+        - {label: "    of which power burn", series: demand.ab.power_burn_est, note: outside oil sands and Heartland cogen}
+        - {label: "    of which other industry", series: demand.ab.other_industry_est, note: "outside oil sands, Heartland, power"}
+        - {label: Alberta off NGTL, series: production.ab.other_est, note: carried from the last regulator month}
+        - {label: BC off T-South incl. the Lower Mainland, series: demand.bc.implied_est, note: "Station 2 South − Huntingdon export"}
+        - {label: "Saskatchewan (daily model)", series: gas.sk.demand_est}
+        - {label: "  Saskatchewan residential + commercial", series: gas.sk.rescom_est}
+        - {label: "  Saskatchewan industrial incl. power", series: gas.sk.industrial_est}
+        - {label: "Saskatchewan (StatCan, monthly)", series: statcan.sk.deliveries}
+    - id: storage
+      title: Storage
+      note: "Flows are + withdrawal / − injection, as each source posts them. Inventory is StatCan's month end."
+      rows:
+        - {label: NGTL net storage (AECO-area fields; + withdrawal), series: ngtl.gdsr.net_storage.flow}
+        - {label: NGTL storage receipts (withdrawals), series: ngtl.gdsr.storage_receipts.flow}
+        - {label: NGTL storage deliveries (injections), series: ngtl.gdsr.storage_deliveries.flow}
+        - {label: "NGTL linepack change (+ = packing)", series: ngtl.gdsr.linepack_roc.flow}
+        - {label: "NGTL own closure: receipts − deliveries", series: balance.ab.unaccounted.ngtl_closure,
+           note: "its fuel, linepack and unaccounted gas, as TC measures them; a part of the demand line"}
+        - {label: "Aitken Creek, BC (est.; + withdrawal)", series: westcoast.oa.aitken_storage_est}
+        - {label: Alberta inventory (month end), series: statcan.ab.storage}
+        - {label: British Columbia inventory (month end), series: statcan.bc.storage}
+        - {label: Saskatchewan inventory (month end), series: statcan.sk.storage}
+    - id: lng
+      title: LNG
+      rows:
+        - {label: LNG Canada feed (daily est.), series: lng.export.total}
+        - {label: "  NGTL Willow Valley into CGL (measured)", series: lng.export.willow_valley}
+        - {label: "  Westcoast Sunset Creek (scheduled)", series: lng.export.sunset}
+        - {label: "  Producers direct into CGL (derived)", series: lng.export.dc}
+        - {label: "LNG Canada receipts (BCER, monthly)", series: lng.lng_canada.receipts}
+        - {label: "LNG Canada feed, 30-day from cargoes", series: lng.kitimat.feed_30d}
+    - id: pipelines
+      title: Pipelines (flow vs capacity)
+      rows:
+        - {label: NGTL Upstream James River flow, series: ngtl.dop.usjr.flow}
+        - {label: NGTL Upstream James River capability, series: ngtl.dop.usjr.capability}
+        - {label: NGTL East Gate flow, series: ngtl.dop.egat.flow}
+        - {label: NGTL East Gate capability, series: ngtl.dop.egat.capability}
+        - {label: NGTL West Gate flow, series: ngtl.dop.wgat.flow}
+        - {label: NGTL West Gate capability, series: ngtl.dop.wgat.capability}
+        - {label: NGTL Oil Sands Delivery Area flow, series: ngtl.dop.osda.flow}
+        - {label: NGTL Oil Sands Delivery Area capability, series: ngtl.dop.osda.capability}
+        - {label: NGTL end-of-day linepack (MMcf), series: ngtl.gdsr.eod_linepack.flow}
+        - {label: NGTL linepack target (MMcf), series: ngtl.gdsr.linepack_target.flow}
+        - {label: Alliance receipts, series: alliance.receipts.total}
+        - {label: Alliance receipt capacity, series: alliance.capacity.total}
+        - {label: Westcoast T-South (Station 2 South) scheduled, series: westcoast.oa.station2_south.scheduled}
+        - {label: Westcoast T-South capacity, series: westcoast.oa.station2_south.capacity}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "StatCan monthly means (table 25-10-0063). Crude includes bitumen and synthetic."
+      rows:
+        - {label: Alberta crude, series: statcan.ab.crude_production}
+        - {label: Alberta condensate + pentanes plus, series: statcan.ab.condensate_production}
+        - {label: Saskatchewan crude, series: statcan.sk.crude_production}
+        - {label: Saskatchewan condensate, series: statcan.sk.condensate_production}
+        - {label: British Columbia crude, series: statcan.bc.crude_production}
+        - {label: British Columbia condensate, series: statcan.bc.condensate_production}
+  power:
+    - id: load_by_zone
+      title: Load by province
+      note: "AB live (AESO); BC Hydro's load via CAISO OASIS (~1 h late, province-wide incl. the Lower Mainland the map gives pnw); SK one daily mean held forward (est.)."
+      rows:
+        - {label: "Alberta (AESO internal load)", series: aeso.csd.ail}
+        - {label: "British Columbia (BC Hydro, incl. LM)", series: weim.bcha.load}
+        - {label: "Saskatchewan (SaskPower, daily mean)", series: saskpower.demand_best}
+    - id: interchange_by_tie
+      title: "Ties (each operator's sign)"
+      note: "AESO signs + = import into Alberta; BC Hydro + = export from BC. AB-BC and AB-SK are inside wcan (they cancel in the region line); MATL and BC-US cross its border."
+      rows:
+        - {label: "AB ← Montana (MATL; AESO, + import)", series: aeso.intertie.montana}
+        - {label: "BC → US (BC Hydro, + export)", series: bch.intertie.bc_us}
+        - {label: "AB ← BC (AESO, + import; internal)", series: aeso.intertie.british_columbia}
+        - {label: "AB ← SK (AESO, + import; internal)", series: aeso.intertie.saskatchewan}
+        - {label: "SK net imports (SaskPower, daily)", series: saskpower.net_imports_best}
+    - id: plants
+      title: "Largest Alberta units, live output (AESO, MW)"
+      note: "AESO's current supply-and-demand report: each unit's total net generation now. Ordered by maximum capability (Nov 2026). BC Hydro and SaskPower publish no per-plant output."
+      rows:
+        - {label: "Shepard (gas CC, 868 MW)", series: aeso.unit.egc1.tng}
+        - {label: "Suncor Base Plant (cogen, 856 MW)", series: aeso.unit.scr1.tng}
+        - {label: "Syncrude #1 (cogen, 510 MW)", series: aeso.unit.scl1.tng}
+        - {label: "Suncor Firebag (cogen, 497 MW)", series: aeso.unit.scr6.tng}
+        - {label: "Joffre #1 (cogen, 474 MW)", series: aeso.unit.jof1.tng}
+        - {label: "Cascade 1 (gas CC, 466 MW)", series: aeso.unit.cas1.tng}
+        - {label: "Cascade 2 (gas CC, 466 MW)", series: aeso.unit.cas2.tng}
+        - {label: "Genesee Repower 1 (gas CC, 466 MW)", series: aeso.unit.gnr1.tng}
+        - {label: "Genesee Repower 2 (gas CC, 466 MW)", series: aeso.unit.gnr2.tng}
+        - {label: "Genesee #3 (gas, 466 MW)", series: aeso.unit.gn3.tng}
+        - {label: "Keephills #3 (gas, 466 MW)", series: aeso.unit.kh3.tng}
+        - {label: "Buffalo Plains (wind, 466 MW)", series: aeso.unit.bpw1.tng}
+        - {label: "Travers (solar, 465 MW)", series: aeso.unit.tvs1.tng}
+        - {label: "Sundance #6 (gas, 401 MW)", series: aeso.unit.sd6.tng}
+        - {label: "Sheerness #1 (gas, 400 MW)", series: aeso.unit.sh1.tng}
+        - {label: "Sheerness #2 (gas, 400 MW)", series: aeso.unit.sh2.tng}
+        - {label: "Brazeau (hydro, 350 MW)", series: aeso.unit.bra.tng}
+    - id: outages
+      title: "Alberta generation out today (AESO, realized MW)"
+      note: "AESO's 7-day outage report: MW out by fuel, the last value known on each day (est. of today's realized outages). Saskatchewan and BC publish none."
+      rows:
+        - {label: "Gas, all (SC + cogen + CC + coal-to-gas)", series: aeso.outage.gas_total.realized}
+        - {label: "  Combined cycle", series: aeso.outage.cc.realized}
+        - {label: "  Cogeneration", series: aeso.outage.cogen.realized}
+        - {label: "  Simple cycle", series: aeso.outage.sc.realized}
+        - {label: "  Gas-fired steam (coal-to-gas)", series: aeso.outage.gfs.realized}
+        - {label: "Hydro", series: aeso.outage.hydro.realized}
+        - {label: "Wind", series: aeso.outage.wind.realized}
+        - {label: "Solar", series: aeso.outage.solar.realized}
+        - {label: "Energy storage", series: aeso.outage.energy_storage.realized}
+        - {label: "Biomass and other", series: aeso.outage.biomass_and_other.realized}
+        - {label: "Mothballed", series: aeso.outage.mbo.realized}
+    - id: capacity_by_fuel
+      title: Installed capacity by type
+      unit: MW
+      note: "StatCan 25-10-0022-01 (annual, by turbine type: combustion isn't split by fuel), all producers, MW; AB + BC + SK, all of BC (the Lower Mainland the map gives pnw is inside)"
+      rows:
+        - {label: "Hydro (incl. pumped storage)", series: cap.wcan.hydro}
+        - {label: "Wind", series: cap.wcan.wind}
+        - {label: "Solar", series: cap.wcan.solar}
+        - {label: "Geothermal", series: cap.wcan.geothermal}
+        - {label: "Other non-combustible", series: cap.wcan.other}
+        - {label: "Steam turbine (coal, gas, oil, biomass)", series: cap.wcan.thermal_steam}
+        - {label: "Combustion turbine (mostly gas)", series: cap.wcan.thermal_ct}
+        - {label: "Engines (diesel, gas)", series: cap.wcan.thermal_ic}
+        - {label: Total, series: cap.wcan.total}
+    - id: data_centres
+      title: Data centres
+      note: "No operator publishes energized data-centre load in AB, BC or SK. AESO's queue is requests, not load; its 1,200 MW Phase 1 limit is fully allocated (in service 2027-28). BC's 2026 call: 300 MW AI + 100 MW data centres per 2 years; new crypto is barred."
+      rows:
+        - {label: "AB data-centre load seeking connection (AESO)", series: aeso.queue.data_load_mw}
+        - {label: "  Active", series: aeso.queue.data_load_mw.active}
+        - {label: "  ISD under review", series: aeso.queue.data_load_mw.under_review}
+        - {label: "  Cluster study (with own gas/battery)", series: aeso.queue.data_load_mw.cluster}
+        - {label: "AB data-centre projects in the queue", series: aeso.queue.data_load_projects}
+        - {label: "AB data-centre load energized (AESO, rolling window)", series: aeso.queue.data_load_energized_mw,
+           note: "the list's Recently Energized rows (a rolling window), not all operating data centres"}

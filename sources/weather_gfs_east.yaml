@@ -1,0 +1,29 @@
+# NOAA GFS gridded forecast for the EAST of the map (SK, MB, NW Ontario to North Bay; L-080): 2 m temperature,
+# 10 m wind and terrain height, 16 days, as grids t2m_east / u10_east / v10_east / z_east. Public domain, no key.
+# Lean on purpose (Erik's phone battery, L-080 item 3): 0.5 deg (not the west's 0.25), and 6-hourly to 120 h then
+# 12-hourly to 384 h (43 steps, not 85). Extent -95..-66.5 x 25.5..65 (L-106: east Texas, NYC / Long Island and Maine):
+# it shares the -95 column with weather_gfs (44..65) and with weather_gfs_south (25.5..44). 58 x 80 points: ~370 KB raw
+# int16 per var per run, about 14 % of the west grid's 2.6 MB. A new run is 43 NOMADS
+# requests at 1/s. Same connector as weather_gfs (montney/connectors/gfs.py, `resolution` + `var_suffix`).
+id: weather_gfs_east
+name: Weather - GFS grid overlay, east (16 day, 0.5 deg)
+type: python
+module: montney.connectors.gfs
+class: GFS
+mode: cached
+interval: 1h
+retention: grid        # emits only grids (current + previous run in <home>/grids), no observations
+params:
+  resolution: 0.5
+  var_suffix: _east
+  lon_min: -95
+  lon_max: -66.5      # L-106: Maine's east edge (-66.95); was -68 (L-091: Quebec City). Same request count
+  lat_min: 25.5        # L-106: east Texas (-95..-93.5) to 25.5 N, NYC / Long Island (40.5 N); was 41. Same request count
+  lat_max: 65
+  step_short: 6        # hours, to short_until
+  short_until: 120
+  step_long: 12        # hours, to horizon
+  horizon: 384
+  pace_s: 1.0
+  min_lag_h: 3.5
+  lookback_cycles: 4

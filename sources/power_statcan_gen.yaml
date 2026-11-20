@@ -1,0 +1,13 @@
+# Saskatchewan + Manitoba generation, total and by type, MONTHLY (L-078). Neither SaskPower nor Manitoba Hydro
+# publishes a live feed, so this is Statistics Canada table 25-10-0015-01 (keyless WDS API), released ~2 months
+# after the month. Stored as the month's mean MW; back to 2020. Details: montney/connectors/power_statcan_gen.py.
+id: power_statcan_gen
+name: StatCan monthly generation by type (Saskatchewan, Manitoba)
+type: python
+module: montney.connectors.power_statcan_gen
+class: StatcanGeneration
+mode: cached
+interval: 1d
+retention: daily
+params:
+  from_year: 2020

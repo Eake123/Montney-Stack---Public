@@ -1,0 +1,33 @@
+# NOAA GFS gridded forecast for the SOUTH of the map (L-090, Erik: "bring the weather down as well"): the PacNW strip
+# 41.5-44 N under the west grid, and California to 32.5 N. 2 m temperature, 10 m wind and terrain height, 16 days, as
+# grids t2m_south / u10_south / v10_south / z_south. Public domain, no key.
+# Lean like weather_gfs_east (L-080): 0.5 deg, 6-hourly to 120 h then 12-hourly to 384 h (43 steps). Extent
+# -140..-95 x 25.5..44 (L-106: down to the Rio Grande for `tx` and `sunbelt`; was 32.5): it shares the 44 N row with
+# weather_gfs (lat_min 44) and the -95 column (25.5..44) with weather_gfs_east, the same seam rule as #303. 91 x 38
+# points, ~295 KB raw int16 per var per run.
+# Requests: a new run is 43 NOMADS requests at 1/s, 4 runs a day, plus ~1 probe an hour while a run is due:
+# ~8 req/h, the same as the east grid (the request count doesn't depend on the extent).
+# East of -95 is weather_gfs_east (now down to 25.5 N as well).
+id: weather_gfs_south
+name: Weather - GFS grid overlay, south (PacNW strip + California, 16 day, 0.5 deg)
+region: cal            # budget/attribution region (sources/BUDGET.yaml); the runner reads it once Database wires it
+type: python
+module: montney.connectors.gfs
+class: GFS
+mode: cached
+interval: 1h
+retention: grid        # emits only grids (current + previous run in <home>/grids), no observations
+params:
+  resolution: 0.5
+  var_suffix: _south
+  lon_min: -140
+  lon_max: -95
+  lat_min: 25.5        # L-106: Texas reaches 25.8 N (Brownsville); was 32.5. Same request count
+  lat_max: 44
+  step_short: 6        # hours, to short_until
+  short_until: 120
+  step_long: 12        # hours, to horizon
+  horizon: 384
+  pace_s: 1.0
+  min_lag_h: 3.5
+  lookback_cycles: 4

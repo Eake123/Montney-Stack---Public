@@ -1,0 +1,117 @@
+# National Fuel Gas Supply + Empire Pipeline (National Fuel's PeopleSoft informational postings): western and central
+# New York (Buffalo, Niagara, Rochester, Syracuse, the Empire Connector) -> ebb.<natfuel|empire>.nyc.<category>
+# (MMcf/d, scheduled) + named points. Only New York points are summed (the Pennsylvania points are in no region).
+# Research: docs/research/pipelines/east_and_rockies.md §2b; method, requests and traps:
+# montney/connectors/gas_ebb_natfuel.py.
+# Requests (server hits on sbsprd2.natfuel.com): per board 2 when nothing is new, 4 with a new cycle (5 before 09:00
+# CT), +3 a day for the previous gas day's Intraday 3: <= 14 a run, ~70-80/day for both boards.
+id: gas_ebb_natfuel
+name: National Fuel Supply + Empire (western / central New York)
+type: python
+module: montney.connectors.gas_ebb_natfuel
+class: EbbNatFuel
+mode: cached
+interval: 2h
+region: nyc
+retention: daily
+params:
+  boards:
+    - pipe: natfuel
+      label: National Fuel Supply
+      site: sbsprd
+      portal: NFSBS
+      regions: [nyc]
+      # No-state rows: production-zone and group aggregates (they repeat the meters and pools), the system storage
+      # total (named below), imbalance and top-gas rows. Counted in no region.
+      unlocated_ok: >-
+        ^(M&N System|E of |New York Points|Line X South|Z-20|YM5|D&L App|Z20 GROUP|M- Excess|M-Leidy|NFGSC -
+        (Excess|Imbalance)|Design Top Gas|Top Gas|Unfilled Design|TGP LEASE)
+      # The New York points' types (NAESB location list 2026-11-13, corrected where it says INT for a city gate or a
+      # generator). Production meters / pools (PSP, NSP, PL0 ids) are typed by the connector.
+      overrides:
+        "NFGDC-NY": {type: LDC, note: "National Fuel Distribution city gates, NY (aggregate; subset rows skipped)"}
+        "NSX1U47021": {type: LDC, note: NYSEG Olean}
+        # TCPL - Niagara rides Tennessee's Niagara Spur (leased): Tennessee books it as a receipt from National Fuel and
+        # posts the whole Niagara meter as its delivery to TC, so it's int_out here, not export_canada.
+        "421079": {type: INT, category: int_out, note: "TCPL - Niagara (via Tennessee's Niagara Spur)"}
+        "421079:R": {type: INT, category: int_in}
+        "012003010": {type: INT, note: "Empire - Grand Island"}
+        "012003020": {type: INT, note: "Empire - Pendleton"}
+        "012003015": {type: INT, note: "Empire - Wheatfield"}
+        "022009010": {type: INT, note: "Empire - Tuscarora"}
+        "420076": {type: INT, note: "TGP - Hamburg E. Eden"}
+        "420077": {type: INT, note: "TGP - East Aurora"}
+        "420088": {type: INT, note: "TGP - Mayville"}
+        "420092": {type: INT, note: "TGP - Lewiston"}
+        "420243": {type: INT, note: "TGP - Nashville Storage (interconnect)"}
+        "420326": {type: INT, note: "TGP - Pekin"}
+        "420428": {type: INT, note: "TGP - Sherman"}
+        "420497": {type: INT, note: "TGP - Clarence"}
+        "49756": {type: INT, note: "TGP - Colden"}
+        "20900": {type: INT, note: "EGTS - DTI Rq Points"}
+        "020502": {type: INT, note: "EGTS - Marilla"}
+        "606000": {type: INT, note: "Columbia - NFS Mainline"}
+        "633863": {type: INT, note: "Columbia - Hartzfelt"}
+        "2078": {type: INT, note: "Millennium - Independence"}
+        "NSX9223491": {type: INT, note: "Wycatt Pipeline (Ashford)"}
+        "623906": {type: GTH, note: "EmKey Energy - Little Valley (local gathering of New York gas)"}
+        "WYCKOFF": {type: STR, note: "Wyckoff Gas Storage net meter (Steuben Co.)"}
+        "INDECKOLEAN": {type: EGN, note: "Indeck Olean Energy Center"}
+        "STBONA": {type: IND, note: "St Bonaventure University"}
+        "DRESSEROLEAN": {type: IND, note: "Dresser-Rand Olean"}
+        "NSX3247071": {type: IND, note: "Seneca Nation (Cattaraugus)"}
+        "PSN1242991": {type: IND, note: "Seneca Resources at B-65"}
+        "WALES": {type: VIR, note: "Wales market pool (paper)"}
+      named:
+        ebb.natfuel.niagara.deliveries:
+          label: "gas for TC at Niagara (on Tennessee's Niagara Spur; inside Tennessee's Niagara total)"
+          plus: ["421079:D"]
+        ebb.natfuel.storage.withdrawals:
+          label: "storage withdrawals, whole system (New York + Pennsylvania fields; not split by state)"
+          plus: ["M- STORAGE PTS:R"]
+        ebb.natfuel.storage.injections:
+          label: "storage injections, whole system (New York + Pennsylvania fields; not split by state)"
+          plus: ["M- STORAGE PTS:D"]
+    - pipe: empire
+      label: Empire Pipeline
+      site: ebsprd
+      portal: NFSBSEMP
+      regions: [nyc]
+      unlocated_ok: "^(Excess (Injection|Withdrawal)|Design Top Gas|Top Gas|Unfilled Design|EMPIRE - Imbalance)"
+      overrides:
+        "012000010": {type: INT, note: "TCPL - Chippawa (TC at the Canada border, Niagara River)"}
+        "012000010:R": {category: import_canada}
+        "012000010:D": {category: export_canada}
+        "012003010": {type: INT, note: "National Fuel - Grand Island"}
+        "012003020": {type: INT, note: "National Fuel - Pendleton"}
+        "012003015": {type: INT, note: "National Fuel - Wheatfield"}
+        "022009010": {type: INT, note: "National Fuel - Tuscarora"}
+        "412856": {type: INT, note: "TGP - Hopewell (Canandaigua)"}
+        "022008810": {type: INT, note: "Millennium - Corning"}
+        "012006100": {type: INT, note: "EGTS - Lysander"}
+        "012004010": {type: LDC, note: NYSEG Royalton}
+        "012004020": {type: LDC, note: NYSEG Arcadia}
+        "012001010": {type: LDC, note: "RG&E Mendon"}
+        "012002020": {type: LDC, note: "National Grid (Niagara Mohawk) Phoenix Line 39"}
+        "012002010": {type: EGN, note: "Phoenix Line 63 - Sithe Independence (Oswego)"}
+        "022008610": {type: EGN, note: "GPL - Milo (Greenidge Generation)"}
+        "012005010": {type: IND, note: "US Gypsum Oakfield"}
+        "BYRONTO": {type: IND, note: "Byron (to plant)"}
+        "EPP247081": {type: IND, note: "WM High Acres (to plant)"}
+        "BYRONFROM": {type: RNG, note: "Byron renewable gas (from plant)"}
+        "EPRC47091": {type: RNG, note: "WM High Acres renewable gas (from plant)"}
+      named:
+        ebb.empire.chippawa.receipts:
+          label: "receipts from Canada at Chippawa (Niagara River)"
+          plus: ["012000010:R"]
+        ebb.empire.border.nyc_sont:
+          label: "New York → Ontario at Chippawa (deliveries − receipts)"
+          plus: ["012000010:D"]
+          minus: ["012000010:R"]
+        ebb.empire.border.pa_nyc:
+          label: "Pennsylvania gas into the Empire Connector (Tioga Co. receipts: Repsol, NFG Midstream Covington)"
+          plus: ["EPRU91101:R", "EPRU91111:R"]
+        ebb.empire.connector.flow:
+          label: "Empire Connector northbound (south → north − north → south)"
+          plus: ["CONNECTOR S-N:S"]
+          minus: ["CONNECTOR N-S:S"]

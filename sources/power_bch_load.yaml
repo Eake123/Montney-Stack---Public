@@ -1,0 +1,15 @@
+# BC Hydro control-area load, hourly (published weekdays, 1-3.5 days late) (L-106, PLAN 8c wcan). Keyless BC Hydro file;
+# 1 request/day (~35 KB). BC local time (America/Vancouver, UTC-7 since 2026-11-01; read as PST until PLAN 9, so one hour
+# late). The wcan region now takes BC's load from power_caiso_weim_load; this file stays as its cross-check.
+# Details: montney/connectors/power_bch.py.
+id: power_bch_load
+name: BC Hydro control-area load, hourly (published weekdays, 1-3.5 days late)
+type: python
+module: montney.connectors.power_bch
+class: BcHydro
+mode: cached
+interval: 1d
+region: ab_nebc      # wcan (sources/BUDGET.yaml)
+retention: hourly
+params:
+  report: load

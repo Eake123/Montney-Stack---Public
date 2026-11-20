@@ -1,0 +1,17 @@
+# Water Survey of Canada approved daily mean discharge (HYDAT via the OGC API) for the 28 WSC gauges with discharge in
+# docs/research/v2/weather-p5d.md §3.1. It's the history behind the flow-vs-normal percentile (reference years
+# 1995-2024, day-of-year +/-7 d, computed on read: montney/connectors/weather_percentile.py).
+# Every run re-reads `start` -> latest approved day (~11.5 k rows per gauge, 2 pages): the FIRST run is the one-off
+# backfill (~280 k rows, weather-p5d.md §3.3); later runs write only what HYDAT added or revised (change-only writes).
+# HYDAT is released quarterly; checking every 30 d picks a release up within a month. Approved data lag 10-22 months.
+# Daily means are on each station's local standard day (AB UTC-7, BC UTC-8 in WSC's LST), stored as the date.
+id: weather_wsc_daily
+name: Rivers - WSC daily means (HYDAT)
+type: python
+module: montney.connectors.weather_wsc
+class: WSCDaily
+mode: cached
+interval: 30d
+retention: daily      # actuals (as_of = ts), kept forever
+params:
+  start: "1995-01-01"

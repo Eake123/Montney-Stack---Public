@@ -1,0 +1,202 @@
+id: bakken
+name: Bakken
+color: "#d4895a"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-MT, US-ND]
+anchor: [-104.5, 47.6]
+tz: America/Denver
+budget_region: bakken
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/bakken.md (and docs/research/bakken_nbpl_2026-11.md)
+  # PLAN 9d: one footprint, the interstate boards (WBI, Alliance US, Northern Border; scheduled, gas day, Dth / 1,037).
+  # NorthWestern Energy's Montana system (its own wells, its Canadian imports at Havre, its storage) posts nothing, so
+  # every line is scoped to the boards' footprint (ND + eastern MT).
+  # Balance only on ended gas days: the boards post today cycle by cycle, each at its own (Reviewer on #503).
+  through: yesterday
+  production: {parts: [ebb.wbi.bakken.production, ebb.alliance.bakken.production, nbpl.bakken.net_receipts,
+                       -ebb.wbi.bakken.to_nbpl, ebb.wbi.bakken.from_nbpl], scope: on the boards, quality: scheduled,
+               note: "processing-plant receipts on WBI + Alliance's Tioga and Bantry + the plant gas Northern Border
+                 takes between Port of Morgan and Glen Ullin (its net receipts less what WBI hands it, plus what it
+                 hands WBI). EIA's monthly ND + MT marketed (on the page) is larger: field fuel, flaring and gas that
+                 never reaches an interstate aren't here"}
+  imports: {parts: [ebb.alliance.border.canada_nd, nbpl.port_of_morgan.receipts, ebb.wbi.border.mn_nd,
+                    ebb.cig.border.mtnw_bakken], scope: on the boards, quality: scheduled,
+            note: "from Canada: Alliance at Sherwood and Northern Border at Port of Morgan; Viking into ND on WBI; CIG
+              Wyoming → Montana. Alliance's rich gas reads ~10-15 % higher here (Dth / 1,037) than wcan's Mcf exit"}
+  exports: {parts: [ebb.alliance.border.nd_mn, nbpl.glen_ullin.flow, ebb.wbi.border.bakken_wy,
+                    ebb.wbi.border.bakken_sd], scope: on the boards, quality: scheduled,
+            note: "Alliance into Minnesota, Northern Border past Glen Ullin (to SD, Ventura and Chicago), WBI into
+              Wyoming (incl. its delivery to WIC) and South Dakota"}
+  demand: {parts: [ebb.wbi.bakken.ldc, ebb.wbi.bakken.power, ebb.wbi.bakken.industrial,
+                   ebb.alliance.bakken.industrial], scope: on the boards, quality: scheduled,
+           note: "measured: LDC citygates, power plants and industry on WBI + Alliance's industrial deliveries.
+             NorthWestern Energy's Montana customers (its own system) aren't on a board; the daily model
+             (gas.bakken.demand_est, MT + ND) stays on the page as a cross-check"}
+  storage: {parts: [ebb.wbi.bakken.storage_inj, -ebb.wbi.bakken.storage_wd], scope: on the boards, quality: scheduled,
+            note: "WBI's fields (Baker, MT), net injection (+ in). NorthWestern's Cobb and Box Elder post nothing
+              daily; EIA's monthly Montana storage is on the page"}
+  inventory: {parts: [{series: eia.mt.storage.working_gas, fill: latest}], unit: Bcf}
+oil:
+  production: {parts: [{series: eia.nd.crude_production, fill: latest},
+                       {series: eia.mt.crude_production, fill: latest}],
+               note: "crude + condensate (EIA crude oil includes lease condensate)"}
+power:
+  # EIA-930 per BA. Demand is hourly (~1-2 h behind); net generation, interchange and fuels come in EIA's DAILY file
+  # only (8-36 h behind), so load / generation / interchange read power_eia930_nowcast's *_best series: the actual
+  # where posted, else live demand + the BA's net export at the same hour on the latest day (est., ~2 h behind;
+  # backtest MAE 5-13 % of NG). Fuels stay on EIA's daily file (lag: 2d). Interchange: EIA's TI is + export, so each
+  # part is negated (net imports, REGIONS §4); flows between BAs inside the region cancel.
+  fuels_note: "Montana only (NorthWestern + NaturEner wind), EIA-930's daily fuel file: about a day behind the generation line, so shares are of the fuels' own total."
+  load: {parts: [eia930.nwmt.demand_best], quality: estimate, lag: 2h, covers: [US-MT], scope: "MT: NWMT", note: "EIA-930 NorthWestern + NaturEner wind; North Dakota is in MISO and SPP, which straddle far beyond the region, so it isn't counted"}
+  generation: {parts: [eia930.nwmt.net_gen_best, eia930.gwa.net_gen_best], quality: estimate, lag: 2h, covers: [US-MT], scope: "MT: NWMT"}
+  interchange: {parts: [-eia930.nwmt.interchange_best, -eia930.gwa.net_gen_best], quality: estimate, lag: 2h, covers: [US-MT], scope: "MT: NWMT", note: "gen-only BAs (GWA): interchange = -net generation (they export all they make)"}
+  fuels:
+    gas: {parts: [eia930.nwmt.gen.gas], lag: 2d}
+    coal: {parts: [eia930.nwmt.gen.coal], lag: 2d}
+    hydro: {parts: [eia930.nwmt.gen.hydro], lag: 2d}
+    wind: {parts: [eia930.nwmt.gen.wind, eia930.gwa.gen.wind], lag: 2d}
+    solar: {parts: [eia930.nwmt.gen.solar], lag: 2d}
+    oil: {parts: [eia930.nwmt.gen.oil], lag: 2d}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_bakken.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_bakken
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.billings.tmean
+    - wx.missoula.tmean
+    - wx.great_falls.tmean
+    - wx.bismarck.tmean
+    - wx.fargo.tmean
+    - wx.williston.tmean
+  hdd: wx.region.bakken.hdd
+  cdd: wx.region.bakken.cdd
+  normals: [wx.region.bakken.hdd_normal, wx.region.bakken.cdd_normal]
+  realized: [wx.region.bakken.hdd.realized, wx.region.bakken.cdd.realized]
+  outlook: [wx.region.bakken.hdd_1_7, wx.region.bakken.hdd_8_15, wx.region.bakken.cdd_1_7, wx.region.bakken.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/bakken.md (shown on the page)
+  - "Port of Morgan receipts: a winter rise to 0.4 Bcf/d or more cuts Bakken net receipts one-for-one"
+  - "Flow past Glen Ullin vs ~2.45 Bcf/d: pinned means displacement, well below means weak supply or an outage"
+  - "Northern Border Bakken net receipts: squeezed off the pipe when Canadian gas rises in winter"
+  - "Williston forecast and HDD, -30 °C or colder with wind: the freeze-off warning for Bakken oil and gas"
+  - "NorthWestern net exports: ~0.75 GW on average, and wind swings them from hour to hour"
+  - "Coal vs wind generation, a day late: each Colstrip unit is ~0.8 GW, about half of NorthWestern load"
+  - "NorthWestern load vs the HDD outlook: the hardest cold on the map, often with a wind lull"
+  - "MATL flow to Alberta: the only live MW at this border"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.bakken.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.bakken.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.bakken.industrial_est}
+        - {label: "LDC citygates on WBI", series: ebb.wbi.bakken.ldc}
+        - {label: "Power plants on WBI", series: ebb.wbi.bakken.power}
+        - {label: "Industrial on WBI", series: ebb.wbi.bakken.industrial}
+        - {label: "Industrial on Alliance US", series: ebb.alliance.bakken.industrial}
+    - id: production_by_area
+      title: Production by area
+      note: "Processing-plant receipts on WBI and Alliance US (scheduled). Bakken plants that feed Northern Border
+        directly (Aux Sable, ONEOK) aren't itemised. Scheduled quantities on the interstate boards (FERC postings),
+        gas day."
+      rows:
+        - {label: "North Dakota marketed production (EIA monthly)", series: eia.nd.marketed_production}
+        - {label: "Montana marketed production (EIA monthly)", series: eia.mt.marketed_production}
+        - {label: "Plant receipts on WBI", series: ebb.wbi.bakken.production}
+        - {label: "Tioga + Bantry receipts on Alliance US", series: ebb.alliance.bakken.production}
+        - {label: "Northern Border Bakken net receipts", series: nbpl.bakken.net_receipts}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Alliance from Canada (Sherwood, ND)", series: ebb.alliance.border.canada_nd}
+        - {label: "Northern Border at Port of Morgan (from Canada)", series: nbpl.port_of_morgan.receipts}
+        - {label: "CIG Wyoming → Montana", series: ebb.cig.border.mtnw_bakken}
+        - {label: "Viking Minnesota → North Dakota (on WBI)", series: ebb.wbi.border.mn_nd}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Alliance North Dakota → Minnesota", series: ebb.alliance.border.nd_mn}
+        - {label: "Northern Border past Glen Ullin (→ SD)", series: nbpl.glen_ullin.flow}
+        - {label: "WBI → Wyoming", series: ebb.wbi.border.bakken_wy}
+        - {label: "WBI → South Dakota", series: ebb.wbi.border.bakken_sd}
+        - {label: "WIC from WBI (into Wyoming)", series: ebb.wic.border.bakken_mtnw}
+    - id: storage
+      title: Storage
+      note: "WBI's fields (scheduled, MMcf/d); EIA monthly working gas (Bcf)."
+      rows:
+        - {label: "Injections on WBI", series: ebb.wbi.bakken.storage_inj}
+        - {label: "Withdrawals on WBI", series: ebb.wbi.bakken.storage_wd}
+        - {label: "Montana working gas (EIA monthly, Bcf)", series: eia.mt.storage.working_gas}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area
+      note: "Montana only: North Dakota sits in MISO and SPP, which straddle far beyond the region."
+      rows:
+        - {label: "NorthWestern Energy (MT)", series: eia930.nwmt.demand_best}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Colstrip (coal)", value: 1647, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Coal Creek (coal)", value: 1216, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Antelope Valley (coal)", value: 954, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Pioneer Generation Station (gas)", value: 897, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Milton R Young (coal)", value: 734, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Leland Olds (coal)", value: 656, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Garrison (hydro)", value: 583, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Noxon Rapids (hydro)", value: 488, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Coyote (coal)", value: 450, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Hungry Horse (hydro)", value: 428, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Wind", series: cap.bakken.wind}
+        - {label: "Coal", series: cap.bakken.coal}
+        - {label: "Hydro", series: cap.bakken.hydro}
+        - {label: "Gas", series: cap.bakken.gas}
+        - {label: "Solar", series: cap.bakken.solar}
+        - {label: "Oil", series: cap.bakken.oil}
+        - {label: "Other", series: cap.bakken.other}
+        - {label: "Biomass", series: cap.bakken.biomass}
+        - {label: Total, series: cap.bakken.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists. North Dakota's large loads are mostly crypto (EPRI ranks ND 2nd by share of state load). EPRI's is a modelled 2023 estimate."
+      rows:
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.bakken.it_mw}
+        - {label: Estimated data-centre load (avg; EPRI), value: 513, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: ND 447 (15.4 % of state load), MT 66 avg MW"}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "EIA monthly, crude incl. lease condensate (~2 months behind)."
+      rows:
+        - {label: "North Dakota crude incl. lease condensate (EIA)", series: eia.nd.crude_production}
+        - {label: "Montana crude incl. lease condensate (EIA)", series: eia.mt.crude_production}
+    - id: refinery_runs
+      title: Refinery runs, PADD 2 + PADD 4
+      note: "EIA weekly, week ending Friday. ND is in PADD 2 Midwest (15 states: IL, IN, IA, KS, KY, MI, MN, MO, NE, ND,
+        OH, OK, SD, TN, WI); MT in PADD 4 Rocky Mountain (CO, ID, MT, UT, WY). Whole PADDs, far wider than the region."
+      rows:
+        - {label: "PADD 2 Midwest crude oil input", series: oil.padd2.refinery_crude_input}
+        - {label: "PADD 2 Midwest utilization", series: oil.padd2.utilization}
+        - {label: "PADD 4 Rocky Mountain crude oil input", series: oil.padd4.refinery_crude_input}
+        - {label: "PADD 4 Rocky Mountain utilization", series: oil.padd4.utilization}
+    - id: stocks
+      title: Stocks, PADD 2 + PADD 4
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR); Cushing, OK is inside PADD 2's crude."
+      rows:
+        - {label: "PADD 2 crude oil", series: oil.padd2.crude_stocks}
+        - {label: "  of which Cushing, OK", series: oil.cushing.crude_stocks}
+        - {label: PADD 2 total motor gasoline, series: oil.padd2.gasoline_stocks}
+        - {label: PADD 2 distillate fuel oil, series: oil.padd2.distillate_stocks}
+        - {label: "PADD 4 crude oil", series: oil.padd4.crude_stocks}
+        - {label: PADD 4 total motor gasoline, series: oil.padd4.gasoline_stocks}
+        - {label: PADD 4 distillate fuel oil, series: oil.padd4.distillate_stocks}

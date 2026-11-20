@@ -1,0 +1,13 @@
+# River flow as a % of normal (Erik, L-066): the trailing-24 h mean of each gauge's provisional real-time discharge
+# (or the AB Rivers TransAlta release) divided by the median of its stored APPROVED WSC daily means within today's
+# Alberta date +/- 7 days, all stored years (1995 -> latest). Labels carry the years, n and the median. NO-RESULT (no
+# row) under 10 years, a median under 1 m3/s, or thin real-time data. Reads the store read-only (gas_common.read_stored,
+# #162). Details: montney/connectors/weather_flow_normal.py.
+id: weather_flow_normal
+name: Rivers - flow as a % of normal
+type: python
+module: montney.connectors.weather_flow_normal
+class: FlowVsNormal
+mode: cached
+interval: 1h
+retention: hourly     # derived hourly actuals (as_of = ts)

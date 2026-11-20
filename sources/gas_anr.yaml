@@ -1,0 +1,15 @@
+# ANR Pipeline (TC Energy): deliveries into Wisconsin, Alliance gas taken at Joliet, Viking at Marshfield (L-095).
+# TWO requests per run: TC eConnects' Operationally Available Capacity report (SSRS, asset 3005), the viewer page then
+# its CSV export (~110 KB), today's gas day, Timely cycle. Details: montney/connectors/midwest_gas.py
+id: gas_anr
+name: ANR Pipeline (Wisconsin, Joliet)
+type: python
+module: montney.connectors.midwest_gas
+class: GasAnr
+mode: cached
+interval: 12h         # 4 requests/day
+region: midwest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://ebb.tceconnects.com/infopost/ReportViewer.aspx?/InfoPost/OperationallyAvailableCapacityANR&pAssetNbr=3005

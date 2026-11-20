@@ -1,0 +1,256 @@
+# Texas (ERCOT is most of it). No feeds yet.
+id: tx
+name: Texas
+color: "#9575cd"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-TX]
+anchor: [-99.2, 31.2]
+tz: America/Chicago
+budget_region: tx
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/tx.md. PLAN 9d: imports / exports from the interstate boards + the LNG
+  # plants' posted feed, scoped: the intrastates (most of Texas's pipe mileage, most Mexico exports) post nothing, and
+  # Texas production has no daily source, so no same-basis balance is reachable here (storage implied stays off).
+  through: yesterday
+  production: {parts: [{series: eia.tx.marketed_production, fill: latest}]}
+  imports: {parts: [ebb.tw.border.nm_tx, ebb.mep.border.ok_tx], scope: interstate + LNG, quality: scheduled,
+            note: "interstate flows into Texas: Transwestern from New Mexico, MEP from Oklahoma (MEP crosses Texas to
+              Louisiana, so most of it leaves again in exports). Intrastate receipts from New Mexico's Permian (Waha
+              header) post nothing"}
+  exports: {parts: [lng.tx.corpus_christi.feedgas, lng.tx.freeport.feedgas, lng.tx.golden_pass.feedgas,
+                    ebb.km.tx.export_mexico, ebb.epng.border.tx_sunbelt, ebb.mep.border.tx_la, ebb.ngpl.border.tx_la,
+                    ebb.tgp.border.tx_la, ebb.tgc.border.tx_la, ebb.fgt.border.tx_la, ebb.pepl.border.tx_ok],
+            scope: interstate + LNG, quality: scheduled,
+            note: "the LNG plants' posted feed (Corpus Christi on CCPL; Freeport's Gulf South part; Golden Pass's
+              interstate part), Mexico at Kinder Morgan's border points, and the interstate exits: El Paso to New
+              Mexico, MEP / NGPL / Tennessee / Trunkline / Florida Gas to Louisiana, Panhandle to Oklahoma. Missing:
+              Mexico via the intrastates (~6 Bcf/d: Trans-Pecos, Comanche Trail, Roma, Valley Crossing) and the
+              intrastate parts of the LNG feed, none posted"}
+  demand: {parts: [gas.tx.demand_est], quality: estimate, unproven: true,
+           note: "Texas: a daily model (gas_region_demand, est.): EIA-930 gas generation x a fitted heat rate +
+             residential/commercial from population-weighted HDD + industrial (same month last year); back-test
+             monthly p90 5.7 %. Unproven until checked against daily measured demand, so no storage implied yet"}
+  storage: {lag: 100d, parts: [{series: eia.tx.storage.net_withdrawal, sign: -1, fill: month}],
+            note: "EIA monthly (+ injection)"}
+  inventory: {parts: [{series: eia.tx.storage.working_gas, fill: latest}], unit: Bcf}
+oil:
+  production: {parts: [{series: eia.tx.crude_production, fill: latest}],
+               note: "crude + condensate (EIA crude oil includes lease condensate)"}
+power:
+  # ERCOT's own dashboards (power_ercot: hourly means of 5-min rows, ~1 h behind) + El Paso Electric from EIA-930 via
+  # power_eia930_nowcast (*_best: actual where posted, else live demand + EPE's net export at the same hour on the
+  # latest day; est.; EPE is ~2-3 % of the region). ercot.interchange.net is already net imports (+ in; ERCOT's four
+  # published DC ties, sign negated); EIA's TI is + export, so EPE's part is negated. The SPP (Panhandle) and MISO
+  # (SE Texas) parts of Texas straddle far beyond it, so they aren't counted.
+  fuels_note: "ERCOT's own live fuel mix only (scope ERCOT; El Paso Electric's fuels are EIA-930 daily). Battery = ERCOT's net Power Storage; coal includes lignite."
+  load: {parts: [ercot.load, eia930.epe.demand_best], quality: estimate, lag: 2h, scope: "ERCOT+EPE",
+         note: "ERCOT's own demand + El Paso Electric (EIA-930 nowcast, est.)"}
+  generation: {parts: [ercot.gen.total, eia930.epe.net_gen_best], quality: estimate, lag: 2h, scope: "ERCOT+EPE",
+               note: "ERCOT generation by fuel summed (storage net) + EPE (EIA-930 nowcast, est.)"}
+  interchange: {parts: [ercot.interchange.net, -eia930.epe.interchange_best], quality: estimate, lag: 2h,
+                scope: "ERCOT+EPE", note: "ERCOT's four published DC ties (not Eagle Pass) + EPE's interchange"}
+  fuels:                        # ERCOT's own fuel mix (live); EPE's fuels are EIA-930 daily only
+    gas: {parts: [ercot.gen.gas], scope: ERCOT}
+    coal: {parts: [ercot.gen.coal], scope: ERCOT, note: "coal + lignite"}
+    nuclear: {parts: [ercot.gen.nuclear], scope: ERCOT}
+    hydro: {parts: [ercot.gen.hydro], scope: ERCOT}
+    wind: {parts: [ercot.gen.wind], scope: ERCOT}
+    solar: {parts: [ercot.gen.solar], scope: ERCOT}
+    battery: {parts: [ercot.gen.battery], scope: ERCOT, note: "Power Storage, net (+ discharge, - charge)"}
+    other: {parts: [ercot.gen.other], scope: ERCOT}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_tx.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_tx
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.houston.tmean
+    - wx.dallas_fort_worth.tmean
+    - wx.san_antonio.tmean
+    - wx.austin.tmean
+    - wx.el_paso.tmean
+    - wx.mcallen.tmean
+    - wx.corpus_christi.tmean
+    - wx.lubbock.tmean
+    - wx.midland.tmean
+  hdd: wx.region.tx.hdd
+  cdd: wx.region.tx.cdd
+  normals: [wx.region.tx.hdd_normal, wx.region.tx.cdd_normal]
+  realized: [wx.region.tx.hdd.realized, wx.region.tx.cdd.realized]
+  outlook: [wx.region.tx.hdd_1_7, wx.region.tx.hdd_8_15, wx.region.tx.cdd_1_7, wx.region.tx.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/tx.md (shown on the page)
+  - "Evening ramp, ERCOT load against solar plus wind: batteries and gas cover what is left"
+  - "ERCOT wind: low wind on a hot or freezing evening is the tight setup"
+  - "1-7 and 8-15 day CDD outlook vs normal and yesterday: heat waves mean ERCOT evening peaks and gas burn"
+  - "Winter Arctic air reaching Dallas, Houston and Midland: the Uri pattern, with Permian freeze-offs"
+  - "ERCOT DC ties: small, but imports in a tight hour show stress"
+  - "Nuclear units, Comanche Peak (~2.4 GW) and South Texas (~2.7 GW): the NRC daily level shows a unit offline"
+  - "EIA monthly Texas production, demand and storage: the gas balance updates when a new month lands"
+  - "Gulf storms in hurricane season: LNG export and refinery shut-ins, and Houston outages"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.tx.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.tx.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.tx.industrial_est}
+        - {label: "LNG feedgas: Corpus Christi (not in demand)", series: lng.tx.corpus_christi.feedgas}
+        - {label: "Power plants on Kinder Morgan pipes", series: ebb.km.tx.power}
+        - {label: "LDC citygates on Kinder Morgan pipes", series: ebb.km.tx.ldc}
+        - {label: "Industrial on Kinder Morgan pipes", series: ebb.km.tx.industrial}
+        - {label: "Power plants on Florida Gas (Texas)", series: ebb.fgt.tx.power}
+        - {label: "Industrial on Florida Gas (Texas)", series: ebb.fgt.tx.industrial}
+    - id: production_by_area
+      title: Production by area
+      note: "Interstate receipts only: most Texas gas enters intrastate pipes, which post nothing daily. Scheduled
+        quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Texas marketed production (all; EIA monthly)", series: eia.tx.marketed_production}
+        - {label: "El Paso receipts in Texas (Permian)", series: ebb.epng.tx.production}
+        - {label: "Transwestern receipts in Texas (Permian)", series: ebb.tw.tx.production}
+        - {label: "NGPL receipts in Texas", series: ebb.ngpl.tx.production}
+        - {label: "Tennessee receipts in Texas", series: ebb.tgp.tx.production}
+        - {label: "Trunkline receipts in Texas", series: ebb.tgc.tx.production}
+        - {label: "Panhandle receipts in Texas", series: ebb.pepl.tx.production}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Interstate flows into Texas. Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Transwestern New Mexico → Texas", series: ebb.tw.border.nm_tx}
+        - {label: "MEP Oklahoma → Texas", series: ebb.mep.border.ok_tx}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Interstate exits and the LNG plants' posted feed. Intrastate exits (most Mexico exports) post nothing.
+        Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "LNG: Corpus Christi feedgas", series: lng.tx.corpus_christi.feedgas}
+        - {label: "LNG: Freeport feedgas (Gulf South part)", series: lng.tx.freeport.feedgas}
+        - {label: "LNG: Golden Pass feedgas (interstate part)", series: lng.tx.golden_pass.feedgas}
+        - {label: "Mexico on Kinder Morgan pipes", series: ebb.km.tx.export_mexico}
+        - {label: "Mexico via Transwestern → Trans-Pecos (partial)", series: ebb.tw.tx.mexico_trans_pecos}
+        - {label: "El Paso Texas → New Mexico", series: ebb.epng.border.tx_sunbelt}
+        - {label: "MEP Texas → Louisiana", series: ebb.mep.border.tx_la}
+        - {label: "NGPL Texas → Louisiana", series: ebb.ngpl.border.tx_la}
+        - {label: "Tennessee Texas → Louisiana", series: ebb.tgp.border.tx_la}
+        - {label: "Trunkline Texas → Louisiana", series: ebb.tgc.border.tx_la}
+        - {label: "Florida Gas Texas → Louisiana (net)", series: ebb.fgt.border.tx_la}
+        - {label: "Panhandle Texas → Oklahoma", series: ebb.pepl.border.tx_ok}
+    - id: lng
+      title: LNG
+      note: "Posted feedgas: scheduled, interstate parts only (intrastate supply to the plants isn't posted)."
+      rows:
+        - {label: "Corpus Christi (Cheniere's CCPL)", series: lng.tx.corpus_christi.feedgas}
+        - {label: "Freeport (Gulf South, Stratton Ridge)", series: lng.tx.freeport.feedgas}
+        - {label: "Golden Pass (interstate part)", series: lng.tx.golden_pass.feedgas}
+        - {label: "LNG deliveries on Kinder Morgan pipes (overlaps)", series: ebb.km.tx.lng}
+    - id: storage
+      title: Storage
+      note: "Storage on the interstate boards (scheduled, MMcf/d); EIA's monthly working gas (Bcf)."
+      rows:
+        - {label: "Injections on Kinder Morgan pipes", series: ebb.km.tx.storage_inj}
+        - {label: "Withdrawals on Kinder Morgan pipes", series: ebb.km.tx.storage_wd}
+        - {label: "Injections on Florida Gas", series: ebb.fgt.tx.storage_inj}
+        - {label: "Withdrawals on Florida Gas", series: ebb.fgt.tx.storage_wd}
+        - {label: "Texas working gas (EIA monthly, Bcf)", series: eia.tx.storage.working_gas}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area
+      of: load
+      rows:
+        - {label: ERCOT, series: ercot.load}
+        - {label: "El Paso Electric (EIA-930)", series: eia930.epe.demand_best}
+    - id: interchange_by_tie
+      title: "ERCOT DC ties (+ = into ERCOT)"
+      of: interchange
+      note: "ERCOT's four published DC ties (Eagle Pass isn't on ERCOT's dashboard); El Paso Electric's interchange is in the line but not split by tie."
+      rows:
+        - {label: "East (to SPP)", series: ercot.tie.east.flow}
+        - {label: "North (to SPP)", series: ercot.tie.north.flow}
+        - {label: "Laredo (to CFE Mexico)", series: ercot.tie.laredo.flow}
+        - {label: "Railroad (to CFE Mexico)", series: ercot.tie.railroad.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "W A Parish (coal)", value: 4008, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "South Texas Project (nuclear)", value: 2709, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Comanche Peak (nuclear)", value: 2430, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Martin Lake (coal)", value: 2380, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Forney Energy Center (gas)", value: 1894, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Limestone (coal)", value: 1850, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Sabine (gas)", value: 1812, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Oak Grove (TX) (coal)", value: 1795, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Midlothian Energy Facility (gas)", value: 1734, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Fayette Power Project (coal)", value: 1690, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 4 units, 4,980 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "Comanche Peak 1 (MW est.)", series: nrc.comanche_peak_1.mw_est}
+        - {label: "Comanche Peak 2 (MW est.)", series: nrc.comanche_peak_2.mw_est}
+        - {label: "South Texas 1 (MW est.)", series: nrc.south_texas_1.mw_est}
+        - {label: "South Texas 2 (MW est.)", series: nrc.south_texas_2.mw_est}
+    - id: outages
+      title: "ERCOT generation out (MW, hourly mean)"
+      note: "ERCOT's dashboard: MW of generation on outage, planned vs unplanned (forced), for dispatchable (thermal, hydro, storage) and renewable (wind, solar) resources. ERCOT only; El Paso Electric publishes none."
+      rows:
+        - {label: "All generation out", series: ercot.outage.combined.total}
+        - {label: "  Unplanned (forced)", series: ercot.outage.combined.unplanned}
+        - {label: "  Planned", series: ercot.outage.combined.planned}
+        - {label: "Dispatchable out", series: ercot.outage.dispatchable.total}
+        - {label: "  Dispatchable, unplanned", series: ercot.outage.dispatchable.unplanned}
+        - {label: "  Dispatchable, planned", series: ercot.outage.dispatchable.planned}
+        - {label: "Renewable out", series: ercot.outage.renewable.total}
+        - {label: "  Renewable, unplanned", series: ercot.outage.renewable.unplanned}
+        - {label: "  Renewable, planned", series: ercot.outage.renewable.planned}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.tx.gas}
+        - {label: "Wind", series: cap.tx.wind}
+        - {label: "Solar", series: cap.tx.solar}
+        - {label: "Battery storage", series: cap.tx.battery}
+        - {label: "Coal", series: cap.tx.coal}
+        - {label: "Nuclear", series: cap.tx.nuclear}
+        - {label: "Oil", series: cap.tx.oil}
+        - {label: "Hydro", series: cap.tx.hydro}
+        - {label: "Biomass", series: cap.tx.biomass}
+        - {label: "Other", series: cap.tx.other}
+        - {label: Total, series: cap.tx.total}
+    - id: data_centres
+      title: Data centres
+      note: "ERCOT's large loads (>= 75 MW) energized since 2022 are > 90 % data centres + crypto; the observed figure is the monthly non-simultaneous peak (ERCOT's estimate of what is operating). New data-centre/crypto energizations >= 75 MW are paused pending verification (ERCOT Batch Zero update, Board 2026-09-14/15; Governor's directive 2026-08-03)."
+      rows:
+        - {label: "Large loads energized since 2022 (ERCOT, observed)", series: ercot.lli.observed_mw}
+        - {label: "Large loads approved to energize (ERCOT)", series: ercot.lli.approved_mw}
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.tx.it_mw}
+        - {label: "Data centres, observed (ERCOT split)", value: 1400, unit: MW, as_of: "2025-02",
+           source: "ERCOT, Forecasting Large Load Behavior in Operations (ESIG 2025): crypto 3,700 MW the same date"}
+        - {label: Large loads seeking interconnection (queued), value: 410000, unit: MW, as_of: "2026-03",
+           source: "ERCOT Senate B&C update, 2026-04-01: ~410 GW, ~87 % data centres"}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "EIA monthly, crude incl. lease condensate (~2 months behind)."
+      rows:
+        - {label: "Texas crude incl. lease condensate (EIA monthly)", series: eia.tx.crude_production}
+    - id: refinery_runs
+      title: "Refinery runs, PADD 3 Gulf Coast (TX, LA, NM, MS, AL, AR)"
+      note: "EIA Weekly Petroleum Status Report, week ending Friday. The whole of PADD 3, not just Texas."
+      rows:
+        - {label: PADD 3 crude oil input, series: oil.padd3.refinery_crude_input}
+        - {label: PADD 3 gross input, series: oil.padd3.refinery_gross_input}
+        - {label: PADD 3 operable capacity, series: oil.padd3.refinery_capacity}
+        - {label: PADD 3 utilization, series: oil.padd3.utilization}
+    - id: stocks
+      title: "Stocks, PADD 3 Gulf Coast (TX, LA, NM, MS, AL, AR)"
+      note: "EIA weekly, end of week. Crude is commercial (excludes the SPR, most of which sits in TX and LA)."
+      rows:
+        - {label: "PADD 3 crude oil (excl. SPR)", series: oil.padd3.crude_stocks}
+        - {label: PADD 3 total motor gasoline, series: oil.padd3.gasoline_stocks}
+        - {label: PADD 3 distillate fuel oil, series: oil.padd3.distillate_stocks}

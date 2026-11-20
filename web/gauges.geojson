@@ -1,0 +1,880 @@
+{
+ "type": "FeatureCollection",
+ "_doc": "River gauges (WSC). Built by docs/research/frontend-proto/build_gauges.py; coordinates from WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada).",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "gauge.05aa024",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -113.82272,
+     49.55781
+    ]
+   },
+   "properties": {
+    "id": "gauge.05aa024",
+    "station": "05AA024",
+    "name": "Oldman River near Brocket",
+    "basin": "Oldman",
+    "wsc_name": "OLDMAN RIVER NEAR BROCKET",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05aa035",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.08649,
+     49.72769
+    ]
+   },
+   "properties": {
+    "id": "gauge.05aa035",
+    "station": "05AA035",
+    "name": "Oldman River at Range Road No. 13A",
+    "basin": "Oldman",
+    "wsc_name": "OLDMAN RIVER AT RANGE ROAD NO. 13A",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05ad007",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -112.86288,
+     49.70942
+    ]
+   },
+   "properties": {
+    "id": "gauge.05ad007",
+    "station": "05AD007",
+    "name": "Oldman River near Lethbridge",
+    "basin": "Oldman",
+    "wsc_name": "OLDMAN RIVER NEAR LETHBRIDGE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05ae006",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -112.84671,
+     49.57346
+    ]
+   },
+   "properties": {
+    "id": "gauge.05ae006",
+    "station": "05AE006",
+    "name": "St. Mary River near Lethbridge",
+    "basin": "Oldman",
+    "wsc_name": "ST. MARY RIVER NEAR LETHBRIDGE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05ag006",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -111.8,
+     49.91889
+    ]
+   },
+   "properties": {
+    "id": "gauge.05ag006",
+    "station": "05AG006",
+    "name": "Oldman River near the Mouth",
+    "basin": "Oldman",
+    "wsc_name": "OLDMAN RIVER NEAR THE MOUTH",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bb001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -115.57177,
+     51.17223
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bb001",
+    "station": "05BB001",
+    "name": "Bow River at Banff",
+    "basin": "Bow",
+    "wsc_name": "BOW RIVER AT BANFF",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bc001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -115.55447,
+     51.16018
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bc001",
+    "station": "05BC001",
+    "name": "Spray River at Banff",
+    "basin": "Bow",
+    "wsc_name": "SPRAY RIVER AT BANFF",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bh004",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.05146,
+     51.05027
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bh004",
+    "station": "05BH004",
+    "name": "Bow River at Calgary",
+    "basin": "Bow",
+    "wsc_name": "BOW RIVER AT CALGARY",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bh005",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.46643,
+     51.17374
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bh005",
+    "station": "05BH005",
+    "name": "Bow River near Cochrane",
+    "basin": "Bow",
+    "wsc_name": "BOW RIVER NEAR COCHRANE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bj001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.0932,
+     51.01279
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bj001",
+    "station": "05BJ001",
+    "name": "Elbow River below Glenmore Dam",
+    "basin": "Bow",
+    "wsc_name": "ELBOW RIVER BELOW GLENMORE DAM",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bj010",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.16989,
+     50.9935
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bj010",
+    "station": "05BJ010",
+    "name": "Elbow River at Sarcee Bridge",
+    "basin": "Bow",
+    "wsc_name": "ELBOW RIVER AT SARCEE BRIDGE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bm002",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -113.44483,
+     50.82282
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bm002",
+    "station": "05BM002",
+    "name": "Bow River below Carseland Dam",
+    "basin": "Bow",
+    "wsc_name": "BOW RIVER BELOW CARSELAND DAM",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05bn012",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -111.59092,
+     50.04728
+    ]
+   },
+   "properties": {
+    "id": "gauge.05bn012",
+    "station": "05BN012",
+    "name": "Bow River near the Mouth",
+    "basin": "Bow",
+    "wsc_name": "BOW RIVER NEAR THE MOUTH",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05ca009",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -115.01925,
+     51.64625
+    ]
+   },
+   "properties": {
+    "id": "gauge.05ca009",
+    "station": "05CA009",
+    "name": "Red Deer River below Burnt Timber Creek",
+    "basin": "Red Deer",
+    "wsc_name": "RED DEER RIVER BELOW BURNT TIMBER CREEK",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05cb007",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.21858,
+     52.05835
+    ]
+   },
+   "properties": {
+    "id": "gauge.05cb007",
+    "station": "05CB007",
+    "name": "Dickson Dam Tunnel Outlet",
+    "basin": "Red Deer",
+    "wsc_name": "DICKSON DAM TUNNEL OUTLET",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05cc002",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -113.82311,
+     52.27053
+    ]
+   },
+   "properties": {
+    "id": "gauge.05cc002",
+    "station": "05CC002",
+    "name": "Red Deer River at Red Deer",
+    "basin": "Red Deer",
+    "wsc_name": "RED DEER RIVER AT RED DEER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05ck004",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -110.2995,
+     50.90269
+    ]
+   },
+   "properties": {
+    "id": "gauge.05ck004",
+    "station": "05CK004",
+    "name": "Red Deer River near Bindloss",
+    "basin": "Red Deer",
+    "wsc_name": "RED DEER RIVER NEAR BINDLOSS",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05da009",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.47093,
+     52.00119
+    ]
+   },
+   "properties": {
+    "id": "gauge.05da009",
+    "station": "05DA009",
+    "name": "North Saskatchewan River at Whirlpool Point",
+    "basin": "N. Saskatchewan",
+    "wsc_name": "NORTH SASKATCHEWAN RIVER AT WHIRLPOOL POINT",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05dc001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.94132,
+     52.3767
+    ]
+   },
+   "properties": {
+    "id": "gauge.05dc001",
+    "station": "05DC001",
+    "name": "North Saskatchewan River near Rocky Mountain House",
+    "basin": "N. Saskatchewan",
+    "wsc_name": "NORTH SASKATCHEWAN RIVER NEAR ROCKY MOUNTAIN HOUSE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05dd007",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.55625,
+     52.88158
+    ]
+   },
+   "properties": {
+    "id": "gauge.05dd007",
+    "station": "05DD007",
+    "name": "Brazeau River below Cardinal River",
+    "basin": "N. Saskatchewan",
+    "wsc_name": "BRAZEAU RIVER BELOW CARDINAL RIVER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05de010",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.75796,
+     53.31548
+    ]
+   },
+   "properties": {
+    "id": "gauge.05de010",
+    "station": "05DE010",
+    "name": "North Saskatchewan River at Highway No. 759",
+    "basin": "N. Saskatchewan",
+    "wsc_name": "NORTH SASKATCHEWAN RIVER AT HIGHWAY NO. 759",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.05df001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -113.4855,
+     53.53721
+    ]
+   },
+   "properties": {
+    "id": "gauge.05df001",
+    "station": "05DF001",
+    "name": "North Saskatchewan River at Edmonton",
+    "basin": "N. Saskatchewan",
+    "wsc_name": "NORTH SASKATCHEWAN RIVER AT EDMONTON",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fa004",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.8145,
+     56.19933
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fa004",
+    "station": "07FA004",
+    "name": "Peace River above Pine River",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER ABOVE PINE RIVER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fa006",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -121.62853,
+     56.25075
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fa006",
+    "station": "07FA006",
+    "name": "Halfway River near Farrell Creek",
+    "basin": "Peace",
+    "wsc_name": "HALFWAY RIVER NEAR FARRELL CREEK",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fb001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -121.21156,
+     55.71844
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fb001",
+    "station": "07FB001",
+    "name": "Pine River at East Pine",
+    "basin": "Peace",
+    "wsc_name": "PINE RIVER AT EAST PINE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fb008",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -121.36678,
+     56.0925
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fb008",
+    "station": "07FB008",
+    "name": "Moberly River near Fort St. John",
+    "basin": "Peace",
+    "wsc_name": "MOBERLY RIVER NEAR FORT ST. JOHN",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fc001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.69986,
+     56.27844
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fc001",
+    "station": "07FC001",
+    "name": "Beatton River near Fort St. John",
+    "basin": "Peace",
+    "wsc_name": "BEATTON RIVER NEAR FORT ST. JOHN",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fd001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.56436,
+     55.95736
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fd001",
+    "station": "07FD001",
+    "name": "Kiskatinaw River near Farmington",
+    "basin": "Peace",
+    "wsc_name": "KISKATINAW RIVER NEAR FARMINGTON",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fd002",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.67242,
+     56.13939
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fd002",
+    "station": "07FD002",
+    "name": "Peace River near Taylor",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER NEAR TAYLOR",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fd003",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -118.60664,
+     55.91908
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fd003",
+    "station": "07FD003",
+    "name": "Peace River at Dunvegan Bridge",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER AT DUNVEGAN BRIDGE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fd007",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.03042,
+     55.86519
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fd007",
+    "station": "07FD007",
+    "name": "Pouce Coupe River below Henderson Creek",
+    "basin": "Peace",
+    "wsc_name": "POUCE COUPE RIVER BELOW HENDERSON CREEK",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07fd010",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.05747,
+     56.12692
+    ]
+   },
+   "properties": {
+    "id": "gauge.07fd010",
+    "station": "07FD010",
+    "name": "Peace River above Alces River",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER ABOVE ALCES RIVER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07ge001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -118.70983,
+     55.07006
+    ]
+   },
+   "properties": {
+    "id": "gauge.07ge001",
+    "station": "07GE001",
+    "name": "Wapiti River near Grande Prairie",
+    "basin": "Peace",
+    "wsc_name": "WAPITI RIVER NEAR GRANDE PRAIRIE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07gh002",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.1619,
+     55.45623
+    ]
+   },
+   "properties": {
+    "id": "gauge.07gh002",
+    "station": "07GH002",
+    "name": "Little Smoky River near Guy",
+    "basin": "Peace",
+    "wsc_name": "LITTLE SMOKY RIVER NEAR GUY",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07gj001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.62308,
+     55.7146
+    ]
+   },
+   "properties": {
+    "id": "gauge.07gj001",
+    "station": "07GJ001",
+    "name": "Smoky River at Watino",
+    "basin": "Peace",
+    "wsc_name": "SMOKY RIVER AT WATINO",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07ha001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.31433,
+     56.24494
+    ]
+   },
+   "properties": {
+    "id": "gauge.07ha001",
+    "station": "07HA001",
+    "name": "Peace River at Peace River",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER AT PEACE RIVER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07hc001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.61842,
+     56.92004
+    ]
+   },
+   "properties": {
+    "id": "gauge.07hc001",
+    "station": "07HC001",
+    "name": "Notikewin River at Manning",
+    "basin": "Peace",
+    "wsc_name": "NOTIKEWIN RIVER AT MANNING",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.07hf001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.02875,
+     58.38789
+    ]
+   },
+   "properties": {
+    "id": "gauge.07hf001",
+    "station": "07HF001",
+    "name": "Peace River at Fort Vermilion",
+    "basin": "Peace",
+    "wsc_name": "PEACE RIVER AT FORT VERMILION",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08na002",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.91293,
+     51.24356
+    ]
+   },
+   "properties": {
+    "id": "gauge.08na002",
+    "station": "08NA002",
+    "name": "Columbia River at Nicholson",
+    "basin": "Columbia",
+    "wsc_name": "COLUMBIA RIVER AT NICHOLSON",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08nb005",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.18039,
+     51.4833
+    ]
+   },
+   "properties": {
+    "id": "gauge.08nb005",
+    "station": "08NB005",
+    "name": "Columbia River at Donald",
+    "basin": "Columbia",
+    "wsc_name": "COLUMBIA RIVER AT DONALD",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08nd013",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -118.08514,
+     51.01263
+    ]
+   },
+   "properties": {
+    "id": "gauge.08nd013",
+    "station": "08ND013",
+    "name": "Illecillewaet River at Greeley",
+    "basin": "Columbia",
+    "wsc_name": "ILLECILLEWAET RIVER AT GREELEY",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08ne049",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.71765,
+     49.17784
+    ]
+   },
+   "properties": {
+    "id": "gauge.08ne049",
+    "station": "08NE049",
+    "name": "Columbia River at Birchbank",
+    "basin": "Columbia",
+    "wsc_name": "COLUMBIA RIVER AT BIRCHBANK",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08ng065",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -115.63534,
+     49.61203
+    ]
+   },
+   "properties": {
+    "id": "gauge.08ng065",
+    "station": "08NG065",
+    "name": "Kootenay River at Fort Steele",
+    "basin": "Kootenay",
+    "wsc_name": "KOOTENAY RIVER AT FORT STEELE",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08nh007",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.96829,
+     50.26287
+    ]
+   },
+   "properties": {
+    "id": "gauge.08nh007",
+    "station": "08NH007",
+    "name": "Lardeau River at Marblehead",
+    "basin": "Kootenay",
+    "wsc_name": "LARDEAU RIVER AT MARBLEHEAD",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08nh118",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -116.95519,
+     50.23286
+    ]
+   },
+   "properties": {
+    "id": "gauge.08nh118",
+    "station": "08NH118",
+    "name": "Duncan River below Lardeau River",
+    "basin": "Kootenay",
+    "wsc_name": "DUNCAN RIVER BELOW LARDEAU RIVER",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gauge.08nj013",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -117.5648,
+     49.46008
+    ]
+   },
+   "properties": {
+    "id": "gauge.08nj013",
+    "station": "08NJ013",
+    "name": "Slocan River near Crescent Valley",
+    "basin": "Kootenay",
+    "wsc_name": "SLOCAN RIVER NEAR CRESCENT VALLEY",
+    "source": "WSC station metadata, api.weather.gc.ca/collections/hydrometric-stations (Open Government Licence - Canada)"
+   }
+  }
+ ]
+}

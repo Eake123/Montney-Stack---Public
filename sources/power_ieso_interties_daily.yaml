@@ -1,0 +1,18 @@
+# Ontario (IESO) intertie flows: hourly history + daily and trailing 7/30-day means (L-103). Source: IESO
+# IntertieScheduleFlowYear CSV (year to date, updated daily, ~1 MB) + each past year from `from_year` (final, cached
+# after one download). 1 request/day. Writes the same hourly series as power_ieso_interties (change-only writes drop
+# the repeats) plus the trend series. Details: montney/connectors/power_ieso_interties.py.
+id: power_ieso_interties_daily
+name: IESO intertie flows, history + daily / 7-day / 30-day means
+type: python
+module: montney.connectors.power_ieso_interties
+class: IesoInterties
+mode: cached
+interval: 1d
+region: ont          # sources/BUDGET.yaml (L-091)
+retention:
+  default: daily
+  "ieso.intertie.*.flow": hourly
+params:
+  report: daily
+  from_year: 2025

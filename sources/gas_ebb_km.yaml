@@ -1,0 +1,96 @@
+# Kinder Morgan interstate EBBs (pipeline2.kindermorgan.com): scheduled quantities by region and category, plus border
+# flows, for 12 KM boards. Method, requests and caveats: montney/connectors/gas_ebb_km.py; research and today's numbers:
+# docs/research/pipelines/kinder_morgan.md. Multi-region (tx, sunbelt, mtnw, nyc, upne, umw, cal), so budget region `rest`.
+id: gas_ebb_km
+name: Kinder Morgan EBBs (EPNG, TGP, CIG, WIC, NGPL ...)
+type: python
+module: montney.connectors.gas_ebb_km
+class: GasEbbKm
+mode: cached
+interval: 2h          # a run only touches boards whose cycle can have changed; ~300 requests/day (~13/h), <= 60 a run
+region: rest
+retention: daily
+params:
+  base: https://pipeline2.kindermorgan.com
+  max_requests: 60            # per run; boards that don't fit wait for the next run
+  pause_s: 1.0                # between requests to the host
+  final_after_ct: "09:00"     # yesterday's final cycle (EPNG "CYCLE 7" posts ~07:30 CT)
+  cycle_times_ct: ["14:00", "17:30", "22:00"]   # ID1 / ID2 / ID3: probe a board once one has passed unseen
+  post_slack_min: 60          # a post up to 60 min before a boundary counts as that cycle
+  location_max_age_days: 7
+  # Interconnects whose counterparty (location CSV `Up/Dn Name`) is one of these are KM-to-KM (or self) transfers: dropped.
+  km_counterparties: [EL PASO NATURAL GAS, MOJAVE PIPELINE, TRANSCOLORADO, SIERRITA, TENNESSEE GAS PIPELINE,
+                      STAGECOACH, ARLINGTON STORAGE, COLORADO INTERSTATE GAS, WYOMING INTERSTATE, CHEYENNE PLAINS,
+                      YOUNG GAS STORAGE, NATURAL GAS PIPELINE COMPANY OF AMERICA, MIDCONTINENT EXPRESS]
+  mexico_counterparties: [IENOVA, GASODUCTO, CENTRO NACIONAL DE CONTROL, NET MEXICO, MEXICANA DE COBRE, COMISION FEDERAL]
+  canada_counterparties: [TRANSCANADA]
+  lng_counterparties: [CHENIERE CORPUS CHRISTI, SABINE PASS, CAMERON INTERSTATE, VENTURE GLOBAL]
+  # board code -> {name, regions: {region: [categories]}}. The categories are the ones with active points of that kind in
+  # the region (location files, 2026-11-13). No regions = a segment-only board (borders below). Young Gas Storage is left
+  # out: its only flows are to/from CIG (KM-internal; CIG's own STR point carries the storage).
+  # `unlocated_ok` (regex on the point's name): known points with no state, let past the no-state guard (a point with
+  # gas and no state otherwise fails its board for the run). EPNG 53711 "EPNG/EPNG (BALBLNCO) BLANCO BALANCI..." is a
+  # VIR balancing point with a blank state in EPNG's location CSV (2026-11-13); VIR, so it counts in no category anyway.
+  # NGPL 40802-40888 "VAR/VAR DIME DESIGN PT - SEG. <n> - [B|E]" (87 points) are OTH segment design points, also with a
+  # blank state (2026-11-13); OTH counts in no category either.
+  boards:
+    EPNG: {name: El Paso Natural Gas, unlocated_ok: '\(BALBLNCO\)|BLANCO BALANC', regions: {
+      sunbelt: [production, ldc, power, industrial, storage_inj, storage_wd, export_mexico],
+      tx: [production, ldc, power, industrial, storage_inj, storage_wd, export_mexico],
+      mtnw: [production], cal: [industrial]}}
+    MOPC: {name: Mojave Pipeline, regions: {cal: [production, power, industrial]}}
+    TCP: {name: TransColorado, regions: {mtnw: [production, ldc], sunbelt: [production, ldc]}}
+    SGP: {name: Sierrita Gas Pipeline, regions: {sunbelt: [export_mexico]}}
+    TGP: {name: Tennessee Gas Pipeline, regions: {
+      nyc: [production, ldc, power, industrial, storage_inj, storage_wd, export_canada],
+      upne: [production, ldc, power, industrial, lng],
+      tx: [production, ldc, power, industrial, storage_inj, storage_wd, lng, export_mexico]}}
+    STAG: {name: Stagecoach Pipeline & Storage}
+    ARLS: {name: Arlington Storage, regions: {nyc: [ldc, industrial]}}
+    CIG: {name: Colorado Interstate Gas, regions: {
+      mtnw: [production, ldc, power, industrial, storage_inj, storage_wd], tx: [ldc, industrial]}}
+    WIC: {name: Wyoming Interstate, regions: {mtnw: [production, ldc, industrial, storage_inj, storage_wd]}}
+    CP: {name: Cheyenne Plains, regions: {mtnw: [production], tx: [power]}}
+    NGPL: {name: Natural Gas Pipeline Co. of America, unlocated_ok: 'DIME DESIGN PT', regions: {
+      tx: [production, ldc, power, industrial, storage_inj, storage_wd, lng, export_mexico],
+      sunbelt: [production, storage_inj, storage_wd], umw: [ldc]}}
+    MEP: {name: Midcontinent Express}
+  # Borders: `segments` = [segment number, segment name] rows of the OA-by-segment download, + in the `forward` direction
+  # (TD1/TD2), − in the other; or `locs` / `counterparties` (+states) = points, deliveries − receipts, × `sign`.
+  # A segment or loc that disappears is FormatDrift. ids: ebb.<pipe>.border.<from>_<to>, + = from → to.
+  borders:
+    - {id: ebb.epng.border.tx_sunbelt, board: EPNG, forward: TD1, label: "EPNG south mainline Texas → New Mexico (El Paso)",
+       segments: [[1675, EL PASO], [1675, ELPASO C], [1675, EL PASO E]]}
+    # The delivery points into California, listed by loc (Reviewer on #476: a counterparty match drops silently when a
+    # name is reworded or a loc re-coded; a listed loc that disappears is FormatDrift).
+    - {id: ebb.epng.border.sunbelt_cal, board: EPNG, locs: ["301016", "332503", "301693", "314604"],
+       label: "EPNG Arizona → California (SoCalGas Ehrenberg/Topock, North Baja, PG&E Topock; Mojave is its own board)"}
+    - {id: ebb.mopc.border.sunbelt_cal, board: MOPC, forward: TD1, label: "Mojave Arizona → California (Topock)",
+       segments: [[3000, CA/AZ State Line to Line 1903]]}
+    - {id: ebb.tcp.border.sunbelt_mtnw, board: TCP, forward: TD2, label: "TransColorado New Mexico → Colorado",
+       segments: [[300, CO/ NM ST LINE TO LA MAQUINA]]}
+    - {id: ebb.tgp.border.nyc_upne, board: TGP, forward: TD1, label: "TGP New York → New England (200 + 300 Lines)",
+       segments: [[256, MLV 256 EAST], [336, MLV 336 EAST]]}
+    - {id: ebb.tgp.border.nyc_sont, board: TGP, forward: TD1, label: "TGP New York → Ontario (Niagara spur)",
+       segments: [[296, STA 230C NIAGARA SPUR NORTH]]}
+    - {id: ebb.tgp.border.pa_nyc, board: TGP, forward: TD1,
+       label: "TGP into New York (200 Line Sta 224, HC line Sta 237, 300 Line MLV 330 after New Jersey); approximate",
+       segments: [[224, STA 224], [299, STA 237 HC LINE], [324, MLV 330]]}
+    - {id: ebb.tgp.border.tx_la, board: TGP, forward: TD1, label: "TGP 100 Line Texas → Louisiana (Sta 32)",
+       segments: [[132, STA 32]]}
+    - {id: ebb.stag.border.pa_nyc, board: STAG, forward: TD1, label: "Stagecoach Pennsylvania → New York (North lateral)",
+       segments: [[300, STAGECOACH NORTH]]}
+    - {id: ebb.cig.border.mtnw_ks, board: CIG, forward: TD1, label: "CIG Colorado → Kansas / Oklahoma (Lakin + Campo)",
+       segments: [[280, CO/KN ST LINE TO LAKIN CS], [276, CAMPO RS TO CO/OK ST LINE]]}
+    - {id: ebb.cig.border.mtnw_bakken, board: CIG, forward: TD1, label: "CIG Wyoming → Montana (WY/MT state line)",
+       segments: [[140, WY/MT State Line]]}
+    - {id: ebb.cp.border.mtnw_ks, board: CP, forward: TD1, label: "Cheyenne Plains Colorado → Kansas",
+       segments: [[625, KIRK CS TO COLORADO STATE LINE]]}
+    - {id: ebb.wic.border.bakken_mtnw, board: WIC, sign: -1, locs: ["56507"],
+       label: "WIC receipt from WBI at Wildhorse (Sheridan WY): Bakken-side gas into Wyoming"}
+    - {id: ebb.mep.border.ok_tx, board: MEP, forward: TD1, label: "MEP Oklahoma → Texas",
+       segments: [[100, OK/TX BORDER BRYAN]]}
+    - {id: ebb.mep.border.tx_la, board: MEP, forward: TD1, label: "MEP Texas → Louisiana",
+       segments: [[120, TX/LA BORDER CASS]]}
+    - {id: ebb.ngpl.border.tx_la, board: NGPL, forward: TD1, label: "NGPL Louisiana line Texas → Louisiana",
+       segments: [[25, EAST OF STA 302 MONTGOMERY]]}

@@ -1,0 +1,16 @@
+# Installed generating capacity by type for AB, BC, SK, MB, ON, QC and the four Canadian regions, ANNUAL (PLAN 9, region
+# page capacity_by_fuel), from Statistics Canada table 25-10-0022-01 (keyless WDS API: one POST, ~50 KB, a week).
+# StatCan releases a year ~10 months after it ends (2025 on 2026-10-19). By turbine type, not fuel: combustion plants
+# keep StatCan's prime-mover split. Back to from_year. Details: montney/connectors/power_capacity_ca.py.
+id: power_capacity_ca
+name: StatCan installed capacity by type, Canadian provinces and regions (annual)
+type: python
+module: montney.connectors.power_capacity_ca
+class: CapacityCA
+mode: cached
+interval: 7d             # an annual table: one request a week finds a new release within 7 days
+region: ab_nebc
+retention: daily
+stale_after: 1050d       # ts = 1 Jan of the year; a year lands ~656 d after its 1 Jan and the next a year later (~1021 d)
+params:
+  from_year: 2015

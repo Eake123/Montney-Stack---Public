@@ -1,0 +1,19 @@
+# NGTL Station Percent Utilization: monthly receipt volume per NGTL receipt station (PLAN 5a, DECISIONS 5a).
+# Source: https://www.tccustomerexpress.com/2883.html (one xlsx per year; the current year is year-to-date,
+# republished about 20 days after each month end). Stored as MMcf/d per L-031: 10^3 m3 x 0.0353147 / days.
+# Live: this year's and last year's files (about 0.4 MB per fetch). History back to 2010 is a one-off load:
+#   uv run python -m montney.importers.ngtl_station_util --from 2010
+# Details, layouts and the fail-loud guards: montney/connectors/ngtl_station_util.py
+id: ngtl_station_util
+name: NGTL station receipts (Station % Utilization)
+type: python
+module: montney.connectors.ngtl_station_util
+class: NgtlStationUtil
+mode: cached
+interval: 1d
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; each monthly republication (the file's "As of" stamp) is a vintage, kept forever.
+retention: daily
+params:
+  page: https://www.tccustomerexpress.com/2883.html
+  years_back: 1

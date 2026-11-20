@@ -1,0 +1,16 @@
+# Quebec (Hydro-Quebec) demand + generation by source, hourly MW, for the Quebec power box (L-091). LIVE ONLY: never
+# persisted (the stored history is sources/power_hq_daily.yaml). Source: Hydro-Quebec open data, the two rolling
+# ~48 h datasets as whole-dataset JSON exports = 2 requests a run, every 15 min (PLAN 9) = 8 req/h. Keyless.
+# Details: montney/connectors/power_hq.py.
+id: power_hq_hourly
+name: Hydro-Quebec demand and generation by source, hourly (live, not stored)
+type: python
+module: montney.connectors.power_hq
+class: HqGeneration
+mode: live
+interval: 15m
+region: qc           # sources/BUDGET.yaml; the source -> region mapping is Database's (L-091)
+# Retention tier (docs/db/RETENTION.md spec contract): live = mode: live, held in obs_live (the last fetch only).
+retention: live
+params:
+  report: hourly

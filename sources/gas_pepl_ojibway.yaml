@@ -1,0 +1,15 @@
+# Panhandle Eastern at Ojibway: into Enbridge Gas, Ontario (L-093 part 2). ONE ~1 MB public page per run (Energy
+# Transfer's Operationally Available by Location; its filters are ignored, so the whole PEPL list comes back).
+# Details: montney/connectors/ont_dawn.py
+id: gas_pepl_ojibway
+name: Panhandle Eastern at Ojibway
+type: python
+module: montney.connectors.ont_dawn
+class: GasPanhandleOjibway
+mode: cached
+interval: 12h         # the page shows the current gas day's latest cycle: 2 requests/day
+region: ont
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://peplmessenger.energytransfer.com/ipost/capacity/operationally-available-by-location

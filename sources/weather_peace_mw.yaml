@@ -1,0 +1,17 @@
+# Peace River dams (GM Shrum/WAC Bennett, Peace Canyon, Site C): reservoir heads from BC Hydro hydromet + WSC, and
+# ESTIMATED plant MW = 9.81 * eta * Q * H over a trailing 24 h, always with its band (mw_lo / mw_hi = +/-2 sigma).
+# Q4 = yes (L-041): BC Hydro hydromet .txt fetched locally for Erik's personal use and NEVER republished; the map shows
+# only our derived estimates. Fallback when a BC Hydro level is missing: fixed typical heads (Q4 option (c)), with
+# a wider band. Flows: WSC 07FA004 (Site C outflow), 07FA006 + 07FB008 (tributaries). Williston: WSC 07EF003 (HYDAT
+# CGVD2013). The error terms eps_H and eta are PROVISIONAL, for Power to confirm (L-033).
+# Details: montney/connectors/weather_peace_mw.py.
+id: weather_peace_mw
+name: Rivers - Peace dams heads + estimated MW
+type: python
+module: montney.connectors.weather_peace_mw
+class: PeaceDamsMW
+mode: cached
+interval: 1h
+retention:
+  default: hourly              # the hourly 24 h-window estimates, heads and flows (as_of = ts)
+  "bchydro.hydromet.*": fast   # BC Hydro 5-min reservoir levels

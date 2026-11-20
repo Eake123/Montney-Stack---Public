@@ -1,0 +1,15 @@
+# Ontario gas in (L-093 part 2): TC Mainline into Ontario net of Québec and Iroquois + the Dawn-side inflows (St. Clair
+# Great Lakes + Vector, Ojibway Panhandle). Includes Dawn storage injection: not demand. No requests: reads the store.
+# Details: montney/connectors/ont_dawn.py
+id: gas_ont_supply
+name: Ontario gas in (TC Mainline + Dawn inflows, derived)
+type: python
+module: montney.connectors.ont_dawn
+class: GasOntSupply
+mode: cached
+interval: 1h
+region: ont
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  days: 7

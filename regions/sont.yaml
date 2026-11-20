@@ -1,0 +1,186 @@
+# Toronto: southern Ontario (Erik's "Toronto"). Northwestern Ontario is clipped to mbnwo.
+id: sont
+name: Toronto (S. Ontario)
+color: "#f8bbd0"          # region border + tint on the map (Erik, 2026-11-07)
+members: [CA-ON]
+clips:
+  - member: CA-ON
+    to: mbnwo
+    note: "Ontario north and west of Erik's Lake Superior - James Bay curve (close to IESO's Northwest + Northeast zones)"
+    polygon: [[-95.6, 48.0], [-84.6, 46.3], [-83.5, 47.0], [-82.2, 48.4], [-81.2, 49.8], [-80.6, 51.0], [-79.0, 51.6],
+              [-79.0, 57.6], [-95.6, 57.6], [-95.6, 48.0]]
+anchor: [-79.6, 45.2]
+box: {dir: SW}            # PLAN 9: where its box goes when the region is too small on screen (Frontend)
+tz: America/Toronto
+budget_region: ont
+coverage: standard
+gas:
+  # L-106 8c: Ontario south and east of the Lake Superior - James Bay curve. Research: docs/research/regions/sont.md
+  production: {none: true, note: "Ontario's own production is a few MMcf/d"}
+  imports: {parts: [tcm.area.on.outflow_est, tcm.niagara.imports, glgt.st_clair.net_deliveries,
+                    vector.st_clair.deliveries, pepl.ojibway.deliveries], quality: estimate,
+            note: "the Northern Ontario Line arriving at North Bay Junction (from mbnwo, est.) + Niagara / Chippawa
+              (net) + the Dawn-side inflows: Great Lakes and Vector at St. Clair, Panhandle at Ojibway"}
+  exports: {parts: [tcm.energir.deliveries, tcm.qc.exports, tcm.iroquois.exports], quality: scheduled,
+            note: "TC into Québec (Énergir + East Hereford, Philipsburg, Napierville) + Iroquois at Waddington (US)"}
+  demand: {parts: [gas.on.demand_est, -tcm.area.on.deliveries], quality: estimate, unproven: true,
+           note: "Ontario: a daily model (gas_region_demand, est.): IESO gas generation x a fitted heat rate +
+             residential/commercial from population-weighted HDD + industrial (same month last year), fitted on
+             StatCan (monthly p90 10.2 %), less TC's deliveries west of North Bay Junction (mbnwo's). Unproven until
+             checked against daily measured demand (Enbridge Gas's Gas Day Summary is behind a reCAPTCHA), so no
+             storage implied yet"}
+  storage: {lag: 100d, parts: [{series: statcan.on.storage_net_withdrawal, sign: -1, fill: month}],
+            note: "Dawn, Tecumseh and the other Ontario pools (StatCan monthly, + injection)"}
+  inventory: {parts: [{series: statcan.on.storage, fill: latest}], unit: Bcf}
+power:
+  lag: 2d                       # IESO's zonal / Ontario demand file lands the next morning (~1 day late)
+  # IESO is one balancing authority, ~90 % of it in sont, so all of IESO is here (REGIONS §1 rule 2), scope "all ON".
+  # IESO publishes no generation or intertie split by zone; its NW + NE zones (mbnwo's Ontario part, ~1.9 GW of load:
+  # ieso.zone.northwest/northeast.demand) are inside these lines, and mbnwo carries Manitoba only.
+  fuels_note: "IESO transmission-connected generation (embedded solar isn't in IESO's reports); biomass = IESO's biofuel."
+  load: {parts: [ieso.demand.ontario], scope: all ON,
+         note: "IESO Ontario Demand, incl. the NW + NE zones the map gives mbnwo"}
+  generation: {parts: [ieso.gen.total.hourly], scope: all ON, note: "IESO transmission-connected generation"}
+  interchange: {parts: [-ieso.intertie.net.flow], scope: all ON,
+                note: "IESO net exports negated (+ import), incl. the Manitoba and Minnesota ties of the NW zone"}
+  fuels:
+    nuclear: {parts: [ieso.gen.nuclear.hourly]}
+    hydro: {parts: [ieso.gen.hydro.hourly]}
+    gas: {parts: [ieso.gen.gas.hourly]}
+    wind: {parts: [ieso.gen.wind.hourly]}
+    solar: {parts: [ieso.gen.solar.hourly]}
+    biomass: {parts: [ieso.gen.biofuel.hourly]}
+    other: {parts: [ieso.gen.other.hourly]}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_ont.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_ont
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.toronto.tmean
+    - wx.ottawa.tmean
+    - wx.hamilton.tmean
+    - wx.kitchener_waterloo.tmean
+    - wx.london_on.tmean
+    - wx.windsor.tmean
+  hdd: wx.region.sont.hdd
+  cdd: wx.region.sont.cdd
+  normals: [wx.region.sont.hdd_normal, wx.region.sont.cdd_normal]
+  realized: [wx.region.sont.hdd.realized, wx.region.sont.cdd.realized]
+  outlook: [wx.region.sont.hdd_1_7, wx.region.sont.hdd_8_15, wx.region.sont.cdd_1_7, wx.region.sont.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/sont.md (shown on the page)
+  - "Nuclear output vs capability (Bruce, Darlington, Pickering): a unit trip moves exports and gas burn that day"
+  - "Net exports and Québec flow vs their 7- and 30-day means: exports fall first when nuclear is out"
+  - "Gas generation: rising gas with flat demand means less nuclear or hydro"
+  - "1-7 and 8-15 day HDD outlook vs normal and yesterday: cold revisions lead Dawn and Ontario gas prices"
+  - "Dawn-side inflows at St. Clair and Ojibway, and the NOL arrival: what is arriving in Ontario"
+  - "Exits to Québec and Iroquois: the Eastern Triangle feeding Québec and the Northeast"
+  - "Ontario gas in vs the HDD outlook: GTA demand swings 2-3 Bcf/d between a mild and a design day"
+  - "Toronto and total Ontario demand vs the outlook: cold snaps and heat waves move demand by 3-5 GW"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Ontario, whole province (est.); the demand line takes NW Ontario (mbnwo) out."
+      rows:
+        - {label: "Ontario power burn (IESO x heat rate)", series: gas.on.power_burn_est}
+        - {label: "Ontario residential + commercial", series: gas.on.rescom_est}
+        - {label: "Ontario industrial (last year, less power)", series: gas.on.industrial_est}
+        - {label: "Less: TC deliveries in NW Ontario (mbnwo)", series: tcm.area.on.deliveries}
+    - id: imports_by_point
+      title: Imports by point
+      of: imports
+      rows:
+        - {label: "TC Mainline at North Bay Junction (from the west)", series: tcm.area.on.outflow_est}
+        - {label: "Niagara Falls + Chippawa (from New York)", series: tcm.niagara.imports}
+        - {label: "Great Lakes at St. Clair (from Michigan)", series: glgt.st_clair.net_deliveries}
+        - {label: "Vector at St. Clair (NEXUS gas included)", series: vector.st_clair.deliveries}
+        - {label: "Panhandle at Ojibway (from Michigan)", series: pepl.ojibway.deliveries}
+    - id: exports_by_point
+      title: Exports by point
+      of: exports
+      rows:
+        - {label: "TC to Énergir (Québec)", series: tcm.energir.deliveries}
+        - {label: "East Hereford (to PNGTS, via Québec)", series: tcm.east_hereford.exports}
+        - {label: "Philipsburg (to Vermont Gas, via Québec)", series: tcm.philipsburg.exports}
+        - {label: "Napierville (to New York, via Québec)", series: tcm.napierville.exports}
+        - {label: "Iroquois at Waddington (to New York)", series: tcm.iroquois.exports}
+    - id: storage
+      title: Storage
+      note: "StatCan monthly (Dawn and the other Ontario fields); no daily public storage flow."
+      rows:
+        - {label: "Ontario storage net withdrawal (monthly)", series: statcan.on.storage_net_withdrawal}
+        - {label: "Ontario inventory (month end)", series: statcan.on.storage}
+    - id: pipelines
+      title: Pipelines (flow vs capacity)
+      rows:
+        - {label: "TC Northern Ontario Line flow (east of Station 41)", series: tcm.area.mb.outflow_est}
+        - {label: "TC Northern Ontario Line capability", series: tcm.nol.capability}
+        - {label: "TC Eastern Delivery Area deliveries", series: tcm.eda.deliveries}
+        - {label: "TC Eastern Delivery Area capability", series: tcm.eda.capability}
+        - {label: "TC capability past Station 148 (Les Cèdres)", series: tcm.stn148.capability}
+        - {label: "TC to the GTA (Central Delivery Area)", series: tcm.cda.deliveries}
+        - {label: "TC to Enbridge Gas at Parkway (net)", series: tcm.parkway.net_deliveries}
+        - {label: "TC to Enbridge Gas at Kirkwall (net)", series: tcm.kirkwall.net_deliveries}
+  power:
+    - id: load_by_zone
+      title: Load by IESO zone
+      note: "IESO's zonal demand file (~1 day late). The Northwest + Northeast zones are the map's mbnwo, but IESO is one balancing authority, so they're in sont's lines (REGIONS rule 2)."
+      rows:
+        - {label: Toronto, series: ieso.zone.toronto.demand}
+        - {label: Southwest, series: ieso.zone.southwest.demand}
+        - {label: Essa, series: ieso.zone.essa.demand}
+        - {label: Ottawa, series: ieso.zone.ottawa.demand}
+        - {label: East, series: ieso.zone.east.demand}
+        - {label: West, series: ieso.zone.west.demand}
+        - {label: Niagara, series: ieso.zone.niagara.demand}
+        - {label: Bruce, series: ieso.zone.bruce.demand}
+        - {label: "Northeast (in mbnwo's outline)", series: ieso.zone.northeast.demand}
+        - {label: "Northwest (in mbnwo's outline)", series: ieso.zone.northwest.demand}
+    - id: interchange_by_tie
+      title: "Interties (IESO, + = Ontario export)"
+      rows:
+        - {label: Québec, series: ieso.intertie.quebec.flow}
+        - {label: New York, series: ieso.intertie.new_york.flow}
+        - {label: Michigan, series: ieso.intertie.michigan.flow}
+        - {label: Minnesota, series: ieso.intertie.minnesota.flow}
+        - {label: Manitoba, series: ieso.intertie.manitoba.flow}
+    - id: plants
+      title: "Largest Ontario plants, live output (IESO, MW)"
+      note: "IESO's generator output report, summed per plant (hourly, live). Nuclear first."
+      rows:
+        - {label: "Bruce (nuclear)", series: ieso.plant.bruce.hourly}
+        - {label: "Darlington (nuclear)", series: ieso.plant.darlington.hourly}
+        - {label: "Pickering (nuclear)", series: ieso.plant.pickering.hourly}
+        - {label: "Lennox (gas/oil)", series: ieso.plant.lennox.hourly}
+        - {label: "Napanee (gas)", series: ieso.plant.napanee.hourly}
+        - {label: "Goreway (gas)", series: ieso.plant.goreway.hourly}
+        - {label: "Halton Hills (gas)", series: ieso.plant.halton_hills.hourly}
+        - {label: "Portlands (gas)", series: ieso.plant.portlands.hourly}
+        - {label: "St. Clair (gas)", series: ieso.plant.st_clair.hourly}
+        - {label: "Greenfield (gas)", series: ieso.plant.greenfield.hourly}
+        - {label: "Brighton Beach (gas)", series: ieso.plant.brighton_beach.hourly}
+        - {label: "York (gas)", series: ieso.plant.york.hourly}
+        - {label: "Thorold (gas)", series: ieso.plant.thorold.hourly}
+        - {label: "Sarnia Regional (gas)", series: ieso.plant.sarnia_regional.hourly}
+    - id: capacity_by_fuel
+      title: Installed capacity by type
+      unit: MW
+      note: "StatCan 25-10-0022-01 (annual, by turbine type: combustion isn't split by fuel), all producers, MW; all of Ontario (the north the map gives mbnwo is inside: StatCan has no split)"
+      rows:
+        - {label: "Hydro (incl. pumped storage)", series: cap.sont.hydro}
+        - {label: "Nuclear", series: cap.sont.nuclear}
+        - {label: "Wind", series: cap.sont.wind}
+        - {label: "Solar", series: cap.sont.solar}
+        - {label: "Steam turbine (coal, gas, oil, biomass)", series: cap.sont.thermal_steam}
+        - {label: "Combustion turbine (mostly gas)", series: cap.sont.thermal_ct}
+        - {label: "Engines (diesel, gas)", series: cap.sont.thermal_ic}
+        - {label: Total, series: cap.sont.total}
+    - id: data_centres
+      title: Data centres
+      note: "IESO publishes no current total: Ontario has ~104 data centres, mostly <= 10 MW (IESO, 2025). The forecast is IESO's 2026 APO reference case."
+      rows:
+        - {label: "Toronto data-centre capacity (CBRE via IESO)", value: 293, unit: MW, as_of: "2023-09",
+           source: "IESO technical paper Large Step Loads (Jul 2025), citing CBRE; capacity, not metered load"}
+        - {label: "Data-centre energy in 2027 (IESO forecast, avg)", value: 514, unit: MW, as_of: "2026",
+           source: "IESO 2026 APO Demand Forecast Module: 4.5 TWh in 2027 (22.6 TWh by 2050)"}

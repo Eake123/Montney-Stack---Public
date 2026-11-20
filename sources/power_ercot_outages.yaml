@@ -1,0 +1,14 @@
+# Texas (ERCOT) generation outages, planned / unplanned / total for dispatchable and renewable generation, hourly means
+# of ERCOT's 5-min dashboard readings (PLAN 9e: the tx region page's `outages` group). Keyless dashboard JSON
+# (generation-outages.json, ~0.5 MB, the last 7 days), one conditional GET an hour. Details:
+# montney/connectors/power_ercot_outages.py.
+id: power_ercot_outages
+name: ERCOT generation outages (planned / unplanned), hourly
+type: python
+module: montney.connectors.power_ercot_outages
+class: ErcotOutages
+mode: cached
+interval: 1h
+region: tx           # sources/BUDGET.yaml
+retention: hourly
+stale_after: 3h       # the snapshot's stale threshold (docs/SOURCES.md): an hour lands ~5 min after it ends + the poll

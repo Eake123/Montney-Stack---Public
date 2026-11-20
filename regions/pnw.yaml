@@ -1,0 +1,213 @@
+# PacNW: WA + OR + ID, plus BC's Lower Mainland / south coast (the clip in wcan.yaml).
+id: pnw
+name: PacNW
+color: "#81c784"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-WA, US-OR, US-ID]
+anchor: [-120.4, 45.4]
+tz: America/Los_Angeles
+budget_region: pnw
+coverage: standard
+gas:
+  # L-106 8c: BC's Lower Mainland is pnw's (the clip from wcan). Research: docs/research/regions/pnw.md
+  # PLAN 9d: one footprint, the two pipes' own postings (NWP all points #523, GTN #524), on the all-Idaho boundary
+  # (regions/pnw.yaml has all of US-ID): demand is now measured deliveries, not derived, so storage implied is a real
+  # number. Balance only on ended gas days (both pipes post today cycle by cycle).
+  through: yesterday
+  production: {parts: [ebb.nwp.pnw.production], covers: [US-WA, US-OR, US-ID, CA-BC], quality: scheduled,
+               note: "NWP's receipts from wells and RNG inside the region (~15-25 MMcf/d); GTN's RNG dairy is in imports
+                 (GTN other receipts)"}
+  imports: {parts: [gtn.kingsgate.receipts, nwp.sumas.receipts, nwp.pegram.net_north, gtn.receipts.ruby_turquoise,
+                    gtn.receipts.other, fortisbc.lower_mainland.demand_est],
+            covers: [US-WA, US-OR, US-ID, CA-BC], quality: estimate,
+            note: "GTN at Kingsgate (from Foothills BC) + NWP at Sumas (the Huntingdon export) + NWP past Pegram (Rockies
+              gas into southern Idaho, net north) + GTN's own receipts (Turquoise Flats off Ruby, Ridge Road, an RNG
+              dairy) + the Lower Mainland's supply off T-South (FortisBC est., ±100; it's in demand too)"}
+  exports: {parts: [gtn.malin.deliveries, gtn.tuscarora.deliveries, nwp.reno_lateral.deliveries],
+            covers: [US-WA, US-OR, US-ID, CA-BC], quality: scheduled,
+            note: "GTN at Malin (California) and into Tuscarora (Nevada), NWP's Reno lateral at Owyhee (to Paiute,
+              Nevada)"}
+  demand: {parts: [ebb.nwp.pnw.ldc, ebb.nwp.pnw.power, ebb.nwp.pnw.industrial, gtn.local.deliveries,
+                   fortisbc.lower_mainland.demand_est, gtn.fuel_linepack],
+           covers: [US-WA, US-OR, US-ID, CA-BC], quality: estimate,
+           note: "measured: NWP's LDC, power and industrial deliveries in WA / OR / ID + GTN's local deliveries (without
+             its gas into NWP at Spokane and Palouse) + the Lower Mainland (FortisBC est. off T-South) + GTN's fuel and
+             linepack (its receipts − deliveries). Not in it: NWP's own fuel (~1 % of its throughput: the residual) and
+             NW Natural's Mist withdrawals straight into its own system (on neither pipe, so demand reads low by them on
+             cold days)"}
+  storage: {parts: [ebb.nwp.pnw.storage_inj, -ebb.nwp.pnw.storage_wd], quality: scheduled,
+            note: "net injection (+ in) on NWP's board: Jackson Prairie, Plymouth LNG and NWP's Mist-linked points.
+              NW Natural's Mist flows into its own system and FortisBC's Tilbury LNG (Lower Mainland) post nothing
+              daily"}
+  inventory: {parts: [pnw.storage.inventory_est], quality: estimate, unit: Bcf,
+              note: "Jackson Prairie (daily) + Mist (EIA's Oregon working gas, latest month)"}
+power:
+  # EIA-930 per BA. Demand is hourly (~1-2 h behind); net generation, interchange and fuels come in EIA's DAILY file
+  # only (8-36 h behind), so load / generation / interchange read power_eia930_nowcast's *_best series: the actual
+  # where posted, else live demand + the BA's net export at the same hour on the latest day (est., ~2 h behind;
+  # backtest MAE 5-13 % of NG). Fuels stay on EIA's daily file (lag: 2d). Interchange: EIA's TI is + export, so each
+  # part is negated (net imports, REGIONS §4); flows between BAs inside the region cancel. BPA (the biggest BA) is
+  # its own 5-min feed instead (power_bpa, ~1 h behind; bpa.interchange.net is already net imports, so not negated).
+  fuels_note: "EIA-930's daily fuel file for all 13 BAs (BPA's too, to keep one source), so the fuels run about a day behind the live generation line; shares are of the fuels' own total."
+  load: {parts: [bpa.load, eia930.pacw.demand_best, eia930.pge.demand_best, eia930.psei.demand_best, eia930.scl.demand_best, eia930.tpwr.demand_best, eia930.ava.demand_best, eia930.chpd.demand_best, eia930.dopd.demand_best, eia930.gcpd.demand_best, eia930.ipco.demand_best], quality: estimate, lag: 2h, note: "BPA's own 5-min feed (power_bpa) + EIA-930's other NW BAs (nowcast, est.): PacifiCorp West, PGE, PSE, Seattle, Tacoma, Avista, Chelan, Douglas, Grant, Idaho Power, Avangrid + Gridforce wind); BC's Lower Mainland isn't in EIA-930"}
+  generation: {parts: [bpa.gen.total, eia930.pacw.net_gen_best, eia930.pge.net_gen_best, eia930.psei.net_gen_best, eia930.scl.net_gen_best, eia930.tpwr.net_gen_best, eia930.ava.net_gen_best, eia930.chpd.net_gen_best, eia930.dopd.net_gen_best, eia930.gcpd.net_gen_best, eia930.ipco.net_gen_best, eia930.avrn.net_gen_best, eia930.grid.net_gen_best], quality: estimate, lag: 2h}
+  interchange: {parts: [bpa.interchange.net, -eia930.pacw.interchange_best, -eia930.pge.interchange_best, -eia930.psei.interchange_best, -eia930.scl.interchange_best, -eia930.tpwr.interchange_best, -eia930.ava.interchange_best, -eia930.chpd.interchange_best, -eia930.dopd.interchange_best, -eia930.gcpd.interchange_best, -eia930.ipco.interchange_best, -eia930.avrn.net_gen_best, -eia930.grid.net_gen_best], quality: estimate, lag: 2h, note: "gen-only BAs (AVRN, GRID): interchange = -net generation (they export all they make)"}
+  fuels:
+    gas: {parts: [eia930.bpat.gen.gas, eia930.pacw.gen.gas, eia930.pge.gen.gas, eia930.psei.gen.gas, eia930.ava.gen.gas, eia930.ipco.gen.gas, eia930.avrn.gen.gas, eia930.grid.gen.gas], lag: 2d}
+    coal: {parts: [eia930.pge.gen.coal, eia930.psei.gen.coal, eia930.grid.gen.coal], lag: 2d}
+    nuclear: {parts: [eia930.bpat.gen.nuclear], lag: 2d}
+    hydro: {parts: [eia930.bpat.gen.hydro, eia930.pacw.gen.hydro, eia930.pge.gen.hydro, eia930.psei.gen.hydro, eia930.scl.gen.hydro, eia930.tpwr.gen.hydro, eia930.ava.gen.hydro, eia930.chpd.gen.hydro, eia930.dopd.gen.hydro, eia930.gcpd.gen.hydro, eia930.ipco.gen.hydro, eia930.avrn.gen.hydro], lag: 2d}
+    wind: {parts: [eia930.bpat.gen.wind, eia930.pacw.gen.wind, eia930.pge.gen.wind, eia930.psei.gen.wind, eia930.ava.gen.wind, eia930.chpd.gen.wind, eia930.ipco.gen.wind, eia930.avrn.gen.wind, eia930.grid.gen.wind], lag: 2d}
+    solar: {parts: [eia930.bpat.gen.solar, eia930.pacw.gen.solar, eia930.psei.gen.solar, eia930.ava.gen.solar, eia930.ipco.gen.solar, eia930.avrn.gen.solar, eia930.grid.gen.solar], lag: 2d}
+    battery: {parts: [eia930.pge.gen.battery, eia930.ipco.gen.battery], lag: 2d}
+    oil: {parts: [eia930.psei.gen.oil, eia930.ipco.gen.oil], lag: 2d}
+    geothermal: {parts: [eia930.ipco.gen.geothermal], lag: 2d}
+    other: {parts: [eia930.bpat.gen.other, eia930.pacw.gen.other, eia930.pge.gen.other, eia930.psei.gen.other, eia930.ava.gen.other, eia930.ipco.gen.other], lag: 2d}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_pnw.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_pnw
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.seattle.tmean
+    - wx.portland.tmean
+    - wx.spokane.tmean
+    - wx.boise.tmean
+    - wx.vancouver.tmean
+    - wx.victoria.tmean
+  hdd: wx.region.pnw.hdd
+  cdd: wx.region.pnw.cdd
+  normals: [wx.region.pnw.hdd_normal, wx.region.pnw.cdd_normal]
+  realized: [wx.region.pnw.hdd.realized, wx.region.pnw.cdd.realized]
+  outlook: [wx.region.pnw.hdd_1_7, wx.region.pnw.hdd_8_15, wx.region.pnw.cdd_1_7, wx.region.pnw.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/pnw.md (shown on the page)
+  - "Huntingdon export at Sumas vs its 1,350 MMcf/d capacity: a full T-South in the cold precedes Sumas spikes"
+  - "Kingsgate vs GTN operating capacity: a GTN or Foothills outage cuts the PacNW and California at once"
+  - "Baker net north, sign and size: net north means the PacNW is short and pulling Rockies gas"
+  - "Jackson Prairie net withdrawal and inventory: the turn to withdrawal comes with the first cold week"
+  - "BPA hydro and net exports: low hydro and imports in a cold week mean more gas burn"
+  - "1-7 and 8-15 day HDD outlook vs normal and yesterday: Arctic outflow is the winter gas spike signal"
+  - "Columbia Generating Station: ~1.15 GW, gone when it refuels"
+  - "Columbia at The Dalles vs normal: below normal means more power imports and more gas burn"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: imports_by_point
+      title: Imports by point
+      rows:
+        - {label: "Kingsgate (Foothills BC into GTN)", series: gtn.kingsgate.receipts}
+        - {label: "Sumas (Westcoast into NWP; the Huntingdon export)", series: nwp.sumas.receipts}
+        - {label: "Baker, OR (NWP from the Rockies, net north)", series: nwp.baker.net_north}
+        - {label: "Lower Mainland supply (FortisBC off Westcoast; est.)", series: fortisbc.lower_mainland.demand_est}
+    - id: exports_by_point
+      title: Exports by point
+      rows:
+        - {label: "Malin (GTN into California)", series: gtn.malin.deliveries}
+        - {label: "Tuscarora (GTN into Nevada)", series: gtn.tuscarora.deliveries}
+    - id: storage
+      title: Storage
+      note: "Flows are + withdrawal / − injection. Mist (NW Natural) posts nothing daily: EIA's Oregon month only."
+      rows:
+        - {label: "Jackson Prairie net withdrawal", series: nwp.jackson_prairie.net_withdrawal}
+        - {label: "Plymouth LNG net withdrawal", series: nwp.plymouth_lng.net_withdrawal}
+        - {label: "Jackson Prairie inventory (whole facility)", series: nwp.jackson_prairie.inventory}
+        - {label: "Jackson Prairie working gas capacity", series: nwp.jackson_prairie.capacity}
+        - {label: "PacNW inventory (JP today + Mist, EIA month)", series: pnw.storage.inventory_est}
+        - {label: "Oregon working gas (EIA monthly; Mist)", series: eia.or.storage.working_gas}
+        - {label: "Washington working gas (EIA monthly; JP)", series: eia.wa.storage.working_gas}
+    - id: pipelines
+      title: Pipelines (flow vs capacity)
+      rows:
+        - {label: "GTN Kingsgate receipts", series: gtn.kingsgate.receipts}
+        - {label: "GTN flow past Kingsgate capacity", series: gtn.kingsgate.capacity}
+        - {label: "GTN Malin deliveries", series: gtn.malin.deliveries}
+        - {label: "GTN Malin delivery capacity", series: gtn.malin.capacity}
+        - {label: "NWP Sumas receipts", series: nwp.sumas.receipts}
+        - {label: "NWP Sumas receipt capacity", series: nwp.sumas.capacity}
+        - {label: "GTN to NWP at Stanfield (net)", series: gtn.stanfield.to_nwp}
+        - {label: "GTN local deliveries (ID / WA / OR)", series: gtn.local.deliveries}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area
+      of: load
+      note: "BPA's own 5-min feed and EIA-930 demand for the other NW BAs (nowcast-cleaned); the sum is the region's load line."
+      rows:
+        - {label: "Bonneville (BPA)", series: bpa.load}
+        - {label: "Puget Sound Energy", series: eia930.psei.demand_best}
+        - {label: "PacifiCorp West", series: eia930.pacw.demand_best}
+        - {label: "Portland General Electric", series: eia930.pge.demand_best}
+        - {label: "Idaho Power", series: eia930.ipco.demand_best}
+        - {label: "Seattle City Light", series: eia930.scl.demand_best}
+        - {label: Avista, series: eia930.ava.demand_best}
+        - {label: "Tacoma Power", series: eia930.tpwr.demand_best}
+        - {label: "Grant County PUD", series: eia930.gcpd.demand_best}
+        - {label: "Chelan County PUD", series: eia930.chpd.demand_best}
+        - {label: "Douglas County PUD", series: eia930.dopd.demand_best}
+    - id: interchange_by_tie
+      title: "BC ties (BC Hydro, + = BC export)"
+      note: "The BC-US tie is pnw's northern border (BC Hydro's sign: + = BC export, i.e. into the US)."
+      rows:
+        - {label: "BC → US (BPA)", series: bch.intertie.bc_us}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Grand Coulee (hydro)", value: 6809, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Chief Joseph (hydro)", value: 1744, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "John Day (hydro)", value: 1485, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Rocky Reach (hydro)", value: 1349, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Wanapum (hydro)", value: 1220, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "The Dalles (hydro)", value: 1206, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Columbia Generating Station (nuclear)", value: 1200, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Boundary (hydro)", value: 1160, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Bonneville (hydro)", value: 980, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Priest Rapids (hydro)", value: 950, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 1 unit, 1,151 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "Columbia Generating Station (MW est.)", series: nrc.columbia.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Hydro", series: cap.pnw.hydro}
+        - {label: "Wind", series: cap.pnw.wind}
+        - {label: "Gas", series: cap.pnw.gas}
+        - {label: "Solar", series: cap.pnw.solar}
+        - {label: "Battery storage", series: cap.pnw.battery}
+        - {label: "Nuclear", series: cap.pnw.nuclear}
+        - {label: "Coal", series: cap.pnw.coal}
+        - {label: "Biomass", series: cap.pnw.biomass}
+        - {label: "Pumped storage", series: cap.pnw.pumped_storage}
+        - {label: "Oil", series: cap.pnw.oil}
+        - {label: "Geothermal", series: cap.pnw.geothermal}
+        - {label: "Other", series: cap.pnw.other}
+        - {label: Total, series: cap.pnw.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists. NPCC's series covers Oregon + Washington (Hillsboro, Quincy, The Dalles); Idaho is small. Epoch AI is the largest AI campuses only (a floor)."
+      rows:
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.pnw.it_mw}
+        - {label: "OR + WA data-centre load in 2024 (NPCC projection)", value: 1100, unit: MW, as_of: "2023-08",
+           source: "NPCC series (Datawrapper M5AKo v6, data of 2023-08-11): OR 564 + WA 535 aMW projected for 2024"}
+        - {label: Estimated data-centre load (avg; EPRI), value: 1340, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: WA 590, OR 732, ID 17 avg MW"}
+        - {label: "OR + WA data-centre load in 2030 (NPCC forecast)", value: 1466, unit: MW, as_of: "2023-08",
+           source: "NPCC series (Datawrapper M5AKo v6, data of 2023-08-11): OR 753 + WA 713 aMW in 2030"}
+  oil:
+    - id: refinery_runs
+      title: "Refinery runs, PADD 5 (CA, WA, OR, AZ, NV, AK, HI)"
+      note: "EIA weekly, week ending Friday. Whole PADD 5, mostly California; Washington's refineries are inside it.
+        Idaho is in PADD 4. EIA's weekly report has no WA / OR split."
+      rows:
+        - {label: PADD 5 crude oil input, series: oil.padd5.refinery_crude_input}
+        - {label: PADD 5 gross input, series: oil.padd5.refinery_gross_input}
+        - {label: PADD 5 operable capacity, series: oil.padd5.refinery_capacity}
+        - {label: PADD 5 utilization, series: oil.padd5.utilization}
+    - id: stocks
+      title: "Stocks, PADD 5 West Coast (CA, WA, OR, AZ, NV, AK, HI)"
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR); Alaska in-transit crude isn't in it."
+      rows:
+        - {label: "PADD 5 crude oil", series: oil.padd5.crude_stocks}
+        - {label: PADD 5 total motor gasoline, series: oil.padd5.gasoline_stocks}
+        - {label: PADD 5 distillate fuel oil, series: oil.padd5.distillate_stocks}

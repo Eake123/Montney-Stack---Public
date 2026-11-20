@@ -1,0 +1,101 @@
+# Energy Transfer interstates' daily scheduled quantities by point, summed per region and category (L-106 regions).
+# Transwestern (sunbelt + its Texas end), Panhandle + Trunkline + Rover (Michigan; their Texas ends), Florida Gas (Texas).
+# One public CSV per pipe and gas day (Messenger iPost, no login) + each pipe's NAESB location file at most weekly.
+# Details, categories and traps: montney/connectors/gas_ebb_et.py. Research: docs/research/pipelines/energy_transfer_and_south.md
+# All values are SCHEDULED (TSQ, Dth/d at 1,037 Btu/cf -> MMcf/d), gas day = ts; as_of = the fetch hour (the CSV
+# carries no post time; a later fetch of the same day is a later cycle).
+id: gas_ebb_et
+name: Interstate EBBs - Energy Transfer (TW, PEPL, TGC, Rover, FGT)
+type: python
+module: montney.connectors.gas_ebb_et
+class: EbbEnergyTransfer
+mode: cached
+interval: 2h           # 5 requests per run + 5 once a day (yesterday's Final) + 4 location files a week: ~65 a day
+region: rest           # multi-region (sunbelt, umw, tx)
+retention: daily
+params:
+  yesterday_after_ct: 11      # yesterday's Final is up by ~10:10 CT (TW 08:22, PEPL 10:06 on 11-13)
+  pipes:
+    tw:
+      title: Transwestern
+      host: https://twtransfer.energytransfer.com
+      asset: TW
+      layout: oa
+      locations: true
+      receipt_default: production      # TW's receipts are plant / gathering outlets
+      emit:
+        sunbelt: [production, power, ldc, industrial, int_in, int_out, other, net]
+        tx: [production, power, ldc, industrial, storage_inj, storage_wd, int_in, int_out, export_mexico, other, net]
+      points:
+        "56698": {cat: int_out, label: PG&E Topock (AZ -> California)}
+        "10487": {cat: int_out, label: SoCal Needles (AZ -> California)}          # reads as an LDC by name
+        "500540": {cat: int_out, label: El Paso Blanco I/C}                       # reads as an LDC by name
+        "61334": {cat: int_out, label: NNG/TW Estes Ward}
+        "78003": {cat: ldc, label: TW/SGTC Mojave (Southwest Gas Transmission, Bullhead City / Laughlin)}
+        "78069": {cat: power, label: Griffith Energy}                              # counterparty UNS Gas
+        "100732": {cat: power, label: Arlington Valley plant}
+        "79040": {cat: power, label: SRP Mesquite}
+        "100835": {cat: int_in, label: Double E Central (pipeline)}
+        "500383": {cat: industrial, label: Nucor Steel Kingman}                    # typed as an interconnect
+        "500515": {cat: int_in, label: Enterprise Waha Pecos (pipeline)}
+        "100718": {cat: export_mexico, series: ebb.tw.tx.mexico_trans_pecos,
+                   label: "Trans-Pecos I/C (toward Presidio / Ojinaga; partial proxy: Trans-Pecos is also fed at Waha)"}
+      borders:
+        az_ca: {points: ["56698", "10487"], flow: D, label: "Arizona -> California (Topock PG&E + Needles SoCal)"}
+        co_nm: {state_net: [CO], label: "Colorado -> New Mexico (San Juan receipts in Colorado, net)"}
+        nm_tx: {state_net: [TX], sign: -1, label: "New Mexico -> Texas (Texas deliveries - Texas receipts)"}
+    pepl:
+      title: Panhandle Eastern
+      host: https://peplmessenger.energytransfer.com
+      asset: PEPL
+      layout: by_location
+      locations: true
+      exclude: ["UNION"]         # Ojibway: stored by gas_pepl_ojibway (pepl.ojibway.deliveries)
+      emit:
+        umw: [production, ldc, power, industrial, int_in, int_out, other, net]
+        tx: [production, int_in, int_out, other, net]
+      points:
+        "UNION": {label: Union Ojibway (Enbridge Gas; stored by gas_pepl_ojibway)}
+      borders:
+        oh_mi: {state_net: [MI], sign: -1, label: "Ohio -> Michigan (Michigan deliveries - receipts; Ojibway included)"}
+        tx_ok: {state_net: [TX], label: "Texas -> Oklahoma (Texas receipts - deliveries)"}
+    tgc:
+      title: Trunkline
+      host: https://peplmessenger.energytransfer.com
+      asset: TGC
+      layout: by_location
+      locations: true
+      emit:
+        tx: [production, ldc, power, industrial, int_in, int_out, other, net]
+      points:
+        "80758": {cat: int_in, label: Trunkline-Matterhorn interconnect}          # typed as a wellhead
+        "80727": {cat: other, label: Eagle Plant Inlet}                          # plant inlet, not demand (Reviewer on #478)
+        "80001": {label: Elkhart - Consumers Energy}
+      borders:
+        in_mi: {points: ["80001"], flow: D, label: "Indiana -> Michigan (Elkhart, into Consumers Energy's line)"}
+        tx_la: {state_net: [TX], label: "Texas -> Louisiana (Texas receipts - deliveries)"}
+    rover:
+      title: Rover
+      host: https://peplmessenger.energytransfer.com
+      asset: ROVER
+      layout: by_location
+      emit:
+        umw: [int_out, net]
+      points:
+        "70013": {label: FIN (Vector Pipeline, Livingston MI)}
+      borders:
+        oh_mi: {state_net: [MI], sign: -1, label: "Ohio -> Michigan (Rover into Vector at FIN)"}
+    fgt:
+      title: Florida Gas
+      host: https://fgttransfer.energytransfer.com
+      asset: FGT
+      layout: oa
+      locations: true
+      unlocated_ok: '\bCS\s*#'   # its compressor-station rows ("(WE) CS #4 Bay City", ...) have ids the location file lacks
+      emit:
+        tx: [production, ldc, power, industrial, storage_inj, storage_wd, int_in, int_out, other, net]
+      points:
+        "100723": {cat: industrial, label: Port Arthur - Motiva refinery}
+        "16494": {cat: industrial, label: Union Carbide - Seadrift}
+      borders:
+        tx_la: {state_net: [TX], label: "Texas -> Louisiana (Texas receipts - deliveries)"}

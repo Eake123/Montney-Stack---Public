@@ -1,0 +1,19 @@
+# US nuclear reactors: each unit's daily power level (% of licensed thermal power) and its MW estimate (x EIA-860M net
+# summer capacity), from the NRC Power Reactor Status Report for the last 365 days (keyless pipe-delimited text,
+# https://www.nrc.gov/.../power-reactor-status-reports/PowerReactorStatusForLast365Days.txt, ~100 KB gzipped).
+# Requests: hourly runs, but a run downloads only while today's (Eastern) report date isn't parsed yet, from 09:00 ET:
+# ~1-2 downloads a day (+1 per restart). Lag: NRC collects 4-8 am ET; the day's rows land by ~09:30 ET (~14:30 UTC).
+# Every US region with reactors at once (cal, pnw, sunbelt, tx, nyc, upne, umw), so budget region `rest`.
+# Details: montney/connectors/power_nrc.py.
+id: power_nrc
+name: NRC reactor power status, daily per unit
+type: python
+module: montney.connectors.power_nrc
+class: NrcReactorStatus
+mode: cached
+interval: 1h
+region: rest          # sources/BUDGET.yaml
+retention: daily
+params:
+  ready_after_et: "09:00"   # before this, yesterday's rows are the newest the file can hold
+  recent_days: 14           # days re-emitted per download after the first (which emits all 366)

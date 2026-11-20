@@ -1,0 +1,29 @@
+# AESO ETS generation outages: MW out by fuel per day (~1 month ahead) and per month (~24 months).
+# Every fetch is kept (as_of: fetch) so outage revisions are visible (forecast tier: thinned, dropped after a year).
+# The realized value (today's row, last fetch of the day wins; as_of = ts) is kept forever (L-036).
+id: aeso_ets_outages
+name: AESO ETS generation outages (daily)
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 30m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention:
+  default: forecast
+  "aeso.outage.*.realized": daily
+params:
+  report: outage_daily
+derive:
+  - id: aeso.outage.gas_total
+    label: AESO gas-fired MW out (SC + cogen + CC + GFS, excl. mothballed)
+    sum: [aeso.outage.sc, aeso.outage.cogen, aeso.outage.cc, aeso.outage.gfs]
+    unit: MW
+    freq: D
+    group: AESO / Outages (daily)
+  - id: aeso.outage.gas_total.realized
+    label: AESO gas-fired MW out, realized (SC + cogen + CC + GFS, excl. mothballed)
+    sum: [aeso.outage.sc.realized, aeso.outage.cogen.realized, aeso.outage.cc.realized, aeso.outage.gfs.realized]
+    unit: MW
+    freq: D
+    group: AESO / Outages (daily)

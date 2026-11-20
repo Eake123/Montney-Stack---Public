@@ -1,0 +1,74 @@
+# NGTL Gas Day Summary Report - the feed behind
+# https://my.tccustomerexpress.com/#GasDaySummaryReport
+# One request per gas day. Each gas day has three views:
+#   volume    -> .flow      extrapolated volume for gas day D   (CSV column "Extrapolated")
+#   prorated  -> .prorated  prorated nominations for gas day D  (CSV column "Prorated")
+#   eight     -> .nom       8:00 nominations for gas day D+1    (CSV column "NextDayNominated")
+# TC publishes deliveries as negatives; we store them as positive magnitudes so
+# exports read naturally. Net storage keeps its sign (+ = net withdrawal into NGTL).
+# Historical data: `uv run montney import-ngtl <csv>` writes the same series ids.
+id: ngtl_gdsr
+name: NGTL Gas Day Summary
+type: http
+mode: cached
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily report values; TC's asofDay revisions are kept as vintages (all four blocks, incl. the 8:00 nom).
+retention: daily
+request:
+  url: https://f51561ras5.execute-api.us-west-2.amazonaws.com/production/gdsr
+  params: {date: "{date}"}
+  iterate: {var: date, days_back: 3, days_forward: -1}   # yesterday back 3 gas days; today 500s until published.
+  # L-081: TC's last revision of a gas day lands ≤ 47 h after it starts (stored vintages, Oct-Nov 2026: P90 1.6 d,
+  # max 1.95 d), so days 4-5 back never changed; reading them hourly was waste (5 → 3 requests an hour).
+  retries: 0
+extract:
+  - &volume
+    path: data.volume
+    ts: {root: data.gasDay, date_only: true}
+    as_of: {root: data.asofDay, tz: America/Edmonton}   # wall clock with DST, like the CSR
+    id: "ngtl.gdsr.{key}.flow"
+    label: "NGTL {label}"
+    group: NGTL / Gas Day - extrapolated
+    freq: D
+    day: gas           # dated by NGTL gas day (starts 15:00 UTC), see montney/connectors/ngtl_gasday.py
+    from: e3m3/d
+    unit: MMcf/d
+    fields: &gdsr_fields
+      field_receipts:     {field: fieldReceipts, label: field receipts}
+      groundbirch_east:   {field: groundBirchEast, label: Groundbirch East}
+      gordondale:         {field: gordondaleBorder, label: Gordondale border}
+      total_receipts:     {field: totalReceipts, label: total receipts}
+      storage_receipts:   {field: storageReceipts, label: storage receipts (withdrawals)}
+      storage_deliveries: {field: storageDeliveries, label: storage deliveries (injections), abs: true}
+      net_storage:        {field: netStorage, label: net storage (+ = withdrawal)}
+      empress:            {field: empressBorder, label: Empress border, abs: true}
+      mcneill:            {field: mcneilBorder, label: McNeill border, abs: true}
+      alberta_bc:         {field: albertaBorder, label: Alberta-BC border, abs: true}
+      willow_valley:      {field: willowValley, label: Willow Valley interconnect, abs: true}
+      other_borders:      {field: otherBorders, label: other borders, abs: true}
+      total_export:       {field: totalExportDeliveries, label: total export deliveries, abs: true}
+      intraprovincial:    {field: intraprovincial, label: intraprovincial, abs: true}
+      storage_plus_intra: {field: totalStorageIntraprovincial, label: storage + intraprovincial, abs: true}
+      total_deliveries:   {field: totalDeliveries, label: total deliveries, abs: true}
+      eod_linepack:       {field: endDayLinepack, label: end of day linepack, from: e3m3, unit: MMcf}
+      linepack_roc:       {field: linepackRateOfChange, label: linepack rate of change, from: e3m3, unit: MMcf}
+      linepack_target:    {field: linepackTarget, label: linepack target, from: e3m3, unit: MMcf}
+      sd_account:         {field: totalSDAccount, label: total SD account, from: TJ, unit: TJ}
+      oba_account:        {field: totalOBAAccount, label: total OBA account, from: TJ, unit: TJ}
+  - <<: *volume
+    path: data
+    id: "ngtl.gdsr.{key}"
+    fields:
+      linepack_change: {field: linepackChange, label: linepack change (last 24h), from: e3m3, unit: MMcf}
+  - <<: *volume
+    path: data.prorated
+    id: "ngtl.gdsr.{key}.prorated"
+    group: NGTL / Gas Day - prorated nom
+    label: "NGTL {label} (prorated)"
+  - <<: *volume
+    path: data.eight
+    ts: {root: data.gasDay, date_only: true, offset_days: 1}
+    id: "ngtl.gdsr.{key}.nom"
+    group: NGTL / Gas Day - 8:00 nom (next day)
+    label: "NGTL {label} (8:00 nom)"

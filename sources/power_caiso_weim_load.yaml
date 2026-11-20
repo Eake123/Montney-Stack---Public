@@ -1,0 +1,17 @@
+# Actual hourly load of every Western EIM (WEIM) balancing area from CAISO OASIS (PLAN 9): BC Hydro's (BCHA) gives the
+# wcan region a BC load ~1 h late instead of BC Hydro's weekday file (1-4.5 days). Keyless OASIS SingleZip,
+# SLD_FCST / ACTUAL, the last 48 h for all ~37 areas in ONE request (~4 KB zip), 4 req/h at 15 min; OASIS asks for
+# <= 1 request per 5 s, so no in-run retries. Lag: an hour lands ~30-40 min after it ends. GMT interval stamps (no
+# local time). Details: montney/connectors/power_caiso_weim.py.
+id: power_caiso_weim_load
+name: CAISO OASIS WEIM actual hourly load by balancing area (BC Hydro + the western WEIM areas)
+type: python
+module: montney.connectors.power_caiso_weim
+class: CaisoWeimLoad
+mode: cached
+interval: 15m
+region: ab_nebc      # wcan (sources/BUDGET.yaml); the other areas are load-only extras for pnw / cal / sunbelt / mtnw
+retention: hourly
+stale_after: 4h       # the snapshot's stale threshold (docs/SOURCES.md): OASIS posts an hour ~30-40 min after it ends
+params:
+  backfill_from: "2026-11-01"   # one-off (Reviewer on #485): the first run reads from here in its one request

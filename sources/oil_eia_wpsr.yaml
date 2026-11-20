@@ -1,0 +1,18 @@
+# EIA Weekly Petroleum Status Report by PADD (REGIONS §5b oil groups refinery_runs + stocks): refinery crude and gross
+# inputs, operable capacity and utilization (PADD 1-5), commercial crude stocks (PADD 1-5 + Cushing, + SPR), total motor
+# gasoline and distillate stocks (PADD 1-5 + sub-PADDs 1A/1B/1C), U.S. totals. FOUR public CSVs at ir.eia.gov/wpsr/
+# (2-8 KB each, no key), only when a release is due: EIA publishes Wednesday 10:30 ET (Thursday after a holiday). Runs
+# every 6 h; a run that already has the newest released week makes no request; a due run probes table4.csv first
+# (conditional GET) and pulls the other three only when it carries a new week. ~4 requests a week, <= 4 a run.
+# kbbl/d, %, kbbl. Details: montney/connectors/oil_eia_wpsr.py
+id: oil_eia_wpsr
+name: EIA weekly petroleum by PADD (WPSR)
+type: python
+module: montney.connectors.oil_eia_wpsr
+class: OilEiaWpsr
+mode: cached
+interval: 6h
+region: rest          # every US region at once (each sits in a PADD)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Weekly report values; each release (as_of = its release date) is a vintage.
+retention: daily

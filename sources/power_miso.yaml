@@ -1,0 +1,14 @@
+# MISO headline: current demand + fuel mix, plus the day's forecast peak and the marginal energy cost from the same
+# Snapshot response (L-096). Source: MISO public real-time JSON (keyless), /api/FuelMix + /api/Snapshot = 2 small
+# requests per run, every 2 h = 1 request/h. LIVE ONLY: never persisted (Erik: headline numbers, few requests).
+# MISO is EST all year (fixed UTC-5, named in the connector). Details: montney/connectors/power_miso.py.
+id: power_miso
+name: MISO demand and fuel mix (headline, live)
+type: python
+module: montney.connectors.power_miso
+class: MisoHeadline
+mode: live
+interval: 2h
+region: midwest      # sources/BUDGET.yaml (L-096); the region row is Database #376 (L-095)
+# Retention tier (docs/db/RETENTION.md spec contract): live = mode: live, held in obs_live (the last fetch only).
+retention: live

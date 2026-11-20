@@ -1,0 +1,500 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "gas.ne_bc",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.85,
+     56.25
+    ]
+   },
+   "properties": {
+    "id": "gas.ne_bc",
+    "kind": "node",
+    "system": "gas",
+    "type": "receipt",
+    "name": "NE BC receipts",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.gas.ne_bc.flow",
+    "unit": "MMcf/d",
+    "capacity": "dev.gas.ne_bc.cap",
+    "callout": {
+     "label": "NE BC receipts",
+     "priority": 3
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.peace",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -118.8,
+     55.17
+    ]
+   },
+   "properties": {
+    "id": "gas.peace",
+    "kind": "node",
+    "system": "gas",
+    "type": "receipt",
+    "name": "Peace River receipts",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.gas.peace.flow",
+    "unit": "MMcf/d",
+    "capacity": "dev.gas.peace.cap"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.ngtl.hub",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -113.5,
+     53.55
+    ]
+   },
+   "properties": {
+    "id": "gas.ngtl.hub",
+    "kind": "node",
+    "system": "gas",
+    "type": "hub",
+    "name": "Central hub",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.gas.hub.flow",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.storage_s",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -112.8,
+     50.6
+    ]
+   },
+   "properties": {
+    "id": "gas.storage_s",
+    "kind": "node",
+    "system": "gas",
+    "type": "storage",
+    "name": "South storage",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.gas.storage.flow",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.empress",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -110.03,
+     50.95
+    ]
+   },
+   "properties": {
+    "id": "gas.empress",
+    "kind": "node",
+    "system": "gas",
+    "type": "border",
+    "name": "Empress",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "ngtl.csr.empress",
+    "unit": "MMcf/d",
+    "capacity": "dev.gas.empress.cap",
+    "callout": {
+     "label": "Empress",
+     "priority": 2
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.mcneill",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -110.0,
+     50.55
+    ]
+   },
+   "properties": {
+    "id": "gas.mcneill",
+    "kind": "node",
+    "system": "gas",
+    "type": "border",
+    "name": "McNeill",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "ngtl.csr.mcneill",
+    "unit": "MMcf/d",
+    "capacity": "dev.gas.mcneill.cap",
+    "callout": {
+     "label": "McNeill",
+     "priority": 2
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.alberta_bc",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.7,
+     49.65
+    ]
+   },
+   "properties": {
+    "id": "gas.alberta_bc",
+    "kind": "node",
+    "system": "gas",
+    "type": "border",
+    "name": "Alberta-BC",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "ngtl.csr.alberta_bc",
+    "unit": "MMcf/d",
+    "capacity": "dev.gas.abbc.cap",
+    "callout": {
+     "label": "Alberta-BC",
+     "priority": 2
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "power.plant.west",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.6,
+     53.55
+    ]
+   },
+   "properties": {
+    "id": "power.plant.west",
+    "kind": "node",
+    "system": "power",
+    "type": "plant",
+    "name": "West-of-Edmonton gen",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.power.west.mw",
+    "unit": "MW",
+    "capacity": "dev.power.west.cap",
+    "callout": {
+     "label": "West gen",
+     "priority": 3
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "power.load.cgy",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -114.0,
+     51.1
+    ]
+   },
+   "properties": {
+    "id": "power.load.cgy",
+    "kind": "node",
+    "system": "power",
+    "type": "hub",
+    "name": "Calgary load",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.power.cgy.mw",
+    "unit": "MW"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.nebc_peace",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -120.85,
+      56.25
+     ],
+     [
+      -118.8,
+      55.17
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.nebc_peace",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.ne_bc \u2192 gas.peace",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l1.flow",
+    "capacity": "dev.gas.l1.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.peace_hub",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -118.8,
+      55.17
+     ],
+     [
+      -113.5,
+      53.55
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.peace_hub",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.peace \u2192 gas.ngtl.hub",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l2.flow",
+    "capacity": "dev.gas.l2.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.hub_abbc",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -113.5,
+      53.55
+     ],
+     [
+      -114.1,
+      51.0
+     ],
+     [
+      -114.7,
+      49.65
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.hub_abbc",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.ngtl.hub \u2192 gas.alberta_bc",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l3.flow",
+    "capacity": "dev.gas.l3.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.hub_empress",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -113.5,
+      53.55
+     ],
+     [
+      -112.0,
+      52.3
+     ],
+     [
+      -110.03,
+      50.95
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.hub_empress",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.ngtl.hub \u2192 gas.empress",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l4.flow",
+    "capacity": "dev.gas.l4.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.storage_mcneill",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -112.8,
+      50.6
+     ],
+     [
+      -110.0,
+      50.55
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.storage_mcneill",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.storage_s \u2192 gas.mcneill",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l5.flow",
+    "capacity": "dev.gas.l5.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.l.empress_storage",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -110.03,
+      50.95
+     ],
+     [
+      -112.8,
+      50.6
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.l.empress_storage",
+    "kind": "link",
+    "system": "gas",
+    "type": "pipeline",
+    "name": "gas.empress \u2192 gas.storage_s",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.gas.l6.flow",
+    "capacity": "dev.gas.l6.cap",
+    "operator": "NGTL",
+    "unit": "MMcf/d"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "power.l.west_cgy",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      -114.6,
+      53.55
+     ],
+     [
+      -113.8,
+      52.3
+     ],
+     [
+      -114.0,
+      51.1
+     ]
+    ]
+   },
+   "properties": {
+    "id": "power.l.west_cgy",
+    "kind": "link",
+    "system": "power",
+    "type": "transmission",
+    "name": "power.plant.west \u2192 power.load.cgy",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "schematic": true,
+    "direction": 1,
+    "value": "dev.power.l1.mw",
+    "capacity": "dev.power.l1.cap",
+    "operator": "AltaLink",
+    "unit": "MW"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "gas.ngtl.egat",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -113.5,
+       50.0
+      ],
+      [
+       -110.0,
+       50.0
+      ],
+      [
+       -110.0,
+       52.2
+      ],
+      [
+       -113.5,
+       52.2
+      ],
+      [
+       -113.5,
+       50.0
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "id": "gas.ngtl.egat",
+    "kind": "area",
+    "system": "gas",
+    "type": "area",
+    "name": "East Gate area (dev)",
+    "source": "schematic: dev fixture (synthetic, approximate points)",
+    "value": "dev.gas.egat.flow",
+    "capacity": "dev.gas.egat.cap",
+    "unit": "MMcf/d",
+    "label_point": [
+     -111.6,
+     51.6
+    ],
+    "callout": {
+     "label": "East Gate (dev)",
+     "priority": 2
+    }
+   }
+  }
+ ],
+ "errors": []
+}

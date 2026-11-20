@@ -1,0 +1,17 @@
+# SoCalGas system (ENVOY Daily Operations): system sendout (incl. SDG&E), southern imports by interstate receipt point,
+# California production, storage net and inventory (L-090). ONE public report per run (~57 KB HTML, gzipped), Dth.
+# Details: montney/connectors/cal_gas.py
+id: gas_socalgas
+name: SoCalGas system (sendout, imports, storage)
+type: python
+module: montney.connectors.cal_gas
+class: GasSoCal
+mode: cached
+# ENVOY updates the actual and today's estimate a few times a day ("Last updated … PCT"): every 2 h.
+interval: 2h
+region: cal          # sources/BUDGET.yaml; Database maps the region
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily values; each update (as_of = ENVOY's "Last updated") is a vintage. Forecast days aren't stored.
+retention: daily
+params:
+  url: https://www.socalgasenvoy.com/Public/ViewExternalDailyOperations.getDailyOperation

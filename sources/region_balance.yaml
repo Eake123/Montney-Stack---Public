@@ -1,0 +1,16 @@
+# The region balances (L-106, docs/REGIONS.md §4): every region file's parts -> the standard region.<r>.* series
+# (gas production / imports / exports / demand / storage implied + measured / residual; power load / generation /
+# interchange / by fuel; oil production). ZERO requests: it reads its inputs back from the store.
+# Method: montney/connectors/region_balance.py. Regions: regions/*.yaml.
+id: region_balance
+name: Region balances (derived, all regions)
+type: python
+module: montney.connectors.region_balance
+class: RegionBalance
+mode: cached
+interval: 15m
+# Reads only; attributed to the home region like the other derived sources.
+# Gas and oil lines are daily/monthly (kept forever); power lines are hourly (2 years, then daily).
+retention:
+  default: daily
+  "region.*.power.*": hourly

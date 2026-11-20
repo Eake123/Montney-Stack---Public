@@ -1,0 +1,20 @@
+# Alberta data-centre load in the AESO connection queue, MONTHLY, for the wcan region page (PLAN 9 data centres).
+# Alberta publishes no operating data-centre MW; this is the queue: the AESO Connection Project List (XLSX, posted early
+# each month), rows whose MW Type contains "Data Load", DTS MW summed over the EN1-EN3 stages (increments), every
+# status still in the queue (Active, ISD Under Review, Cluster N, On Hold). Jul 2026 = 19,565 MW, the GoA headline.
+# Requests, not approvals; not energized load. Index: https://www.aeso.ca/grid/transmission-projects/connection-project-reporting/
+# Requests: the index page 1/day (~79 KB, a 304 when unchanged) + each new month's list once (~50 KB; parsed results
+# cached in <home>/cache/aeso_dc_queue); the first run back-fills the linked lists from `from`. TLS verifies with
+# httpx/certifi as-is. Details: montney/connectors/power_aeso_dc_queue.py.
+id: power_aeso_dc_queue
+name: AESO connection queue, data-centre load (monthly)
+type: python
+module: montney.connectors.power_aeso_dc_queue
+class: AesoDataCentreQueue
+mode: cached
+interval: 1d
+region: ab_nebc      # wcan (sources/BUDGET.yaml)
+retention: daily
+params:
+  from: "2024-11"    # the first list in the current layout (Status, "Data Load", EN1-3 DTS); older ones have neither
+  backfill_per_run: 60

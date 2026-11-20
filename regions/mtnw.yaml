@@ -1,0 +1,222 @@
+# Mountain West: WY + UT + CO (docs/QUESTIONS.md Q-R2). No feeds yet.
+id: mtnw
+name: Mountain West
+color: "#90a4ae"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-WY, US-UT, US-CO]
+anchor: [-108.5, 40.8]
+tz: America/Denver
+budget_region: rockies
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/mtnw.md. PLAN 9d: Kinder Morgan's Rockies boards (CIG, WIC, Cheyenne
+  # Plains, TransColorado) and WBI now post daily, so the (small) imports are wired. The exits stay off: REX, Ruby and
+  # Kern River, most of the Rockies' outflow, block automated reads, and the posted exits (CIG / Cheyenne Plains to
+  # Kansas, CIG to Montana, San Juan to New Mexico, NWP at Baker) are well under half of it: a partial exports line
+  # would mislead. No same-basis daily balance is reachable from public data (production has no daily total either).
+  through: yesterday
+  imports: {parts: [ebb.tcp.border.sunbelt_mtnw, ebb.wbi.border.bakken_wy], scope: posted pipes, quality: scheduled,
+            note: "TransColorado New Mexico → Colorado and WBI into Wyoming (incl. its delivery to WIC; the same
+              series as bakken's export). The Rockies import little; Kern River, REX and Ruby post nothing we may
+              read, so a westbound REX flow or a Kern River backhaul wouldn't show"}
+  why: {exports: "REX, Ruby and Kern River, most of the Rockies' exits, block automated reads"}
+  production: {parts: [{series: eia.wy.marketed_production, fill: latest},
+                       {series: eia.ut.marketed_production, fill: latest},
+                       {series: eia.co.marketed_production, fill: latest}]}
+  demand: {parts: [gas.mtnw.demand_est], quality: estimate, unproven: true,
+           note: "WY + UT + CO: a daily model (gas_region_demand, est.): EIA-930 gas generation x a fitted heat rate
+             + residential/commercial from population-weighted HDD + industrial (same month last year); back-test
+             monthly p90 16.7 %; 2026 drift in EIA's UT/CO/WY power burn. Unproven until checked against daily
+             measured demand, so no storage implied yet"}
+  storage: {lag: 100d, parts: [{series: eia.wy.storage.net_withdrawal, sign: -1, fill: month},
+                    {series: eia.ut.storage.net_withdrawal, sign: -1, fill: month},
+                    {series: eia.co.storage.net_withdrawal, sign: -1, fill: month}],
+            note: "EIA monthly by state (+ injection); EIA weekly Mountain (WY+UT+CO ~61 %): eia.storage.mountain.*"}
+  inventory: {parts: [{series: eia.wy.storage.working_gas, fill: latest},
+                      {series: eia.ut.storage.working_gas, fill: latest},
+                      {series: eia.co.storage.working_gas, fill: latest}], unit: Bcf}
+oil:
+  production: {parts: [{series: eia.wy.crude_production, fill: latest},
+                       {series: eia.ut.crude_production, fill: latest},
+                       {series: eia.co.crude_production, fill: latest}],
+               note: "crude + condensate (EIA crude oil includes lease condensate)"}
+power:
+  # EIA-930 per BA. Demand is hourly (~1-2 h behind); net generation, interchange and fuels come in EIA's DAILY file
+  # only (8-36 h behind), so load / generation / interchange read power_eia930_nowcast's *_best series: the actual
+  # where posted, else live demand + the BA's net export at the same hour on the latest day (est., ~2 h behind;
+  # backtest MAE 5-13 % of NG). Fuels stay on EIA's daily file (lag: 2d). Interchange: EIA's TI is + export, so each
+  # part is negated (net imports, REGIONS §4); flows between BAs inside the region cancel. SPP West is SPP's own
+  # 5-min feed instead (power_spp_west, ~1 h behind; sppw.interchange.net = -NAI, already net imports).
+  fuels_note: "EIA-930's daily fuel file (SPP West's too, to keep one source), so the fuels run about a day behind the live generation line; shares are of the fuels' own total."
+  load: {parts: [eia930.pace.demand_best, eia930.psco.demand_best, sppw.load], quality: estimate, lag: 2h, scope: "incl. SPP West", note: "EIA-930 PacifiCorp East, PSCo (nowcast, est.) + SPP's own SPP West feed (power_spp_west) (WAPA Rocky Mountain + Upper Great Plains since 2026-04, mostly CO/WY; it also reaches NE/SD/MT/ND)"}
+  generation: {parts: [eia930.pace.net_gen_best, eia930.psco.net_gen_best, sppw.gen.total], quality: estimate, lag: 2h, scope: "incl. SPP West"}
+  interchange: {parts: [-eia930.pace.interchange_best, -eia930.psco.interchange_best, sppw.interchange.net], quality: estimate, lag: 2h, scope: "incl. SPP West"}
+  fuels:
+    gas: {parts: [eia930.pace.gen.gas, eia930.psco.gen.gas, eia930.swpw.gen.gas], lag: 2d}
+    coal: {parts: [eia930.pace.gen.coal, eia930.psco.gen.coal, eia930.swpw.gen.coal], lag: 2d}
+    nuclear: {parts: [eia930.swpw.gen.nuclear], lag: 2d}
+    hydro: {parts: [eia930.pace.gen.hydro, eia930.psco.gen.hydro, eia930.swpw.gen.hydro], lag: 2d}
+    wind: {parts: [eia930.pace.gen.wind, eia930.psco.gen.wind, eia930.swpw.gen.wind], lag: 2d}
+    solar: {parts: [eia930.pace.gen.solar, eia930.psco.gen.solar, eia930.swpw.gen.solar], lag: 2d}
+    battery: {parts: [eia930.psco.gen.battery, eia930.swpw.gen.battery], lag: 2d}
+    oil: {parts: [eia930.psco.gen.oil, eia930.swpw.gen.oil], lag: 2d}
+    other: {parts: [eia930.pace.gen.other, eia930.swpw.gen.other], lag: 2d}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_mtnw.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_mtnw
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.denver.tmean
+    - wx.colorado_springs.tmean
+    - wx.salt_lake_city.tmean
+    - wx.ogden.tmean
+    - wx.provo.tmean
+    - wx.cheyenne.tmean
+    - wx.casper.tmean
+    - wx.grand_junction.tmean
+  hdd: wx.region.mtnw.hdd
+  cdd: wx.region.mtnw.cdd
+  normals: [wx.region.mtnw.hdd_normal, wx.region.mtnw.cdd_normal]
+  realized: [wx.region.mtnw.hdd.realized, wx.region.mtnw.cdd.realized]
+  outlook: [wx.region.mtnw.hdd_1_7, wx.region.mtnw.hdd_8_15, wx.region.mtnw.cdd_1_7, wx.region.mtnw.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/mtnw.md (shown on the page)
+  - "SPP West live mix (coal, wind, gas, load): the only part of the region with a live fuel mix"
+  - "Wind vs load, SPP West live and PacifiCorp East / PSCo a day late: a calm, cold day puts gas on the margin"
+  - "1-7 and 8-15 day HDD outlook vs normal and yesterday: Front Range and Wasatch gas demand"
+  - "Region net power exports: a net exporter of ~1.4 GW in late autumn 2026, mostly PacifiCorp East"
+  - "NWP at Baker net north: its sign shows whether the PacNW is short and pulling Rockies gas"
+  - "Casper and Grand Junction cold in the forecast: freeze-off risk in the basins"
+  - "EIA monthly WY / UT / CO production and storage: the supply and storage read when a new month lands"
+  - "Kern River / Mojave into California and Ruby at Malin: the pull of California on Rockies gas"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.mtnw.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.mtnw.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.mtnw.industrial_est}
+        - {label: "Power plants on Kinder Morgan pipes", series: ebb.km.mtnw.power}
+        - {label: "LDC citygates on Kinder Morgan pipes", series: ebb.km.mtnw.ldc}
+        - {label: "Industrial on Kinder Morgan pipes", series: ebb.km.mtnw.industrial}
+    - id: production_by_area
+      title: Production by area
+      note: "Receipts on Kinder Morgan's Rockies boards (CIG, WIC, Cheyenne Plains, El Paso's San Juan,
+        TransColorado). Kern River, REX, Ruby and Dominion's lines post nothing we may read. Scheduled quantities on
+        the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Wyoming marketed production (EIA monthly)", series: eia.wy.marketed_production}
+        - {label: "Colorado marketed production (EIA monthly)", series: eia.co.marketed_production}
+        - {label: "Utah marketed production (EIA monthly)", series: eia.ut.marketed_production}
+        - {label: "Receipts on Kinder Morgan pipes (all)", series: ebb.km.mtnw.production}
+        - {label: "  CIG", series: ebb.cig.mtnw.production}
+        - {label: "  WIC", series: ebb.wic.mtnw.production}
+        - {label: "  Cheyenne Plains", series: ebb.cp.mtnw.production}
+        - {label: "  El Paso (San Juan, Colorado)", series: ebb.epng.mtnw.production}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "TransColorado New Mexico → Colorado", series: ebb.tcp.border.sunbelt_mtnw}
+        - {label: "WIC from WBI (Bakken → Wyoming)", series: ebb.wic.border.bakken_mtnw}
+    - id: exports_by_point
+      title: Exports by point
+      note: "The posted exits only. REX, Ruby and Kern River (the biggest) block automated reads. Scheduled
+        quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "CIG Colorado → Kansas / Oklahoma", series: ebb.cig.border.mtnw_ks}
+        - {label: "Cheyenne Plains Colorado → Kansas", series: ebb.cp.border.mtnw_ks}
+        - {label: "CIG Wyoming → Montana", series: ebb.cig.border.mtnw_bakken}
+        - {label: "Transwestern from Colorado (San Juan → NM)", series: ebb.tw.border.co_nm}
+        - {label: "NWP at Baker, OR (Rockies → PacNW, net)", series: nwp.baker.net_north}
+    - id: storage
+      title: Storage
+      note: "Storage on Kinder Morgan's boards (scheduled, MMcf/d); EIA's monthly working gas (Bcf)."
+      rows:
+        - {label: "Injections on Kinder Morgan pipes", series: ebb.km.mtnw.storage_inj}
+        - {label: "Withdrawals on Kinder Morgan pipes", series: ebb.km.mtnw.storage_wd}
+        - {label: "Wyoming working gas (EIA monthly, Bcf)", series: eia.wy.storage.working_gas}
+        - {label: "Colorado working gas (EIA monthly, Bcf)", series: eia.co.storage.working_gas}
+        - {label: "Utah working gas (EIA monthly, Bcf)", series: eia.ut.storage.working_gas}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area
+      of: load
+      rows:
+        - {label: "PacifiCorp East", series: eia930.pace.demand_best}
+        - {label: "PSCo (Xcel Colorado)", series: eia930.psco.demand_best}
+        - {label: "SPP West (SWPW)", series: sppw.load}
+    - id: interchange_by_tie
+      title: "SPP West ties (SPP's sign, inferred: + = out of SWPW)"
+      note: "SPP's per-tie flows; the sign is inferred from the group (their sum tracks SPP West's net interchange, corr +0.51) and the seven don't close against it (DC ties to SPP East aren't listed), so one tie's sign is unverified."
+      rows:
+        - {label: "to PacifiCorp East", series: sppw.tie.pace.flow}
+        - {label: "to PSCo", series: sppw.tie.psco.flow}
+        - {label: "to NorthWestern (MT)", series: sppw.tie.nwmt.flow}
+        - {label: "to Black Hills", series: sppw.tie.bhba.flow}
+        - {label: "to WAPA Desert SW", series: sppw.tie.walc.flow}
+        - {label: "to APS", series: sppw.tie.aps.flow}
+        - {label: "to PNM", series: sppw.tie.pnm.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Jim Bridger (gas)", value: 2326, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Laramie River Station (coal)", value: 1863, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Hunter (coal)", value: 1472, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Craig (CO) (coal)", value: 1428, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Comanche (CO) (coal)", value: 1253, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Lake Side Power Plant (gas)", value: 1246, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Fort St Vrain (gas)", value: 1148, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Intermountain Power Project (gas)", value: 1093, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Huntington (coal)", value: 1016, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Cherokee (gas)", value: 1006, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.mtnw.gas}
+        - {label: "Coal", series: cap.mtnw.coal}
+        - {label: "Wind", series: cap.mtnw.wind}
+        - {label: "Solar", series: cap.mtnw.solar}
+        - {label: "Battery storage", series: cap.mtnw.battery}
+        - {label: "Hydro", series: cap.mtnw.hydro}
+        - {label: "Pumped storage", series: cap.mtnw.pumped_storage}
+        - {label: "Oil", series: cap.mtnw.oil}
+        - {label: "Geothermal", series: cap.mtnw.geothermal}
+        - {label: "Other", series: cap.mtnw.other}
+        - {label: "Biomass", series: cap.mtnw.biomass}
+        - {label: Total, series: cap.mtnw.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists. EPRI's is a modelled 2023 estimate; Epoch AI is the largest AI campuses only (Meta Cheyenne, Meta Eagle Mountain)."
+      rows:
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.mtnw.it_mw}
+        - {label: Estimated data-centre load (avg; EPRI), value: 677, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: UT 292, WY 212, CO 172 avg MW"}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "EIA monthly, crude incl. lease condensate (~2 months behind)."
+      rows:
+        - {label: "Wyoming crude incl. lease condensate (EIA)", series: eia.wy.crude_production}
+        - {label: "Utah crude incl. lease condensate (EIA)", series: eia.ut.crude_production}
+        - {label: "Colorado crude incl. lease condensate (EIA)", series: eia.co.crude_production}
+    - id: refinery_runs
+      title: "Refinery runs, PADD 4 Rocky Mountain (CO, ID, MT, UT, WY)"
+      note: "EIA Weekly Petroleum Status Report, week ending Friday. PADD 4 adds Idaho and Montana to the region."
+      rows:
+        - {label: PADD 4 crude oil input, series: oil.padd4.refinery_crude_input}
+        - {label: PADD 4 gross input, series: oil.padd4.refinery_gross_input}
+        - {label: PADD 4 operable capacity, series: oil.padd4.refinery_capacity}
+        - {label: PADD 4 utilization, series: oil.padd4.utilization}
+    - id: stocks
+      title: "Stocks, PADD 4 Rocky Mountain (CO, ID, MT, UT, WY)"
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR)."
+      rows:
+        - {label: "PADD 4 crude oil", series: oil.padd4.crude_stocks}
+        - {label: PADD 4 total motor gasoline, series: oil.padd4.gasoline_stocks}
+        - {label: PADD 4 distillate fuel oil, series: oil.padd4.distillate_stocks}

@@ -1,0 +1,15 @@
+# AB + BC gas balance vs storage, daily (L-079, Erik): production − pipeline exports − LNG − AB demand, against NGTL net
+# storage + Aitken Creek net. Reads its inputs back from the store (read-only); writes the balance.ab_bc.* series.
+# Findings and the corrected identity: docs/research/gas-balance.md. Method: montney/connectors/gas_balance.py
+id: gas_balance
+name: AB + BC gas balance vs storage
+type: python
+module: montney.connectors.gas_balance
+class: GasBalance
+mode: cached
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily estimates; each run that changes a gas day is a vintage.
+retention: daily
+params:
+  days: 14     # gas days recomputed each run (inputs from other sources arrive over the following day)

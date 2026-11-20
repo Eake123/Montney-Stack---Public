@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Data: never commit (proprietary exports, local caches)
+*.duckdb
+*.duckdb.wal
+*.csv
+# tiny synthetic test fixtures are allowed (the CI data guard agrees)
+!tests/fixtures/*.csv
+*.xlsx
+data/
+private/
+.env
+.env.*
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Agent harness pause switch (only the main checkout's copy counts; see agents/README.md)
+agents/PAUSE

@@ -1,0 +1,40 @@
+# 16-day city forecasts for the `tx` region (L-106, docs/REGIONS.md): Texas. Open-Meteo, the same connector and terms
+# as sources/weather.yaml (free, no key, personal use): wx.<city>.* per city (tmax, tmin, tmean, precip, wind, hdd, cdd,
+# their normals, realized days) and the region composite wx.region.tx.* (population-weighted HDD / CDD for Gas and Power's
+# demand estimates). ONE batched request per run for all 9 cities (`batch: true`), every 6 h (~0.17 req/h); normals one
+# batched archive request per 30 d. Each city keeps its own named zone, so local days follow its own clock.
+# HDD/CDD base 18 degC, as for every city here (the US convention is 65 degF = 18.3 degC).
+id: weather_tx
+name: Weather - Texas cities, 16 day forecast
+region: tx
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:             # as sources/weather.yaml: run vintages are `forecast`; ended-day actuals `daily` (L-038/L-039)
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Chicago
+  locations:
+    - {name: Houston, lat: 29.76, lon: -95.37}
+    - {name: Dallas-Fort Worth, lat: 32.78, lon: -96.80}
+    - {name: San Antonio, lat: 29.42, lon: -98.49}
+    - {name: Austin, lat: 30.27, lon: -97.74}
+    - {name: El Paso, lat: 31.80, lon: -106.40, tz: America/Denver}   # inland of the coarse outline
+    - {name: McAllen, lat: 26.20, lon: -98.23}
+    - {name: Corpus Christi, lat: 27.75, lon: -97.45}   # inland of the coarse outline
+    - {name: Lubbock, lat: 33.58, lon: -101.86}
+    - {name: Midland, lat: 32.00, lon: -102.08}
+  composites:
+    # Weights = 2020 US Census MSA population (El Paso MSA is Texas only). Only the ratios matter.
+    - id: region.tx
+      name: Texas (9-city pop. wtd)
+      weights: {houston: 7122240, dallas_fort_worth: 7637387, san_antonio: 2558143, austin: 2283371, el_paso: 868859, mcallen: 870781, corpus_christi: 421933, lubbock: 321368, midland: 175220}

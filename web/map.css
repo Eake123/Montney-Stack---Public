@@ -1,0 +1,506 @@
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap;
+  src: url("vendor/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 500; font-display: swap;
+  src: url("vendor/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700; font-display: swap;
+  src: url("vendor/fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  --bg: #050907; --panel: rgba(8, 14, 11, 0.86); --line: #142219; --line-2: #1d3227;
+  --text: #d3ece0; --muted: #6e8d7f; --dim: #3b574a;
+  --jade: #00c98b; --jade-hi: #3dffb8; --jade-lo: #00825a;
+  --up: #3dffb8; --down: #ff4d6d; --amber: #ffb547; --crit: #ff4d6d;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  font: 12px/1.35 var(--mono); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+a { color: var(--jade); }
+.dim { color: var(--muted); }
+#map { position: absolute; inset: 0; }
+#wind, #overlay { position: absolute; inset: 0; pointer-events: none; }
+#overlay { z-index: 2; }   /* boxes above the weather readout (#hover, L-074), below the HUD panels (3) */
+#wind { width: 100%; height: 100%; }   /* drawn in device pixels; a canvas doesn't stretch to inset: 0 (L-068: 2.6× on a phone) */
+#leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+#hover { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; background: rgba(6, 11, 9, .86); border: 1px solid var(--line-2);
+  border-radius: 3px; padding: 2px 6px; font-size: 11px; white-space: nowrap; }
+.maplibregl-ctrl-attrib { background: rgba(5, 9, 7, .78) !important; color: var(--muted); font: 10px var(--mono); }
+.maplibregl-ctrl-attrib a { color: var(--muted); }
+.maplibregl-ctrl-bottom-right { bottom: 74px; }
+.maplibregl-ctrl-attrib.maplibregl-compact-show { max-width: 560px; }
+
+.hud { position: absolute; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; backdrop-filter: blur(6px); z-index: 3; }
+.brandbox { left: 10px; top: 10px; padding: 6px 10px; }
+.brand { font-weight: 700; letter-spacing: .08em; color: var(--jade-hi); white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.brand .sl { color: var(--dim); }
+.clock { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.clock b { color: var(--text); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); display: inline-block; }
+.dot.ok { background: var(--jade); box-shadow: 0 0 5px var(--jade); }
+.dot.err { background: var(--down); box-shadow: 0 0 5px var(--down); }
+/* storage budget (web/status.js): warn = amber; blocked = a red SQUARE, writes stopped (shape, not just colour) */
+.dot.warn { background: var(--amber); box-shadow: 0 0 5px var(--amber); }
+.dot.blocked { background: var(--down); box-shadow: 0 0 5px var(--down); border-radius: 1px; }
+.runner { font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 0 4px; border-radius: 2px; vertical-align: 1px; }
+.runner.stale { color: var(--bg); background: var(--amber); }
+.runner.down { color: #fff; background: var(--down); }
+/* the ☰ menu (L-097, web/sysmenu.js): a button at the start of the header; a compact panel with Sources and System tabs */
+.menubtn { background: none; border: 0; padding: 0 2px; margin: 0; color: var(--jade-hi); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.menubtn[aria-expanded="true"] { color: var(--text); }
+.sysmenu { left: 10px; top: 58px; width: 340px; max-width: calc(100% - 20px); max-height: calc(100% - 150px); display: flex;
+  flex-direction: column; font-size: 11px; z-index: 6; }
+.sysmenu[hidden] { display: none; }
+.smhead { display: flex; align-items: center; border-bottom: 1px solid var(--line-2); }
+.smtabs { display: flex; flex: 1; }
+.smtabs button, .smx { background: none; border: 0; color: var(--muted); font: inherit; padding: 7px 10px; cursor: pointer; letter-spacing: .06em; text-transform: uppercase; }
+.smtabs button[aria-selected="true"] { color: var(--jade-hi); box-shadow: inset 0 -2px 0 var(--jade); }
+.smbody { overflow-y: auto; padding: 6px 10px 10px; }
+.smsum { margin-bottom: 4px; }
+.srclist { list-style: none; margin: 0; padding: 0; }
+.srclist li { display: grid; grid-template-columns: 12px 1fr auto 26px; align-items: center; gap: 6px; padding: 2px 2px; border-radius: 3px; }
+.srclist li:hover { background: rgba(61, 255, 184, .05); }
+.srclist .rf { background: none; border: 1px solid var(--line-2); border-radius: 3px; color: var(--jade); font: inherit; font-size: 13px; line-height: 1; height: 22px; padding: 0; cursor: pointer; }
+.srclist .rf:hover:not(:disabled), .srclist .rf:focus-visible { color: var(--jade-hi); border-color: var(--jade); outline: none; }
+.srclist .rf:disabled { opacity: .35; cursor: default; }
+.srclist .sn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.srclist li.queued .sa { color: var(--jade-hi); }
+.smsec { margin: 8px 0 3px; color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.smsec .dim { text-transform: none; letter-spacing: 0; }   /* "measured 16m ago", not "16M AGO" */
+.smrow { display: grid; grid-template-columns: 54px 1fr auto; align-items: center; gap: 8px; padding: 2px 0; }
+.smrow .n, .smt .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.smnote { font-size: 10px; margin: 1px 0 2px; }
+.smt { width: 100%; border-collapse: collapse; }
+.smt td { padding: 2px 0; } .smt td.n { padding-left: 10px; }
+.smt tr.tot td { border-top: 1px solid var(--line-2); font-weight: 700; padding-top: 3px; }
+.sbar { display: block; height: 6px; background: rgba(110, 141, 127, .18); border-radius: 2px; overflow: hidden; }
+.sbar i { display: block; height: 100%; background: var(--jade); }
+.sbar.warn i { background: var(--amber); } .sbar.over i { background: var(--down); }
+.devbanner { margin-top: 4px; color: var(--bg); background: var(--amber); font-weight: 700; font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+.up { color: var(--up); } .down { color: var(--down); }
+
+/* ---- callouts */
+/* --a is the fade (callouts.js render); off-now dims it further */
+.callout { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; background: rgba(6, 11, 9, .84); opacity: var(--a, 1);
+  border: 1px solid transparent; padding: 3px 7px 4px; min-width: 104px; backdrop-filter: blur(3px); }
+/* Pixel frame (Art, L-041 Q10): a 9-slice with 4 px fixed corners, drawn as a non-interactive overlay on the box's
+   outer edge. The box keeps its P4a size, padding, hit target and translucent background; only the 1 px border is
+   now transparent under the frame. */
+.callout::before { content: ""; position: absolute; inset: -1px; pointer-events: none; box-sizing: border-box;
+  border: 4px solid transparent; border-image: url("sprites/callout-frame.png") 4 / 4px / 0 stretch; image-rendering: pixelated; }
+@media (min-resolution: 1.5dppx) { .callout::before { border-image-source: url("sprites/callout-frame@2x.png"); border-image-slice: 8; } }
+/* The frame's corners are stepped: its 3 transparent pixels at each corner, (0,0) (1,0) (0,1), are clipped from the box
+   too, so the map shows through instead of a square of the translucent background (Reviewer, #120). The clip changes no
+   layout, size or hit area beyond those 12 pixels, and it clips the backdrop blur with it. */
+.callout { clip-path: polygon(0 2px, 1px 2px, 1px 1px, 2px 1px, 2px 0,
+  calc(100% - 2px) 0, calc(100% - 2px) 1px, calc(100% - 1px) 1px, calc(100% - 1px) 2px, 100% 2px,
+  100% calc(100% - 2px), calc(100% - 1px) calc(100% - 2px), calc(100% - 1px) calc(100% - 1px), calc(100% - 2px) calc(100% - 1px), calc(100% - 2px) 100%,
+  2px 100%, 2px calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 2px), 0 calc(100% - 2px)); }
+/* Borders by system (PLAN 4b; step 7, Erik: "they're both just gray"): the frame's keyline mapped to a clear orange (gas)
+   or blue (power) by the index.html filters (exact per-pixel colour, the pixel art stays crisp), plus a 1 px line of the
+   same colour just inside it (a 2 px inset, its outer pixel under the keyline), so the band is 2 px at any scaling.
+   Gas #ff6b1a is a red-orange, well clear of the alert amber #ffb547. A merged gas + power box stays neutral. */
+.callout.gas::before { filter: url(#tint-gas); }
+.callout.power::before { filter: url(#tint-power); }
+.callout.gas { box-shadow: inset 0 0 0 2px rgba(255, 107, 26, .75); }
+.callout.power { box-shadow: inset 0 0 0 2px rgba(61, 155, 255, .75); }
+/* hover: a jade line just inside the frame's keyline (inset, so the clip keeps it; the frame covers the outer 2 rows) */
+.callout:hover { box-shadow: inset 0 0 0 3px var(--jade); }
+.callout .row + .row { border-top: 1px solid var(--line-2); margin-top: 3px; padding-top: 3px; }
+.callout .row:hover .k { color: var(--jade-hi); }
+.callout .row.stale .v { color: var(--muted); }
+.callout .k { color: var(--muted); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.callout .vv { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.callout .v { font-size: 15px; font-weight: 700; }
+.callout .u, .panel .u { color: var(--muted); font-size: 9px; }
+.callout .est { color: var(--muted); }
+.callout .live { display: none; font-size: 8px; color: var(--amber); border: 1px solid var(--amber); border-radius: 2px; padding: 0 3px; }
+.chip { font-size: 9px; padding: 0 4px; border-radius: 3px; margin-left: 2px; white-space: nowrap; }
+.chip.up { background: rgba(61, 255, 184, .12); color: var(--up); }
+.chip.down { background: rgba(255, 77, 109, .14); color: var(--down); }
+.chip.stale { background: rgba(255, 181, 71, .16); color: var(--amber); }
+.chip.noresult { background: rgba(127, 148, 138, .18); color: var(--muted); }   /* not an alert: data too thin */
+.callout .cx { position: absolute; top: 1px; right: 2px; background: none; border: 0; color: var(--muted); font: 10px var(--mono);
+  cursor: pointer; padding: 0 2px; line-height: 1; }   /* a pinned box's close (PLAN 4c) */
+.callout .cx:hover { color: var(--jade-hi); }
+.callout .row.sub { padding-left: 10px; border-left: 1px solid var(--line-2); margin-left: 2px; }   /* a part of the row above */
+.callout .row.sub .v { font-size: 12px; }
+.callout .row + .row.sub { border-top: 0; margin-top: 1px; padding-top: 1px; }
+/* nested parts (L-073): a row with parts toggles them from its label; ▸ closed, ▾ open */
+.callout .row.parent > .k { cursor: pointer; }
+.callout .row.parent > .k:hover { color: var(--jade-hi); }
+.callout .row .tw { color: var(--jade); }
+.callout .row.head .hd { color: var(--muted); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }   /* merged-box sections */
+.callout .row.head.title .hd { color: #d3ece0; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+.callout .row.head:not(.title) { margin-top: 4px; }
+/* Every box's header (L-072, Erik: "all the main boxes should look like the demand one, where the header is bolded"):
+   a box without a title head shows its first row's label in the title style. It is also the fold target (#276). */
+.callout > .row:first-of-type:not(.head) > .k { color: #d3ece0; font-weight: 700; }   /* bold at the label size: boxes keep their width */
+.callout .agg { color: var(--muted); font-size: 8px; letter-spacing: .02em; }
+.callout .share { font-size: 10px; font-weight: 700; white-space: nowrap; }   /* PLAN 4c: colour set inline by size */
+/* L-106 (#428/#433): a late-by-design row (lib.js lateAge): muted value, its age after the unit */
+.callout .row.late .v { opacity: 0.6; }
+.callout .age, .panel .age { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 3px; }
+/* L-106 region colours: a region box carries its region's colour (callouts.js sets --region from the feature's `color`):
+   a 3 px left edge inside the frame and the title text, so box and area read as one */
+/* PLAN 9 rule 4: the whole border in the region's colour (as its outline), so the eye links box and territory */
+.callout[data-region] { box-shadow: inset 0 0 0 2px var(--region); }
+.callout[data-region]:hover { box-shadow: inset 0 0 0 2px var(--region), inset 0 0 0 3px var(--jade); }
+/* PLAN 9 forms (regionlayout.js): compact = title + its two headline numbers; chip = the title alone */
+.callout[data-form="compact"] .row:not(.title):not([data-compact="1"]), .callout[data-form="compact"] .more,
+.callout[data-form="chip"] .row:not(.title), .callout[data-form="chip"] .more { display: none !important; }
+.callout[data-form="chip"] { min-width: 0; padding: 2px 7px 3px; }
+.callout[data-form="chip"] .row.head.title .hd::after { content: ""; }
+.rdot { stroke: #020504; stroke-width: 1; }
+/* PLAN 9 part 2: a region box stays narrow (its labels and tags ellipsise; the full text is on hover), so it fits its region */
+.callout.regionbox { max-width: 230px; backdrop-filter: none; }   /* no blur: a region box that runs off the screen edge over the
+   weather field painted black in Chromium (PLAN 9 proof); its background is already 84 % opaque */
+.callout.regionbox .k { overflow: hidden; text-overflow: ellipsis; }
+/* a v2 row without a value ("—", dimmed) and its quiet tags (est., scope) */
+.callout .row.nov .v, .callout .row.nov .u { color: var(--muted); opacity: .6; }
+.callout .qt { margin-left: 5px; color: var(--muted); font-size: 8px; letter-spacing: .04em; text-transform: none; opacity: .8; }
+.callout[data-region] .row.head.title .hd { color: var(--region); }
+/* L-106 8a: a region box's title opens the region panel */
+.callout[data-opens] .row.head.title { cursor: pointer; }
+.callout[data-opens] .row.head.title .hd::after { content: " ›"; color: var(--muted); }
+/* L-106 8a: a region fuel row's share as a 28 px bar before its % (colour set inline, as the % is) */
+.callout .sbar { display: inline-block; width: 28px; height: 4px; margin: 0 3px 1px 4px; vertical-align: middle;
+  background: rgba(211, 236, 224, 0.12); }
+.callout .sbar i { display: block; height: 100%; }
+/* pixel leader (L-041 Q10): 1 px line on a 3 px casing, crisp; region/system leaders stay dashed */
+.leader-case { stroke: #020504; stroke-width: 3; shape-rendering: crispEdges; }
+.leader { stroke: #7f948a; stroke-width: 1; shape-rendering: crispEdges; }
+.leader.region, .leader-case.region { stroke-dasharray: 3 3; }
+.cap-case { fill: #020504; shape-rendering: crispEdges; }
+.cap { fill: #d3ece0; shape-rendering: crispEdges; }
+.ring { fill: none; stroke: rgba(211, 236, 224, .7); stroke-width: 1; stroke-dasharray: 2 2; }
+.rlab { fill: rgba(211, 236, 224, .75); font: 9px var(--mono); letter-spacing: .1em; text-anchor: middle;
+  paint-order: stroke; stroke: rgba(2, 5, 4, .8); stroke-width: 3px; }
+
+/* ---- slider off NOW: the network is still live; say so (map layers are dimmed in JS) */
+.off-now .callout { opacity: calc(var(--a, 1) * .8); }
+.off-now .callout .live { display: inline; }
+.off-now .netlive { color: var(--bg); background: var(--amber); padding: 1px 5px; border-radius: 3px; font-weight: 700; display: inline-block; margin-top: 2px; }
+.off-now .nowbtn { color: var(--bg) !important; background: var(--jade) !important; border-color: var(--jade) !important; }
+
+/* ---- layers */
+.layers { left: 10px; top: 66px; padding: 8px 10px; display: grid; gap: 3px; }
+.layers .h, .panel .h, .panel .evh { color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+.layers label { display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
+.layers input { accent-color: var(--jade); margin: 0; }
+.layers .op { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.layers .op input { width: 80px; }
+.layers .bs { color: var(--muted); font-size: 10px; margin-top: 2px; }   /* battery saver toggle (L-080) */
+
+/* ---- drill-down panel */
+.panel { right: 10px; top: 10px; width: 330px; padding: 10px 12px; max-height: calc(100% - 110px); overflow: auto; }
+.panel .x { float: right; background: none; border: 0; color: var(--muted); cursor: pointer; }
+.panel .name { font-weight: 700; color: var(--jade-hi); margin: 2px 0 6px; }
+/* PLAN 10d: a plant's fuel beside its name: the map sprite + the fuel word */
+.panel .fuelchip { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 6px 1px 3px; border-radius: 3px;
+  border: 1px solid var(--line-2); color: var(--text); font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; vertical-align: 2px; white-space: nowrap; }
+.panel .fuelchip.unk { color: var(--muted); font-weight: 400; }
+/* PLAN 10c: out of service / idle, in plain words under the headline */
+.panel .pstate { font-size: 11px; margin: 2px 0 4px; color: var(--text); }
+.panel .pstate.off { color: var(--muted); font-weight: 700; letter-spacing: .03em; }
+.panel .fuelchip .fspr { display: inline-block; background-image: url("/static/sprites/nodes.png"); background-repeat: no-repeat;
+  image-rendering: pixelated; flex: none; }
+.panel .chartnote { font-size: 9px; margin: 2px 0 4px; }   /* dated / widened chart context */
+.panel .big { font-size: 26px; font-weight: 700; }
+.panel .est { color: var(--muted); font-size: 12px; }
+.panel .basis { color: var(--muted); font-size: 9px; margin-top: 2px; }
+.panel .ranges { margin-top: 8px; display: flex; gap: 4px; }
+.panel .ranges button { background: none; border: 1px solid var(--line-2); border-radius: 3px; color: var(--muted); font-size: 10px; padding: 0 6px; cursor: pointer; }
+.panel .ranges button.on { color: var(--bg); background: var(--jade); border-color: var(--jade); }
+.panel .chart { margin-top: 4px; min-height: 120px; color: var(--muted); font-size: 11px; }
+.panel table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+.panel td { padding: 2px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.panel td:last-child { text-align: right; }
+.panel .evh { margin-top: 10px; }
+.ev { display: grid; grid-template-columns: 8px 1fr; gap: 0 6px; padding: 3px 0; border-top: 1px solid var(--line); font-size: 11px; }
+.ev .sev, .tk .sev { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-top: 4px; display: inline-block; }
+.ev.warn .sev, .tk.warn .sev { background: var(--amber); }
+.ev.crit .sev, .tk.critical .sev { background: var(--crit); }
+.ev .w { grid-column: 2; color: var(--muted); font-size: 10px; }
+.evbody p { color: var(--text); font-size: 11px; }
+.uplot { font-family: var(--mono); }
+.u-legend { font-size: 10px; color: var(--muted); }
+
+/* ---- legend */
+.legend { left: 10px; bottom: 86px; padding: 6px 10px; width: 300px; }
+.legend .bar { height: 8px; border-radius: 2px; margin: 4px 0 2px; }
+.legend .lab { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+.legend .ticksl { position: relative; height: 12px; color: var(--muted); font-size: 9px; }
+.legend .ticksl span { position: absolute; transform: translateX(-50%); }
+.legend .row { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; margin-top: 5px; }
+.legend .schem { color: var(--dim); }
+.legend .sw { width: 26px; height: 4px; border-radius: 2px; }
+.legend .sw.gas { background: linear-gradient(90deg, #7f948a, #eef6f2 60%, #ffb547 85%, #ff4d6d); }
+.legend .sw.pow { background: repeating-linear-gradient(90deg, #c9a2ff 0 6px, transparent 6px 9px); }
+
+/* ---- time bar + ticker */
+.timebar { left: 10px; right: 10px; bottom: 10px; padding: 6px 10px 4px; }
+.tb { display: flex; gap: 10px; align-items: center; }
+.tb button { background: var(--jade); color: var(--bg); border: 0; border-radius: 4px; min-width: 30px; height: 24px; cursor: pointer; font-weight: 700; }
+.tb .nowbtn { padding: 0 8px; background: transparent; color: var(--muted); border: 1px solid var(--line-2); }
+.track { flex: 1; position: relative; padding-bottom: 12px; }
+.track input { width: 100%; accent-color: var(--jade); margin: 0; }
+.ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; color: var(--dim); font-size: 9px; }
+.ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.nowmark { position: absolute; top: -2px; width: 2px; height: 18px; background: var(--amber); opacity: .7; pointer-events: none; }
+.when { min-width: 210px; text-align: right; color: var(--jade-hi); font-weight: 700; line-height: 1.2; }
+.netlive { color: var(--muted); font-size: 10px; font-weight: 400; }
+.tb2 { display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); margin-top: 4px; padding-top: 3px; font-size: 10px; min-width: 0; }
+.wxstatus { color: var(--muted); white-space: nowrap; }
+.ticker { display: flex; gap: 14px; overflow: hidden; white-space: nowrap; min-width: 0; flex: 1; }
+.tk { background: none; border: 0; padding: 0; cursor: pointer; color: var(--text); font-size: 10px; display: inline-flex; gap: 5px; align-items: center; }
+.tk .sev { margin-top: 0; }
+.tk:hover { color: var(--jade-hi); }
+
+.empty { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); z-index: 4; background: var(--panel);
+  border: 1px dashed var(--line-2); border-radius: 6px; padding: 10px 14px; color: var(--muted); max-width: 420px; text-align: center; }
+.toast { position: fixed; right: 12px; bottom: 96px; z-index: 9; background: var(--panel); border: 1px solid var(--line-2);
+  border-left: 3px solid var(--jade); padding: 6px 10px; border-radius: 4px; max-width: 420px; }
+.toast.err { border-left-color: var(--down); }
+/* Small screens (L-068, Erik's phone over Tailscale; a minimal port, box layout unchanged). Narrow (portrait) or short
+   (landscape): the layers list and legend fold behind the ☰ button, and scroll if they don't fit. */
+.hudtoggle { display: none; right: 10px; top: 10px; width: 44px; height: 44px; padding: 0; font-size: 20px; color: var(--jade-hi); cursor: pointer; }
+.hudtoggle svg { display: block; margin: auto; }
+@media (max-width: 900px), (max-height: 500px) {
+  .hudtoggle { display: block; }
+  .brandbox { max-width: calc(100% - 74px); overflow: hidden; }   /* clear of the layers button */
+  .sysmenu { top: 64px; max-height: calc(100% - 160px); }
+  .layers, .legend { display: none; }
+  body.hud-open .layers, body.hud-open .legend { display: grid; }
+  body.hud-open .legend { display: block; }
+  .layers { max-height: calc(100% - 66px - 96px); overflow: auto; }
+  .legend { width: min(300px, calc(100% - 20px)); }
+}
+@media (max-width: 900px) {   /* portrait: the panel is a bottom sheet over the time bar */
+  .panel { left: 10px; right: 10px; top: auto; bottom: 90px; width: auto; max-height: 45%; }
+}
+@media (max-height: 500px) {   /* landscape: layers and legend side by side, the panel within the height */
+  .legend { left: 170px; top: 66px; bottom: auto; max-height: calc(100% - 66px - 96px); overflow: auto; }
+  .panel { top: 62px; max-height: calc(100% - 62px - 86px); }   /* below the ☰ button, above the time bar */
+}
+/* Compact boxes (L-069; callouts.js isCompact, by the map's size): narrower, the label truncates (full text in the
+   tooltip and the panel), value + share only (no ± text, no change chip; STALE / NO-RESULT stay), "+N" folded rows */
+#callouts.compact .callout { max-width: 200px; overflow: hidden; }
+#callouts.compact .callout.open { overflow-y: auto; overflow-x: hidden; }   /* an open box still scrolls (the line above outranks .callout.open) */
+#callouts.compact .callout .k { overflow: hidden; text-overflow: ellipsis; }
+#callouts.compact .callout:not(.open) .bd { display: none; }   /* folded: value, share, daily change */
+#callouts.compact .callout .v { font-size: 14px; }
+#callouts.compact .callout .vv { flex-wrap: wrap; row-gap: 0; }   /* a long value line wraps its chip, never clips it */
+/* fold / expand (L-070, every screen): "+N ▾" on a folded box, "▴" on an open one */
+.callout .more { display: block; text-align: right; color: var(--jade); font-size: 10px; line-height: 1; margin: 0 -7px -4px; padding: 2px 7px 4px; cursor: pointer; }
+.callout .more[hidden] { display: none; }
+/* an open box never runs past the screen (L-073: nested parts can make it tall): it scrolls, and its ▴ stays in view */
+/* an open box scrolls vertically only (L-074: overflow-y alone makes x auto too, and the scrollbar's width then pushed
+   the no-wrap rows sideways): the gutter is reserved so nothing is squeezed, and the bar is thin in the house look */
+.callout.open { max-height: calc(100dvh - 160px); overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; overscroll-behavior: contain; }
+.callout.open .more { position: sticky; bottom: -4px; background: rgba(6, 11, 9, .96); }
+.callout .more:hover { color: var(--jade-hi); }
+/* an open box's header folds it (L-070): a headline row's label and the ▴ strip */
+.callout.open .row[data-lead="1"] > .k { cursor: n-resize; }
+.callout.open .row[data-lead="1"] > .k:hover, .callout.open .more:hover { color: var(--jade-hi); }
+@media (pointer: coarse) { .callout .more { padding: 6px 7px 6px; font-size: 12px; } }
+/* the ⓘ credits stay above the bottom sheet and boxes (Reviewer on #271: attribution is a terms requirement) */
+.maplibregl-ctrl-bottom-right { z-index: 4; }
+/* Touch: close buttons big enough for a finger */
+@media (pointer: coarse) {
+  .panel .x { min-width: 40px; min-height: 40px; font-size: 18px; margin: -8px -8px 0 0; }
+  .callout .cx { min-width: 28px; min-height: 28px; font-size: 14px; top: -2px; right: -2px; }
+}
+
+/* river gauge legend swatches (web/gauges.js BAND_COLOR) */
+.gsw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #5aa9e6; margin: 0 1px; vertical-align: -1px; }
+
+/* Scrollbars in the house look (L-074, Erik): thin, a dark track, a muted thumb like the box frame */
+.callout.open, .panel, .layers { scrollbar-width: thin; scrollbar-color: #3b574a rgba(2, 5, 4, .6); }
+.callout.open::-webkit-scrollbar, .panel::-webkit-scrollbar, .layers::-webkit-scrollbar { width: 6px; height: 0; }
+.callout.open::-webkit-scrollbar-track, .panel::-webkit-scrollbar-track, .layers::-webkit-scrollbar-track { background: rgba(2, 5, 4, .6); }
+.callout.open::-webkit-scrollbar-thumb, .panel::-webkit-scrollbar-thumb, .layers::-webkit-scrollbar-thumb { background: #3b574a; border-radius: 3px; }
+.callout.open::-webkit-scrollbar-thumb:hover, .panel::-webkit-scrollbar-thumb:hover, .layers::-webkit-scrollbar-thumb:hover { background: #6e8d7f; }
+/* A tap on a box or the map chrome selects nothing and flashes nothing (L-074, Erik's phone); the panel stays selectable */
+#map, #callouts, .callout, .hud:not(.panel), .maplibregl-ctrl { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+
+/* Panel action (L-075): e.g. "Top producers in Alberta ›" */
+.panel .act { display: block; margin: 0 0 6px; padding: 3px 8px; background: none; border: 1px solid var(--jade); border-radius: 3px;
+  color: var(--jade-hi); font-size: 11px; cursor: pointer; }
+.panel .act:hover { background: rgba(0, 201, 139, .12); }
+@media (pointer: coarse) { .panel .act { padding: 8px 10px; font-size: 12px; } }
+/* Top producers popup (L-075, web/producers.js): a modal over everything but toasts; map + list side by side, stacked on
+   a narrow screen. */
+.modal-back { position: fixed; inset: 0; z-index: 8; background: rgba(2, 5, 4, .55); display: flex; align-items: center; justify-content: center; }
+.modal { background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; backdrop-filter: blur(6px);
+  width: min(1100px, calc(100% - 40px)); height: min(720px, calc(100% - 40px)); display: flex; flex-direction: column; overflow: hidden; }
+.modal .mh { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 12px; border-bottom: 1px solid var(--line-2); }
+.modal .mh .h { color: #d3ece0; font-weight: 700; letter-spacing: .08em; }
+.modal .mh .sub { font-size: 10px; }
+.modal .x { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; min-width: 32px; min-height: 28px; }
+.modal .mb { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 360px; }
+.modal .pmap { position: relative; min-height: 0; }
+.modal .side { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line-2); }
+.modal .detail { padding: 8px 10px; border-bottom: 1px solid var(--line-2); max-height: 50%; overflow: auto; }
+.modal .detail .name { font-weight: 700; color: var(--jade-hi); }
+.modal .detail .big { font-size: 20px; font-weight: 700; }
+.modal .detail .u { color: var(--muted); font-size: 10px; }
+.modal .detail table, .modal .plist { width: 100%; border-collapse: collapse; font-size: 11px; }
+.modal .detail td { padding: 1px 0; border-top: 1px solid var(--line); }
+.modal .detail td:last-child { text-align: right; }
+.modal .side > .plist { display: block; flex: 1; overflow: auto; }
+.modal .plist th { position: sticky; top: 0; background: #0b1410; color: var(--muted); font-weight: 400; font-size: 10px; text-align: left; padding: 3px 6px; cursor: pointer; }
+.modal .plist th.on { color: var(--jade-hi); }
+.modal .plist td { padding: 3px 6px; border-top: 1px solid var(--line); cursor: pointer; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.modal .plist td.n { text-align: right; }
+.modal .plist tr:hover td { background: rgba(0, 201, 139, .06); }
+.modal .plist tr.sel td { background: rgba(255, 107, 26, .14); color: var(--text); }
+.modal .src { padding: 4px 10px; font-size: 9px; border-top: 1px solid var(--line-2); }
+.modal .side, .modal .detail, .modal .side > .plist { scrollbar-width: thin; scrollbar-color: #3b574a rgba(2, 5, 4, .6); }
+@media (max-width: 700px) {
+  .modal { width: 100%; height: 100%; border-radius: 0; }
+  .modal .mb { grid-template-columns: 1fr; grid-template-rows: 38% 1fr; }
+  .modal .side { border-left: 0; border-top: 1px solid var(--line-2); }
+  .modal .x { min-width: 44px; min-height: 40px; font-size: 18px; }
+}
+
+/* Search (L-076, web/search.js). Desktop: an input in the top bar, right of the header; results drop below it. */
+.search { top: 10px; left: max(560px, calc(50% - 160px)); width: 320px; z-index: 4; padding: 4px; }
+.search .sbtn { display: none; }
+.search form { display: flex; gap: 4px; margin: 0; }
+.search input { flex: 1; min-width: 0; background: rgba(2, 5, 4, .6); border: 1px solid var(--line-2); border-radius: 4px; color: var(--text);
+  font: 12px var(--mono); padding: 5px 8px; outline: none; }
+.search input:focus { border-color: var(--jade); }
+.search input::-webkit-search-cancel-button { display: none; }
+.search .sx { display: none; background: none; border: 0; color: var(--muted); cursor: pointer; }
+.search .sres { margin-top: 4px; max-height: min(60vh, 520px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3b574a rgba(2, 5, 4, .6); }
+.search .sres[hidden] { display: none; }
+.search .sg { color: var(--muted); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; padding: 6px 6px 2px; }
+.search .sr { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; border-top: 1px solid var(--line);
+  color: var(--text); font: 12px var(--mono); text-align: left; padding: 5px 6px; cursor: pointer; }
+.search .sr.on, .search .sr:hover { background: rgba(0, 201, 139, .12); }
+.search .sl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search .ss { color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* result icons by kind: system dots, and Art's well / pad sprites (#284) for the top producers */
+.si { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #6e8d7f; display: inline-block; }
+.si.gas { background: #ff6b1a; } .si.power { background: #3d9bff; } .si.gauge { background: transparent; border: 2px solid #5aa9e6; }
+.si.river { border-radius: 1px; height: 4px; background: #5aa9e6; }
+.si.pad, .si.well { width: 16px; height: 16px; border-radius: 0; background: url("sprites/wells.png") no-repeat; image-rendering: pixelated; }
+.si.pad { background-position: -58px -2px; } .si.well { background-position: -2px -2px; }
+/* Small screens: a 44 px 🔍 beside the ☰; it opens a full-width bar on top, a 16 px input (no browser zoom), 44 px rows */
+@media (max-width: 900px), (max-height: 500px) {
+  .brandbox { max-width: calc(100% - 128px); }
+  .search { left: auto; right: 62px; width: 44px; height: 44px; padding: 0; }
+  .search .sbtn { display: block; width: 44px; height: 44px; background: none; border: 0; font-size: 18px; cursor: pointer; }
+  .search form, .search .sres { display: none; }
+  .search.open { position: fixed; inset: 0 0 auto 0; width: auto; height: auto; padding: 8px; border-radius: 0; z-index: 7; }
+  .search.open .sbtn { display: none; }
+  .search.open form { display: flex; }
+  .search.open input { font-size: 16px; padding: 10px 12px; }
+  .search.open .sx { display: block; min-width: 44px; min-height: 44px; font-size: 18px; }
+  .search.open .sres:not([hidden]) { display: block; max-height: calc(100dvh - 90px); }
+  .search .sr { min-height: 44px; font-size: 14px; padding: 8px 8px; }
+  .search .ss { font-size: 11px; }
+}
+
+/* AB + BC tie-out in the panel (L-079, web/tieout.js): the waterfall, actual storage, the error and its band, history */
+.panel .tieout { margin: 4px 0 10px; padding: 6px 0; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); color: var(--text); }
+.panel .tieout .th { color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.panel .tieout table.wf { width: 100%; border-collapse: collapse; font-size: 11px; margin: 0 0 4px; }
+.panel .tieout .wf td { padding: 1px 0; border-top: 0; }
+.panel .tieout .wf td.n { text-align: right; padding-right: 6px; white-space: nowrap; width: 1%; }
+.panel .tieout .wf td.b { width: 34%; }
+.panel .tieout .wf tr.tot td { border-top: 1px solid var(--line-2); font-weight: 700; padding-top: 2px; }
+.panel .tieout .wf.st { margin-top: 6px; }
+.panel .tieout .wb { display: block; height: 7px; border-radius: 1px; }
+.panel .tieout .wb.pos { background: #3dffb8; opacity: .7; } .panel .tieout .wb.neg { background: #ff6b1a; opacity: .7; }
+.panel .tieout .res { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; font-size: 12px; }
+.panel .tieout .res b { font-size: 14px; }
+.panel .tieout .rawres, .panel .tieout .tnote { font-size: 10px; margin-top: 2px; }
+.panel .tieout .tchart { margin-top: 6px; }
+/* the clickable error and its breakdown (L-080 item 4): parts, their band and assumption, a part's parts folded under it */
+.panel .tieout button.brk { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 2px 0; margin-top: 2px; color: var(--text); font: inherit; font-size: 10px; cursor: pointer; }
+.panel .tieout button.brk:hover b, .panel .tieout button.brk:focus-visible b { text-decoration: underline; }
+.panel .tieout .bd { margin: 4px 0 2px; padding: 4px 0 2px 8px; border-left: 2px solid var(--line-2); }
+.panel .tieout .bdt tr.ba td { font-size: 9px; padding: 0 0 3px; line-height: 1.3; text-align: left; }
+.panel .tieout .bdt tr.d1 td:first-child { padding-left: 14px; }
+.panel .tieout .bdt tr.haskids { cursor: pointer; }
+.panel .tieout .bdt td.n.dim { font-size: 9px; }
+.panel .tieout .bdh { margin-top: 8px; }
+.panel .tieout .bdt .conf { color: var(--muted); font-style: italic; }
+.panel .tieout .bdr { font-size: 10px; margin-top: 4px; line-height: 1.35; }
+.panel .tieout .bdr a { color: var(--jade); white-space: nowrap; }
+
+/* PLAN 9 part 3: the region page (web/regionpage.js). Most of the screen on a desktop, full screen on a phone. The
+   region's colour (--region) marks its name and the active tab, as its box and outline do. */
+.rpage { width: min(1280px, calc(100% - 48px)); height: min(860px, calc(100% - 48px)); }
+.rpage .rname { color: var(--region, #d3ece0); font-size: 14px; }
+.rpage .rbody { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rpage .rtabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line-2); }
+.rpage .rtabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: inherit;
+  letter-spacing: .08em; text-transform: uppercase; font-size: 11px; padding: 8px 14px 6px; cursor: pointer; }
+.rpage .rtabs button.on { color: var(--text); border-bottom-color: var(--region, var(--jade)); }
+.rpage .rtabs button:disabled { opacity: .35; cursor: default; }
+.rpage .rscroll { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px 14px; scrollbar-width: thin; scrollbar-color: #3b574a rgba(2, 5, 4, .6); }
+.rpage .rh, .rpage .rgh { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 4px; }
+.rpage .rgh { color: #d3ece0; }
+.rpage .rbal { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 14px; align-items: start; }
+.rpage table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rpage td { padding: 3px 4px; border-top: 1px solid var(--line); vertical-align: baseline; }
+.rpage td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rpage td.u { color: var(--muted); font-size: 10px; width: 1%; white-space: nowrap; }
+.rpage .rlines td.n { font-size: 15px; font-weight: 700; }
+.rpage tr.cl { cursor: pointer; }
+.rpage tr.cl:hover td { background: rgba(0, 201, 139, .06); }
+.rpage tr.dim td.n { color: var(--muted); font-weight: 400; }
+.rpage .rtags { color: var(--muted); font-size: 9px; margin-left: 6px; letter-spacing: .04em; }
+.rpage .rchartbox { min-width: 0; }
+.rpage .rchead { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; }
+.rpage .rchead .back { background: none; border: 0; color: var(--jade); cursor: pointer; font: inherit; padding: 0 4px 0 0; }
+.rpage .rranges button { background: none; border: 1px solid var(--line-2); color: var(--muted); font: inherit; font-size: 10px; padding: 1px 6px; margin-left: 2px; cursor: pointer; }
+.rpage .rranges button.on { color: var(--text); border-color: var(--region, var(--jade)); }
+.rpage .rchart { min-height: 240px; margin-top: 4px; }   /* the plot is 210 px; its legend flows below it */
+/* detail groups: cards in a grid that fills the width, so two groups still look finished and twenty stay readable */
+.rpage .rgroups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px 16px; margin-top: 16px; }
+.rpage .rgroup { min-width: 0; }
+/* PLAN 9g: labels wrap (no "…" cutting a word); the bar column gives way, the value never wraps */
+.rpage .rgroup td.k { white-space: normal; overflow-wrap: break-word; line-height: 1.25; }
+.rpage .rgroup tr.sub td.k { padding-left: 14px; color: var(--muted); }
+.rpage .rgroup tr.sub td.n { color: var(--muted); }
+.rpage .rgnote { color: var(--muted); font-size: 10px; line-height: 1.35; margin: -1px 0 4px; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+.rpage .rgnote.open { display: block; }
+.rpage .rnote { color: var(--muted); font-size: 11px; margin: 0 0 10px; }
+.rpage .rthrough { color: var(--muted); font-size: 10px; letter-spacing: .04em; margin: 0 0 4px; }
+.rpage .rgroup tr.fact td.n { white-space: nowrap; vertical-align: top; }
+.rpage .rgroup tr.fact .fu { color: var(--muted); font-size: 10px; }
+.rpage .rgroup td.bar { width: 26%; min-width: 48px; position: relative; }
+.rpage .rgroup td.bar i { display: block; height: 8px; min-width: 1px; background: var(--region, var(--jade)); opacity: .75; }
+.rpage .rgroup td.bar i.rel { opacity: .35; }   /* against the group's largest row, not a share: lighter, no % */
+/* a free table with both signs (interchange by tie): bars from a zero line in the middle, negatives left, positives right */
+.rpage .rgroup td.bar.split::before { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1px; background: var(--line-2); }
+.rpage .rgroup td.bar.split i { position: absolute; top: calc(50% - 4px); }
+.rpage .rgroup td.bar.split i.pos { left: 50%; }
+.rpage .rgroup td.bar.split i.neg { right: 50%; }
+.rpage .rgroup td.bar span { position: absolute; right: 4px; top: 1px; font-size: 9px; color: var(--muted); }
+.rpage .rgroup tr.rest td { color: var(--muted); font-style: italic; }
+.rpage .rgroup tr.fact td { color: var(--muted); }
+.rpage .rgroup .rsrc { display: block; font-size: 9px; white-space: normal; overflow-wrap: break-word; }
+.rpage .rweather, .rpage .rwatch { margin-top: 16px; }
+.rpage .rwx { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; }
+.rpage table.rdd { width: auto; margin-bottom: 6px; }
+.rpage .rdd th { color: var(--muted); font-weight: 400; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; text-align: right; }
+.rpage .rdd td { padding: 2px 8px; }
+.rpage .rdd td.dim { color: var(--muted); }
+.rpage .rwx b { color: var(--text); }
+.rpage .rwatch ul { margin: 2px 0; padding-left: 16px; font-size: 12px; line-height: 1.5; }
+.rpage .rempty { padding: 20px; color: var(--muted); }
+.rpage .rnogroups { margin-top: 14px; font-size: 11px; }
+@media (max-width: 760px) {
+  .rpage { width: 100%; height: 100%; border-radius: 0; }   /* a phone: the whole screen */
+  .rpage .rbal { grid-template-columns: 1fr; }
+  .rpage .rgroups { grid-template-columns: 1fr; }
+}

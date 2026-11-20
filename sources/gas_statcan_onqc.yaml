@@ -1,0 +1,20 @@
+# Provincial gas, monthly: StatCan 25-10-0086 deliveries to consumers, storage inventory and net withdrawal for Ontario
+# + Québec (L-091), plus Alberta, BC, Saskatchewan (and their marketable production) and Manitoba deliveries (L-106,
+# the wcan / mbnwo regions), and the residential / commercial / industrial split for SK, MB, QC and ON (gas_region_demand).
+# Still ONE WDS request a day (~5 KB; StatCan releases monthly, ~2 months behind).
+# Ontario's daily demand isn't public (Enbridge Gas's Gas Day Summary needs a reCAPTCHA token), so this is its headline.
+# Details: montney/connectors/statcan_gas.py
+id: gas_statcan_onqc
+name: StatCan gas supply and disposition by province (monthly)
+type: python
+module: montney.connectors.statcan_gas
+class: GasStatcanProvinces
+mode: cached
+interval: 1d
+region: ont          # serves Québec and the western provinces too (one request); sources/BUDGET.yaml
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; each StatCan release (as_of = its release time) is a vintage.
+retention: daily
+params:
+  url: https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods
+  months: 24

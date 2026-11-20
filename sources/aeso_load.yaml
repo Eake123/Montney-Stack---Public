@@ -1,0 +1,29 @@
+# AESO Alberta Internal Load: hourly actual + day-ahead forecast.
+# The forecast is stored as a new vintage on every fetch, so forecast revisions are kept.
+id: aeso_load
+name: AESO Actual / Forecast Load
+type: http
+mode: cached
+interval: 30m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: hourly
+request:
+  url: https://apimgw.aeso.ca/public/actualforecast-api/v1/load/albertaInternalLoad
+  params: {startDate: "{today-3d}", endDate: "{today+1d}"}
+  headers:
+    API-KEY: "{secret:AESO_API_KEY}"
+extract:
+  - &load
+    path: "return.Actual Forecast Report"
+    ts: {field: begin_datetime_utc, tz: UTC}
+    as_of: ts
+    group: AESO / Load
+    freq: 1h
+    unit: MW
+    fields:
+      ail: {field: alberta_internal_load, id: aeso.load.ail, label: AESO AIL (hourly actual)}
+  - <<: *load
+    as_of: fetch
+    retention: forecast
+    fields:
+      ail_fcst: {field: forecast_alberta_internal_load, id: aeso.load.ail_forecast, label: AESO AIL forecast}

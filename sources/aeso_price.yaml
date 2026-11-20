@@ -1,0 +1,29 @@
+# AESO pool price: hourly actual, forecast and 30-day rolling average.
+id: aeso_price
+name: AESO Pool Price
+type: http
+mode: cached
+interval: 15m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: hourly
+request:
+  url: https://apimgw.aeso.ca/public/poolprice-api/v1.1/price/poolPrice
+  params: {startDate: "{today-3d}", endDate: "{today+1d}"}
+  headers:
+    API-KEY: "{secret:AESO_API_KEY}"
+extract:
+  - &price
+    path: "return.Pool Price Report"
+    ts: {field: begin_datetime_utc, tz: UTC}
+    as_of: ts
+    group: AESO / Pool price
+    freq: 1h
+    unit: $/MWh
+    fields:
+      pool:  {field: pool_price, id: aeso.price.pool, label: AESO pool price}
+      avg30: {field: rolling_30day_avg, id: aeso.price.avg30, label: AESO pool price 30d rolling avg}
+  - <<: *price
+    as_of: fetch
+    retention: forecast
+    fields:
+      fcst: {field: forecast_pool_price, id: aeso.price.forecast, label: AESO pool price forecast}

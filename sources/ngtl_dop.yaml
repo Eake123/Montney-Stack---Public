@@ -1,0 +1,20 @@
+# NGTL Daily Operating Plan (DOP): area capability vs actual vs year-ago flow, plus the
+# maintenance/outage list as events. Same API as ngtl_csr (my.tccustomerexpress.com backend).
+# Capability is stored once per DOP publication (as_of = publication time, ~21:30 UTC on
+# business days), so hourly polling adds no duplicate vintages. Details: montney/connectors/ngtl_dop.py
+id: ngtl_dop
+name: NGTL Daily Operating Plan
+type: python
+module: montney.connectors.ngtl_dop
+class: NgtlDop
+mode: cached
+interval: 1h   # L-081: each run checks /outages/publisheddates; chart + outages only on a new publication or every 12 h (full_every_hours)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# daily, not forecast: capability is published ~14 d ahead, but its vintages are keyed by DOP publication
+# (not fetch) and change-only, measured 1.0 vintage/point (DuckDB, 2026-11-01); worst case ~20k rows/yr.
+# Keeping every publication forever is cheap and keeps "how early did TC signal the cut" (L-036 sent
+# outages to forecast only for size, ~11.6M rows/yr). flow and flow_yago are as_of = ts actuals.
+retention: daily
+params:
+  days_back: 7       # actual flow for the last week
+  days_forward: 16   # TC publishes capability ~14 days out (chart rows run further, capability null)

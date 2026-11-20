@@ -1,0 +1,16 @@
+# LNG Canada monthly feed-gas receipts (BCER Facility Petrinex Reporting, plant BCLN3165257) and BC producer gas delivered
+# straight into Coastal GasLink (receipts − NGTL Willow Valley). PLAN 5c item 2; Q6 / L-041: personal use (L-006),
+# never redistributed. Lag about 1 month. Method, guards and the band: montney/connectors/gas_lng_bcer.py
+id: gas_lng_bcer
+name: LNG Canada receipts + CGL producer-direct (BCER, monthly)
+type: python
+module: montney.connectors.gas_lng_bcer
+class: GasLngBcer
+mode: cached
+interval: 1h   # PLAN 9: hourly, so the daily LNG export follows Willow Valley within the hour. The monthly BCER
+               # report (2 requests) is read at most every 12 h (CSV_MAX_AGE), reused between: ~4 requests/day (was 2).
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; each amendment is a vintage, kept forever.
+retention: daily
+params:
+  page: https://reports.bc-er.ca/ogc/r/app001/ams_reports/facility-petrinex-reporting

@@ -1,0 +1,18 @@
+# New England (ISO-NE) generation by fuel, load (system + 8 zones) and interchange per external tie, hourly MW, for the
+# upne box (PLAN 9 item 1: generation under 2 h old). Keyless ISO Express CSVs, https://www.iso-ne.com/transform/csv/
+# {genfuelmix, fiveminutesystemload, fiveminuteestimatedzonalload, fiveminuteinterchange}?start=D&end=D, after one ISO
+# Express page sets the isox_token cookie (reused while it lasts; fails closed if the handshake breaks). Prevailing
+# Eastern (America/New_York, DST). Lag: fuel mix ~3 min, system load ~1 min, zones ~15 min, ties ~6 min, so an hour is
+# written ~15-30 min after it ends. Requests: a file is re-read only when it can hold a newly ended hour (no ETag):
+# ~8 req/h + yesterday's 4 once a day (+ the ~93 KB warm-up when the cookie is lost), ~1/s. ~60 KB per CSV read.
+# Details: montney/connectors/power_isone.py.
+id: power_isone
+stale_after: 3h          # the snapshot's stale threshold (docs/SOURCES.md): ISO-NE's hourly data posts ~2 h behind
+name: ISO-NE generation by fuel, load and interchange, hourly
+type: python
+module: montney.connectors.power_isone
+class: IsoNewEngland
+mode: cached
+interval: 15m
+region: upne         # sources/BUDGET.yaml
+retention: hourly

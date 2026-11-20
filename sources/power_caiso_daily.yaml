@@ -1,0 +1,17 @@
+# California (CAISO) demand + generation by fuel, DAILY SUMS (MWh/d): the stored history (L-090). Source: CAISO
+# Today's Outlook history CSVs, one per file per day (no bulk file). Each run reads yesterday (2 requests) plus a
+# BOUNDED back-fill of `backfill_per_run` older days (2 requests each) toward `from_date`: 30/run = 62 requests/day,
+# so 2020-01-01 is reached in ~84 days, then 2 requests/day. Details: montney/connectors/power_caiso.py.
+id: power_caiso_daily
+name: CAISO demand and generation by fuel, daily sums
+type: python
+module: montney.connectors.power_caiso
+class: CaisoGeneration
+mode: cached
+interval: 1d
+region: cal          # sources/BUDGET.yaml; the source -> region mapping is Database's (L-090)
+retention: daily
+params:
+  report: daily
+  from_date: "2020-01-01"
+  backfill_per_run: 30

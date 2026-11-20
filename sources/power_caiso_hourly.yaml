@@ -1,0 +1,17 @@
+# California (CAISO) demand + generation by fuel, hourly MW, for the California power box (L-090). LIVE ONLY: never
+# persisted (the stored history is sources/power_caiso_daily.yaml, daily sums). Source: CAISO Today's Outlook CSVs
+# (keyless): today's fuelsource.csv + demand.csv each run (every 15 min since PLAN 9: the cal box) = 8 requests/h;
+# yesterday's history files once, then cached.
+# Details: montney/connectors/power_caiso.py.
+id: power_caiso_hourly
+name: CAISO demand and generation by fuel, hourly (live, not stored)
+type: python
+module: montney.connectors.power_caiso
+class: CaisoGeneration
+mode: live
+interval: 15m
+region: cal          # sources/BUDGET.yaml; the source -> region mapping is Database's (L-090)
+# Retention tier (docs/db/RETENTION.md spec contract): live = mode: live, held in obs_live (the last fetch only).
+retention: live
+params:
+  report: hourly

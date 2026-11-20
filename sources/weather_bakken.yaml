@@ -1,0 +1,37 @@
+# 16-day city forecasts for the `bakken` region (L-106, docs/REGIONS.md): Bakken (MT, ND). Open-Meteo, the same connector and terms
+# as sources/weather.yaml (free, no key, personal use): wx.<city>.* per city (tmax, tmin, tmean, precip, wind, hdd, cdd,
+# their normals, realized days) and the region composite wx.region.bakken.* (population-weighted HDD / CDD for Gas and Power's
+# demand estimates). ONE batched request per run for all 6 cities (`batch: true`), every 6 h (~0.17 req/h); normals one
+# batched archive request per 30 d. Each city keeps its own named zone, so local days follow its own clock.
+# HDD/CDD base 18 degC, as for every city here (the US convention is 65 degF = 18.3 degC).
+id: weather_bakken
+name: Weather - Bakken (MT, ND) cities, 16 day forecast
+region: bakken
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:             # as sources/weather.yaml: run vintages are `forecast`; ended-day actuals `daily` (L-038/L-039)
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Denver
+  locations:
+    - {name: Billings, lat: 45.78, lon: -108.50}
+    - {name: Missoula, lat: 46.87, lon: -113.99}
+    - {name: Great Falls, lat: 47.50, lon: -111.30}
+    - {name: Bismarck, lat: 46.81, lon: -100.78, tz: America/Chicago}
+    - {name: Fargo, lat: 46.88, lon: -96.79, tz: America/Chicago}
+    - {name: Williston, lat: 48.15, lon: -103.62, tz: America/Chicago}
+  composites:
+    # Weights = 2020 US Census MSA / uSA population; Fargo = the ND part (Cass County; Clay County MN is in umw). Only the ratios matter.
+    - id: region.bakken
+      name: Bakken (MT, ND) (6-city pop. wtd)
+      weights: {billings: 184167, missoula: 117922, great_falls: 84414, bismarck: 133626, fargo: 184525, williston: 40950}

@@ -1,0 +1,56 @@
+# Iroquois Gas Transmission: Canadian gas into New York at Waddington, deliveries in New York, Connecticut and Long Island
+# -> ebb.iroquois.<nyc|upne>.<category> (MMcf/d) + named points. Research: docs/research/pipelines/east_and_rockies.md §2;
+# method, requests and traps: montney/connectors/gas_ebb_east.py.
+# Requests: 0 when the newest due cycle is already read, 1 when a new one is due (2-3 if it isn't posted yet), +1 a day
+# (previous gas day's Intraday 3): ~6-10/day on ioly.iroquois.com.
+id: gas_ebb_iroquois
+name: Iroquois (Waddington, New York, Connecticut)
+type: python
+module: montney.connectors.gas_ebb_east
+class: EbbIroquois
+mode: cached
+interval: 2h
+region: rest          # multi-region (nyc, upne)
+retention: daily
+params:
+  boards:
+    - pipe: iroquois
+      label: Iroquois
+      regions: [nyc, upne]
+      # No location file: the whole map (Iroquois's OA list, 2026-11-13). Power plants per Iroquois's own Power Plant
+      # Scheduled Quantities list (Athens, Dover, Milford B, Devon, Devon B). LDC = city gates; INT = other pipelines.
+      overrides:
+        "2250": {state: NY, type: INT, note: "Waddington (TC at the Canada border)"}
+        "2250:R": {category: import_canada}
+        "2250:D": {category: export_canada}
+        "2257": {state: NY, type: LDC, note: Lisbon}
+        "2258": {state: NY, type: LDC, note: Edwards}
+        "2259": {state: NY, type: LDC, note: Croghan}
+        "2260": {state: NY, type: LDC, note: New Bremen}
+        "2345": {state: NY, type: LDC, note: Boonville}
+        "2261": {state: NY, type: INT, note: "Canajoharie (EGTS)"}
+        "2454": {state: NY, type: INT, note: "Manheim (bi-directional interconnect)"}
+        "2307": {state: NY, type: INT, note: "Burdicks Crossing (interconnect)"}
+        "2255": {state: NY, type: INT, note: "Wright (Tennessee)"}
+        "2366": {state: NY, type: EGN, note: "Athens (Athens Generating)"}
+        "2262": {state: NY, type: LDC, note: "Pleasant Valley (Central Hudson)"}
+        "2479": {state: NY, type: EGN, note: "Dover (Cricket Valley Energy Center)"}
+        "2252": {state: CT, type: LDC, note: New Milford}
+        "2256": {state: CT, type: INT, note: "Brookfield (Algonquin, bi-directional)"}
+        "2254": {state: CT, type: LDC, note: Shelton A}
+        "2253": {state: CT, type: LDC, note: Shelton B}
+        "2339": {state: CT, type: LDC, note: Stratford}
+        "2247": {state: CT, type: LDC, note: Milford}
+        "2348": {state: CT, type: EGN, note: "Milford B (Milford Power)"}
+        "2263": {state: CT, type: EGN, note: "Devon (NRG Devon)"}
+        "2443": {state: CT, type: EGN, note: Devon B}
+        "2251": {state: NY, type: LDC, note: "Northport (National Grid Long Island; not on Iroquois's power-plant list)"}
+        "2249": {state: NY, type: LDC, note: "South Commack (National Grid Long Island)"}
+        "2363": {state: NY, type: LDC, note: "Hunts Point (Con Edison, Bronx)"}
+      named:
+        ebb.iroquois.waddington.receipts:
+          label: "receipts from Canada at Waddington"
+          plus: ["2250:R"]
+        ebb.iroquois.li_bronx.deliveries:
+          label: "Long Island and Bronx deliveries (South Commack, Northport, Hunts Point; back into NY under the Sound)"
+          plus: ["2249:D", "2251:D", "2363:D"]

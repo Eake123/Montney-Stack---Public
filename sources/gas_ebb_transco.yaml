@@ -1,0 +1,28 @@
+# Williams Transco (1Line): Zone 6 New York deliveries and the flow north past Linden -> ebb.transco.nyc.<category>
+# (MMcf/d) + ebb.transco.linden.flow. Research: docs/research/pipelines/east_and_rockies.md §3; method, requests and traps:
+# montney/connectors/gas_ebb_east.py.
+# Requests: 1 per run (the newest-cycle check) + 1 when a cycle is new, +2 a day (previous gas day's final), +1 a week
+# (location file): ~16-26/day on www.1line.williams.com.
+id: gas_ebb_transco
+name: Transco (New York, Linden)
+type: python
+module: montney.connectors.gas_ebb_east
+class: EbbTransco
+mode: cached
+interval: 2h
+region: rest          # multi-region family (nyc; tx later)
+retention: daily
+params:
+  boards:
+    - pipe: transco
+      label: Transco
+      buid: 80
+      regions: [nyc]
+      overrides:
+        "1099998": {state: NY, type: LDC, note: "NEW YORK FAC GROUP: Transco's Zone 6 NY deliveries, posted as one aggregate (not in the location file)"}
+        "9008502": {type: LDC, note: "Marinace (KeySpan Long Island), typed OTH"}
+        "1099999": {drop: true, note: "WASHINGTON GAS F GRP: a Zone 5 aggregate (VA/MD/DC), not in the location file"}
+      named:
+        ebb.transco.linden.flow:
+          label: "flow north past Linden, NJ, toward Staten Island and NYC"
+          plus: ["1001300:S"]

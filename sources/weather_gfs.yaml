@@ -1,0 +1,26 @@
+# NOAA GFS 0.25 deg gridded forecast for the map overlay: 2 m temperature, 10 m wind and model
+# terrain height, 16 days. Public domain, no key. Plan and numbers: docs/research/weather.md 3.1.
+# Extent covers the frontend's maxBounds (181 x 85 points at 0.25 deg). Payload: ~2.6 MB raw int16
+# per var per run (~7.8 MB for t2m+u10+v10, plus base64 and gzip); fine on localhost.
+# Grids are written to <home>/grids/ (current + previous run), not the observations table.
+# Each check costs ~1 request when no new run is out; a new run is 85 requests at 1/s (~2 min).
+id: weather_gfs
+name: Weather - GFS grid overlay (16 day)
+type: python
+module: montney.connectors.gfs
+class: GFS
+mode: cached
+interval: 1h
+retention: grid        # emits only grids (current + previous run in <home>/grids), no observations
+params:
+  lon_min: -140
+  lon_max: -95
+  lat_min: 44
+  lat_max: 65
+  step_short: 3        # hours, to short_until
+  short_until: 120
+  step_long: 6         # hours, to horizon
+  horizon: 384
+  pace_s: 1.0          # seconds between NOMADS requests
+  min_lag_h: 3.5       # a cycle isn't probed until this long after its start (posts ~3.5-5.2 h)
+  lookback_cycles: 4

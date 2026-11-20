@@ -1,0 +1,19 @@
+# Water Survey of Canada real-time gauges (ECCC): discharge and water level for the 54 WSC gauges on the Peace,
+# Bow, North Saskatchewan + Brazeau, Red Deer, Oldman, Columbia and Kootenay (weather-p5d.md §3.1 + PLAN step 5). Data Source: Environment and Climate
+# Change Canada (ECCC Data Servers End-use Licence; many BC gauges are BC Hydro-contributed). No key.
+# 5-min steps, published in hourly batches, newest value ~25-80 min old. L-081: hourly, with THREE regional bbox
+# requests per run (Peace, AB, Columbia/Kootenay) covering all gauges: 72 requests/day (was ~5,200 per gauge every
+# 30 min), ~1.15 MB a run for a 3 h window. Worst case age ~1 h + ~1.4 h = 2.4 h, under the 5 h stale threshold. Units: m3/s, m. Levels become
+# CGVD2013 elevations where HYDAT has a factor (Williston 07EF002/07EF003, 07FA004, 07FD002; DECISIONS P5d),
+# else they stay on the gauge's own datum. Details: montney/connectors/weather_wsc.py.
+id: weather_wsc
+name: Rivers - WSC real-time gauges
+type: python
+module: montney.connectors.weather_wsc
+class: WSCRealtime
+mode: cached
+interval: 1h
+retention: fast       # 5-min actuals (as_of = ts): full detail 60 d, then hourly rollups
+params:
+  lookback_h: 3       # re-read window per poll (interval + ~80 min publish latency + margin); a runner outage longer
+                      # than this leaves a gap (the API keeps 30 d)

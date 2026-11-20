@@ -1,0 +1,17 @@
+# Ontario (IESO) generation, hourly MW by fuel + total, for the Ontario power box (L-078). LIVE ONLY: never persisted
+# (Erik: "save the data as daily sums, display it as hourly"; the stored history is sources/power_ieso_daily.yaml).
+# Source: IESO GenOutputCapability (today's per-generator report, re-issued hourly) + yesterday's final file, summed
+# by fuel. Keyless. IESO time is EST all year (fixed UTC-5, named in the connector). Details:
+# montney/connectors/power_ieso.py.
+id: power_ieso_hourly
+name: IESO generation by fuel, hourly (live, not stored)
+type: python
+module: montney.connectors.power_ieso
+class: IesoGeneration
+mode: live
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract): live = mode: live, held in obs_live (the last fetch only).
+region: ont          # sources/BUDGET.yaml (L-091: `ont`, not `on`); the source -> region mapping is Database's
+retention: live
+params:
+  report: hourly

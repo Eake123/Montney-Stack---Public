@@ -1,0 +1,51 @@
+# NGTL Current System Report - the same feed behind
+# https://my.tccustomerexpress.com/#CurrentSystemReport
+# Returns the last 7 days at ~30 min resolution, published in 10^3 m3 (/day), newest first.
+# lastUpdated is Alberta wall-clock time (America/Edmonton), not fixed MST: a row stamped 14:29:44
+# appeared at 20:29 UTC on 2026-10-31. Alberta is UTC-6 year-round from 2026-11-01, so there are
+# no more repeated or skipped hours. Rows stored before this fix were read as fixed MST, so the
+# UTC-6 ones are 1 h late. Repair:
+#   uv run python -m montney.importers.ngtl_dst_fix --before "<upgrade time, UTC>" --dry-run
+id: ngtl_csr
+name: NGTL Current System Report
+type: http
+mode: cached
+interval: 15m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# 30-min actuals stamped at their own time (as_of: ts).
+retention: fast
+request:
+  url: https://f51561ras5.execute-api.us-west-2.amazonaws.com/production/csr
+extract:
+  - path: data
+    ts: {field: lastUpdated, tz: America/Edmonton}
+    as_of: ts
+    id: "ngtl.csr.{key}"
+    label: "NGTL {label}"
+    group: NGTL / Current System
+    freq: 30min
+    from: e3m3/d
+    unit: MMcf/d
+    fields:
+      total_receipts:    {field: totalReceipts, label: total receipts}
+      field_receipts:    {field: fieldReceipts, label: field receipts}
+      groundbirch_east:  {field: groundBirchEastReceipt, label: Groundbirch East receipts}
+      gordondale:        {field: gordondaleReceipt, label: Gordondale receipts}
+      net_storage:       {field: netStorageFlow, label: net storage flow (+ = withdrawal)}
+      total_deliveries:  {field: totalDeliveries, label: total deliveries}
+      intraprovincial:   {field: intraprovincialDemand, label: intraprovincial demand}
+      empress:           {field: empressBorderFlow, label: Empress border}
+      mcneill:           {field: mcneilBorderFlow, label: McNeill border}
+      alberta_bc:        {field: albertaBorderFlow, label: Alberta-BC border}
+      willow_valley:     {field: willowValleyInterconnect, label: Willow Valley interconnect}
+      flow_differential: {field: flowDifferential, label: flow differential (receipts - deliveries)}
+      linepack:          {field: currentLinepack, label: linepack, from: e3m3, unit: MMcf}
+      linepack_4h_roc:   {field: linepack4Hr, label: linepack 4hr rate of change, from: e3m3, unit: MMcf}
+      linepack_target:   {field: linepackTarget, label: linepack target, from: e3m3, unit: MMcf}
+derive:
+  - id: ngtl.csr.total_export
+    label: NGTL total export (Empress + McNeill + AB-BC + Willow Valley)
+    sum: [ngtl.csr.empress, ngtl.csr.mcneill, ngtl.csr.alberta_bc, ngtl.csr.willow_valley]
+    unit: MMcf/d
+    freq: 30min
+    group: NGTL / Current System

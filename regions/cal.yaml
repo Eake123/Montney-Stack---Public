@@ -1,0 +1,202 @@
+id: cal
+name: California
+color: "#80deea"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-CA]
+anchor: [-119.6, 37.2]
+tz: America/Los_Angeles
+budget_region: cal
+coverage: standard
+gas:
+  production: {parts: [pge.receipts.california, socal.receipts.california], scope: PG&E+SoCal,
+               note: "PG&E + SoCalGas receipts from California production (daily, the same system as imports
+                 and demand); EIA's whole-state marketed production is eia.ca.marketed_production"}
+  imports: {parts: [cal.imports.total], quality: scheduled, scope: PG&E+SoCal,
+            note: "Malin (GTN + Ruby into PG&E) + Topock + Ehrenberg / Blythe + Kramer / Daggett + Wheeler Ridge +
+              Otay Mesa (net). Kern River / Mojave gas delivered straight to non-utility customers isn't in it"}
+  exports: {none: true, note: "no exit by pipeline: Otay Mesa (TGN, Mexico) flows both ways and is netted in imports"}
+  demand: {parts: [cal.demand.total], scope: PG&E+SoCal}
+  storage: {parts: [{series: cal.storage.net_withdrawal, sign: -1}], scope: PG&E+SoCal,
+            note: "PG&E + SoCalGas storage (+ injection); the independents (Wild Goose, Lodi, Gill Ranch,
+              Central Valley) aren't public daily. EIA's weekly Pacific region (CA ~83 %) is eia.storage.pacific.*"}
+  inventory: {parts: [cal.storage.inventory], unit: Bcf, scope: PG&E+SoCal}
+oil:
+  production: {parts: [{series: eia.ca.crude_production, fill: latest}],
+               note: "crude + condensate (EIA crude oil includes lease condensate)"}
+power:
+  # CAISO's own Today's Outlook feed for CAISO (power_caiso_hourly: hourly means of 5-min rows, ~1 h behind), plus
+  # the four other California BAs from EIA-930 via power_eia930_nowcast (*_best: actual where posted, else live demand
+  # + the BA's net export at the same hour on the latest day; est.). EIA's own CISO numbers aren't used: its demand
+  # adds rooftop solar (~0 at night, 7-8.5 GW at midday) and until Dec 2025 put the same amount into gas, so CISO
+  # from EIA and CAISO's feed don't mix (Power research, PLAN 9). Interchange: CAISO's net imports (incl. WEIM) are
+  # already + import; EIA's TI is + export, so those parts are negated. Flows between the five BAs cancel.
+  fuels_note: "CAISO's own live fuel mix only (scope CAISO, ~80 % of the state): BANC, LADWP, IID and Turlock publish fuels only in EIA-930's daily file. Hydro = small + large; other = coal + other."
+  load: {parts: [caiso.demand.hourly, eia930.banc.demand_best, eia930.ldwp.demand_best, eia930.iid.demand_best,
+                 eia930.tidc.demand_best], quality: estimate, lag: 2h,
+         note: "CAISO's own demand (no rooftop solar) + BANC (SMUD), LADWP, IID, Turlock from EIA-930 = the state"}
+  generation: {parts: [caiso.gen.total.hourly, eia930.banc.net_gen_best, eia930.ldwp.net_gen_best,
+                       eia930.iid.net_gen_best, eia930.tidc.net_gen_best], quality: estimate, lag: 2h,
+               note: "CAISO in-state generation (all fuels, no imports) + the four others (EIA-930 nowcast, est.)"}
+  interchange: {parts: [caiso.gen.imports.hourly, -eia930.banc.interchange_best, -eia930.ldwp.interchange_best,
+                        -eia930.iid.interchange_best, -eia930.tidc.interchange_best], quality: estimate, lag: 2h}
+  fuels:                        # CAISO's own fuel mix (live); the other four BAs' fuels are EIA-930 daily only
+    gas: {parts: [caiso.gen.gas.hourly], scope: CAISO}
+    nuclear: {parts: [caiso.gen.nuclear.hourly], scope: CAISO}
+    hydro: {parts: [caiso.gen.hydro.hourly], scope: CAISO, note: "small + large hydro"}
+    wind: {parts: [caiso.gen.wind.hourly], scope: CAISO}
+    solar: {parts: [caiso.gen.solar.hourly], scope: CAISO, note: "grid solar (rooftop isn't in CAISO's figures)"}
+    battery: {parts: [caiso.gen.batteries.hourly], scope: CAISO, note: "+ discharge, - charge"}
+    geothermal: {parts: [caiso.gen.geothermal.hourly], scope: CAISO}
+    biomass: {parts: [caiso.gen.biomass.hourly], scope: CAISO, note: "biomass + biogas"}
+    other: {parts: [caiso.gen.other.hourly], scope: CAISO, note: "coal + other"}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_cal.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_cal
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.los_angeles.tmean
+    - wx.san_francisco.tmean
+    - wx.san_diego.tmean
+    - wx.sacramento.tmean
+    - wx.fresno.tmean
+    - wx.riverside.tmean
+    - wx.bakersfield.tmean
+  hdd: wx.region.cal.hdd
+  cdd: wx.region.cal.cdd
+  normals: [wx.region.cal.hdd_normal, wx.region.cal.cdd_normal]
+  realized: [wx.region.cal.hdd.realized, wx.region.cal.cdd.realized]
+  outlook: [wx.region.cal.hdd_1_7, wx.region.cal.hdd_8_15, wx.region.cal.cdd_1_7, wx.region.cal.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/cal.md (shown on the page)
+  - "Evening ramp, CAISO demand against solar plus wind: batteries cover more each year, gas covers the rest"
+  - "Southern vs northern gas imports and each desert point: shows which pipe is cut"
+  - "SoCalGas and PG&E storage inventory vs the winter plan: SoCalGas winter reliability depends on it"
+  - "Net power imports in the evening: low imports mean more in-state gas burn"
+  - "Diablo Canyon units: one unit down is ~1.1 GW that gas has to cover"
+  - "1-7 day CDD outlook vs normal: a multi-day inland heat wave means evening peaks, gas burn and price spikes"
+  - "Gas demand vs the CDD / HDD outlook: power burn is the likely swing"
+  - "Implied vs measured storage and the residual: a jump usually means an import point changed its reporting"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: production_by_area
+      title: Production by area
+      rows:
+        - {label: "PG&E receipts from California production", series: pge.receipts.california}
+        - {label: "SoCalGas receipts from California production", series: socal.receipts.california,
+           note: "CP lines, Elk Hills"}
+        - {label: "California marketed production (EIA monthly)", series: eia.ca.marketed_production}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Utility receipts at each border point (scheduled), from PG&E's and SoCalGas's postings."
+      rows:
+        - {label: "Malin (GTN + Ruby into PG&E)", series: cal.imports.north}
+        - {label: "  GTN at Malin", series: pge.imports.gtn}
+        - {label: "  Ruby at Malin (Onyx Hill)", series: pge.imports.ruby}
+        - {label: "Topock / Needles (El Paso + Transwestern)", series: cal.imports.topock}
+        - {label: "Ehrenberg / Blythe (El Paso + North Baja)", series: cal.imports.ehrenberg}
+        - {label: "Kramer Junction / Daggett (Kern River + Mojave)", series: cal.imports.kramer}
+        - {label: "Wheeler Ridge (Kern River + Mojave)", series: cal.imports.wheeler_ridge}
+        - {label: "Otay Mesa (TGN from Mexico)", series: cal.imports.otay_mesa}
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "PG&E posts its demand by sector; SoCalGas posts one sendout (incl. SDG&E), so its sectors aren't split."
+      rows:
+        - {label: "PG&E core (residential + commercial)", series: pge.demand.core}
+        - {label: "PG&E electric generation", series: pge.demand.electric_gen}
+        - {label: "PG&E industrial", series: pge.demand.industrial}
+        - {label: "SoCalGas sendout (all sectors, incl. SDG&E)", series: socal.demand.sendout}
+    - id: storage
+      title: Storage
+      note: "Flows are + withdrawal / − injection."
+      rows:
+        - {label: "California net withdrawal (all fields on PG&E + SoCalGas)", series: cal.storage.net_withdrawal}
+        - {label: "  PG&E's own fields", series: pge.storage.net_withdrawal}
+        - {label: "  Independents on PG&E", series: pge.storage.independent_net_withdrawal,
+           note: "Wild Goose, Lodi, Gill Ranch, Central Valley"}
+        - {label: "  SoCalGas (Aliso Canyon, Honor Rancho, ...)", series: socal.storage.net_withdrawal}
+        - {label: "California inventory (PG&E + SoCalGas)", series: cal.storage.inventory}
+        - {label: "PG&E working gas", series: pge.storage.working_gas}
+        - {label: "SoCalGas inventory", series: socal.storage.inventory}
+        - {label: "California working gas (EIA, all fields, monthly)", series: eia.ca.storage.working_gas}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      rows:
+        - {label: "California crude incl. lease condensate (EIA monthly)", series: eia.ca.crude_production}
+    - id: refinery_runs
+      title: "Refinery runs, PADD 5 (CA, WA, OR, AZ, NV, AK, HI)"
+      note: "EIA weekly, week ending Friday. Whole PADD 5; California is most of it. The weekly report has no
+        California-only split (EIA's California numbers are monthly)."
+      rows:
+        - {label: PADD 5 crude oil input, series: oil.padd5.refinery_crude_input}
+        - {label: PADD 5 gross input, series: oil.padd5.refinery_gross_input}
+        - {label: PADD 5 operable capacity, series: oil.padd5.refinery_capacity}
+        - {label: PADD 5 utilization, series: oil.padd5.utilization}
+    - id: stocks
+      title: "Stocks, PADD 5 West Coast (CA, WA, OR, AZ, NV, AK, HI)"
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR); Alaska in-transit crude isn't in it."
+      rows:
+        - {label: "PADD 5 crude oil", series: oil.padd5.crude_stocks}
+        - {label: PADD 5 total motor gasoline, series: oil.padd5.gasoline_stocks}
+        - {label: PADD 5 distillate fuel oil, series: oil.padd5.distillate_stocks}
+  power:
+    - id: load_by_zone
+      title: Load by balancing area / CAISO zone
+      note: "CAISO's TACs and the four other California BAs: CAISO's live demand, and actual hourly load from CAISO OASIS (Western EIM, ~1 h late). EIA-930 for the other BAs (nowcast-cleaned)."
+      rows:
+        - {label: "CAISO (Today's Outlook demand)", series: caiso.demand.hourly}
+        - {label: "  PG&E area (CAISO TAC)", series: weim.pge_tac.load}
+        - {label: "  SCE area (CAISO TAC)", series: weim.sce_tac.load}
+        - {label: "  SDG&E area (CAISO TAC)", series: weim.sdge_tac.load}
+        - {label: "  Valley Electric (CAISO TAC)", series: weim.vea_tac.load}
+        - {label: "BANC (SMUD and partners)", series: eia930.banc.demand_best}
+        - {label: LADWP, series: eia930.ldwp.demand_best}
+        - {label: "Imperial Irrigation District", series: eia930.iid.demand_best}
+        - {label: "Turlock Irrigation District", series: eia930.tidc.demand_best}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Diablo Canyon (nuclear)", value: 2323, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Dynegy Moss Landing Power Plant Hybrid (gas)", value: 1848, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Haynes (gas)", value: 1739, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Castaic (pumped storage)", value: 1682, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Ormond Beach (gas)", value: 1612, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Geysers Unit 5-20 (geothermal)", value: 1236, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "La Paloma Generating Plant (gas)", value: 1156, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "AES Alamitos LLC (gas)", value: 1115, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Helms Pumped Storage (pumped storage)", value: 1053, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Mountainview Generating Station (gas)", value: 1037, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 2 units, 2,240 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "Diablo Canyon 1 (MW est.)", series: nrc.diablo_canyon_1.mw_est}
+        - {label: "Diablo Canyon 2 (MW est.)", series: nrc.diablo_canyon_2.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.cal.gas}
+        - {label: "Solar", series: cap.cal.solar}
+        - {label: "Battery storage", series: cap.cal.battery}
+        - {label: "Hydro", series: cap.cal.hydro}
+        - {label: "Wind", series: cap.cal.wind}
+        - {label: "Pumped storage", series: cap.cal.pumped_storage}
+        - {label: "Nuclear", series: cap.cal.nuclear}
+        - {label: "Geothermal", series: cap.cal.geothermal}
+        - {label: "Biomass", series: cap.cal.biomass}
+        - {label: "Oil", series: cap.cal.oil}
+        - {label: "Other", series: cap.cal.other}
+        - {label: "Coal", series: cap.cal.coal}
+        - {label: Total, series: cap.cal.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists. The CEC's figure is metered demand from ~300 data centres; requests are not load. Epoch AI tracks no frontier AI campus in California yet."
+      rows:
+        - {label: Data-centre demand (CEC), value: 1000, unit: MW, as_of: "2025-12",
+           source: "CEC Demand Analysis Working Group, 2026-08-12, slide 5 (~300 data centres, ~2 % of CAISO peak)"}
+        - {label: Estimated data-centre load (avg; EPRI), value: 1065, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: 9.33 TWh"}
+        - {label: Signed data-centre service agreements (queued), value: 5086, unit: MW, as_of: "2025-12",
+           source: "CEC DAWG 2026-08-12: CAISO-area utilities; + 9,587 MW applications, 8,604 MW inquiries"}

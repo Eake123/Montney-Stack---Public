@@ -1,0 +1,38 @@
+# 16-day city forecasts for the `umw` region (L-106, docs/REGIONS.md): Upper Midwest (MN, WI, MI). Open-Meteo, the same connector and terms
+# as sources/weather.yaml (free, no key, personal use): wx.<city>.* per city (tmax, tmin, tmean, precip, wind, hdd, cdd,
+# their normals, realized days) and the region composite wx.region.umw.* (population-weighted HDD / CDD for Gas and Power's
+# demand estimates). ONE batched request per run for all 7 cities (`batch: true`), every 6 h (~0.17 req/h); normals one
+# batched archive request per 30 d. Each city keeps its own named zone, so local days follow its own clock.
+# HDD/CDD base 18 degC, as for every city here (the US convention is 65 degF = 18.3 degC).
+id: weather_umw
+name: Weather - Upper Midwest (MN, WI, MI) cities, 16 day forecast
+region: midwest
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:             # as sources/weather.yaml: run vintages are `forecast`; ended-day actuals `daily` (L-038/L-039)
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Chicago
+  locations:
+    - {name: Minneapolis, lat: 44.98, lon: -93.27}
+    - {name: Detroit, lat: 42.33, lon: -83.05, tz: America/Detroit}
+    - {name: Milwaukee, lat: 43.04, lon: -87.91}
+    - {name: Grand Rapids, lat: 42.96, lon: -85.67, tz: America/Detroit}
+    - {name: Madison, lat: 43.07, lon: -89.40}
+    - {name: Green Bay, lat: 44.51, lon: -88.01}
+    - {name: Duluth, lat: 46.79, lon: -92.10}
+  composites:
+    # Weights = 2020 US Census MSA population (Minneapolis and Duluth MSAs are all MN + WI, both in the region). Only the ratios matter.
+    - id: region.umw
+      name: Upper Midwest (MN, WI, MI) (7-city pop. wtd)
+      weights: {minneapolis: 3690261, detroit: 4392041, milwaukee: 1574731, grand_rapids: 1087592, madison: 680796, green_bay: 328268, duluth: 291638}

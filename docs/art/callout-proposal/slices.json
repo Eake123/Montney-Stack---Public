@@ -1,0 +1,44 @@
+{
+  "status": "frame-approved",
+  "approval": "L-041 Q10, 2026-11-01",
+  "frame": {
+    "file": "frame.png",
+    "size": [
+      16,
+      16
+    ],
+    "slice": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "borderCssPx": 4,
+    "centre": "transparent",
+    "minimumCssSize": [
+      16,
+      16
+    ]
+  },
+  "leaders": {
+    "tileSize": [
+      16,
+      16
+    ],
+    "strokeCssPx": 1,
+    "casingCssPx": 3,
+    "cap": {
+      "size": [
+        4,
+        4
+      ],
+      "centreSize": [
+        2,
+        2
+      ],
+      "outlineCssPx": 1
+    },
+    "stretch": "horizontal/vertical axis only; elbows/caps fixed; diagonal repeat at 1:1"
+  },
+  "density2": "exact nearest-neighbour 2x; display at original logical dimensions"
+}

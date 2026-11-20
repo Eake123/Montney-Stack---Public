@@ -1,0 +1,24 @@
+# AESO AIES Event Log: Energy Emergency Alerts and major unit on/offline notes -> map ticker.
+# EEA / grid alert / load shed text becomes a critical alert on power.region.ab.
+id: aeso_ets_events
+name: AESO AIES event log
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 5m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: events
+params:
+  report: event_log
+  refs:   # keyword in the log text -> network/power feature ids
+    Keephills: [power.plant.keephills]
+    Genesee: [power.plant.genesee]
+    Sundance: [power.plant.sundance]
+    Cascade: [power.plant.cascade]
+    Shepard: [power.plant.shepard]
+    Sheerness: [power.plant.sheerness]
+    Battle River: [power.plant.battle_river]
+    Northern Prairie: [power.plant.northern_prairie]
+    BC intertie: [power.intertie.bc]
+    MATL: [power.intertie.matl]

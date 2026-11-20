@@ -1,0 +1,15 @@
+# Corpus Christi LNG feed gas (scheduled): Cheniere Corpus Christi Pipeline's public capacity posting, the delivery to
+# Corpus Christi Liquefaction (CCLIQ-D), Intraday 3 of yesterday's gas day. Keyless JSON (FERC informational postings
+# on Cheniere's LNG Connection). ONE request per run, every 12 h (+1 per missed gas day after an outage, at most 3).
+# Details: montney/connectors/gas_cheniere_ccl.py. Research: docs/research/pipelines/daily_demand_methods.md §4.
+id: gas_cheniere_ccl
+name: Corpus Christi LNG feed gas (Cheniere CCPL, scheduled)
+type: python
+module: montney.connectors.gas_cheniere_ccl
+class: GasCheniereCcl
+mode: cached
+interval: 12h
+region: tx
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# One value per gas day; as_of = the Intraday 3 posting time (after the gas day starts).
+retention: daily

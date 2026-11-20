@@ -1,0 +1,18 @@
+# NGTL production by area / segment (PLAN 5a, DECISIONS P5a): monthly actuals from TC Station % Utilization, TC's daily
+# measured receipts (System Receipts & Deliveries xlsx, the GDSR bias oracle), and a daily estimate =
+# GDSR field receipts x k (rd-measured rescale) x last month's shares, with the P2 back-test bands.
+# Method, bands and guards: montney/connectors/ngtl_split.py
+id: ngtl_split
+name: NGTL production by area / segment
+type: python
+module: montney.connectors.ngtl_split
+class: NgtlSplit
+mode: cached
+interval: 1h   # PLAN 9: hourly, so the daily estimates follow the GDSR within the hour. TC's page and workbooks
+               # (4 files) are downloaded at most every 12 h (FILE_MAX_AGE), reused between: ~8 requests/day (was 4).
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly actuals, daily measured values and daily estimates are all report vintages (as_of = fetch day), kept forever.
+retention: daily
+params:
+  page: https://www.tccustomerexpress.com/2883.html
+  rd_url: https://www.tccustomerexpress.com/assets/{year}-NGTL-System-Receipts-and-Deliveries.xlsx

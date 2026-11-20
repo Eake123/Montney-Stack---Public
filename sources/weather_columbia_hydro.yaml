@@ -1,0 +1,15 @@
+# Columbia hydro at a glance (L-085): US reservoir storage (% full, % of normal) and NWRFC's Jan-Jul runoff forecast
+# at The Dalles (% of the 1991-2020 average). Public (USBR Hydromet, NOAA NWRFC), no key. TWO requests a run: one
+# Hydromet CSV (Grand Coulee + Hungry Horse + Dworshak storage, 1995 -> today, ~0.5 MB; its own history gives the
+# normal and the full mark) and one NWRFC CSV (~2 KB). Both publish once a day; every 12 h catches the day's issue.
+# Not included, stated: Libby (USACE only), BC's Mica and Arrow (levels only, no public storage curve).
+# Details and the above/near/below cue (+/-10 %): montney/connectors/weather_columbia_hydro.py.
+id: weather_columbia_hydro
+name: Rivers - Columbia hydro (US storage, Jan-Jul runoff forecast)
+region: pnw
+type: python
+module: montney.connectors.weather_columbia_hydro
+class: ColumbiaHydro
+mode: cached
+interval: 12h
+retention: daily       # daily actuals / the day's issued forecast (as_of = ts)

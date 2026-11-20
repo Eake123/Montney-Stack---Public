@@ -1,0 +1,15 @@
+# New York (NYISO) real-time generation by fuel, load by zone and external-tie flows, hourly means (PLAN 9 item 1).
+# Keyless NYISO MIS CSVs (http://mis.nyiso.com/public/csv/{rtfuelmix,pal,ExternalLimitsFlows}/<YYYYMMDD>...csv),
+# prevailing Eastern. Requests: today's 3 files per run = 12 req/h, conditional (If-Modified-Since, 304s honoured),
+# + yesterday's 3 until final (~15/day). Lag: the newest complete hour lands ~20 min after it ends.
+# Details: montney/connectors/power_nyiso.py.
+id: power_nyiso
+stale_after: 4h          # the snapshot's stale threshold (docs/SOURCES.md): NYISO's hourly files post up to ~3 h behind
+name: NYISO generation by fuel, load and interchange, hourly
+type: python
+module: montney.connectors.power_nyiso
+class: NyisoRealtime
+mode: cached
+interval: 15m
+region: nyc          # sources/BUDGET.yaml
+retention: hourly

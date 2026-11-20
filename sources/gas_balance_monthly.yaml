@@ -1,0 +1,17 @@
+# AB + BC tie-out per regulator month (L-079): the history behind the daily gas_balance check (which starts 2026-11-01).
+# Petrinex AB + BCER BC production − NGTL borders − Alliance − T-South − LNG Canada receipts − NGTL AB demand, against
+# NGTL net storage + Aitken net (BCER). Reads its inputs back from the store (read-only).
+# Back-fill: uv run python -m montney.importers.gas_balance   (see montney/importers/gas_balance.py)
+# Method: montney/connectors/gas_balance.py; findings: docs/research/gas-balance.md
+id: gas_balance_monthly
+name: AB + BC tie-out, monthly
+type: python
+module: montney.connectors.gas_balance
+class: GasBalanceMonthly
+mode: cached
+interval: 1d
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly values; a revised regulator month adds a vintage.
+retention: daily
+params:
+  from_month: "2024-01"   # the CER key points (T-South / Alliance before their own postings) start 2024-01

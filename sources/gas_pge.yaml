@@ -1,0 +1,18 @@
+# PG&E gas system (California Gas Transmission, Pipe Ranger): system demand (core / electric gen / industrial), northern
+# imports at Malin (GTN + Ruby), southern imports (Baja path), storage (PG&E's own + the independents' net) (L-090).
+# ONE ~17 KB public JSON per run (the Current Pipeline Status page's own data call), MMcf/d.
+# Details: montney/connectors/cal_gas.py
+id: gas_pge
+name: PG&E gas system (demand, imports, storage)
+type: python
+module: montney.connectors.cal_gas
+class: GasPge
+mode: cached
+# PG&E posts its plan ~07:50, 13:00 and 16:30 PT and yesterday's final mid-morning: every 2 h is within one posting.
+interval: 2h
+region: cal          # sources/BUDGET.yaml; Database maps the region
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily values; each posting (as_of = PG&E's posted time) is a vintage. Forecast days aren't stored.
+retention: daily
+params:
+  url: https://www.pge.com/bin/pipeline/supplydemand

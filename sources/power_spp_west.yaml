@@ -1,0 +1,17 @@
+# SPP West (the SWPW BA: WAPA Rocky Mountain + Upper Great Plains West and the other RTO West members, since
+# 2026-04): load, generation by fuel (11 columns) and net interchange (+ per-neighbour tie flows), hourly means
+# (PLAN 9 item 1, map region mtnw). Sources (keyless SPP portal charts, no-store, no conditional GET):
+#   https://portal.spp.org/chart-api/gen-mix-swpw/asFile            last 2 h at 5 min, ~2.6 KB, UTC interval ends
+#   https://portal.spp.org/chart-api/interchange-trend-swpw/asFile  24 h back at 1 min (NAI + ties), ~246 KB
+# 2 requests per run, every 15 min = 8 req/h (~24 MB/day). Lag: rows ~2 min; newest complete hour ~1 h 5 min after
+# its start. Details: montney/connectors/power_spp_west.py.
+id: power_spp_west
+name: SPP West (SWPW) load, generation by fuel and net interchange, hourly
+type: python
+module: montney.connectors.power_spp_west
+class: SppWest
+mode: cached
+interval: 15m
+region: rockies      # sources/BUDGET.yaml: mtnw's budget region (regions/mtnw.yaml budget_region)
+retention: hourly
+stale_after: 3h       # the snapshot's stale threshold (docs/SOURCES.md): an hour lands ~5 min after it ends

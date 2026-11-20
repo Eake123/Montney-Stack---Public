@@ -1,0 +1,16 @@
+# BC gas production, monthly (PLAN 4b item 4): plant + battery outlets from the BCER facility report (all BC facilities).
+# Personal use (Q6 / L-041, L-006), never redistributed. One ~9 MB CSV a day, aggregated on ingest, never saved.
+# Method, identity and guards: montney/connectors/gas_bcer_production.py
+id: gas_bcer_production
+name: BC gas production (BCER, monthly)
+type: python
+module: montney.connectors.gas_bcer_production
+class: GasBcerProduction
+mode: cached
+interval: 1d
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; BCER amendments are vintages, kept forever.
+retention: daily
+params:
+  page: https://reports.bc-er.ca/ogc/r/app001/ams_reports/facility-petrinex-reporting
+  months_back: 6

@@ -1,0 +1,15 @@
+# CER key-point throughput and capacity: TC Mainline, Foothills, Westcoast, Alliance (PLAN step 5, PR B).
+# CER open data (OGL-Canada). Daily values released quarterly, ~4 months behind: context and capacity, not live flow.
+# Details: montney/connectors/gas_cer_keypoints.py
+id: gas_cer_keypoints
+name: CER key-point throughput and capacity (Mainline, Foothills, Westcoast, Alliance)
+type: python
+module: montney.connectors.gas_cer_keypoints
+class: GasCerKeypoints
+mode: cached
+interval: 7d
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily report values; quarterly re-releases are vintages, kept forever.
+retention: daily
+params:
+  base: https://www.cer-rec.gc.ca/open/energy/throughput-capacity/{}-throughput-and-capacity.csv

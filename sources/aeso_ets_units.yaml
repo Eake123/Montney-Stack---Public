@@ -1,0 +1,1308 @@
+# AESO ETS Current Supply & Demand: per-unit net generation (TNG) and max capability (MC).
+# Keyless public report (plain HTTP). Gas-fired, wind and solar units plus the Grande Prairie-area non-gas units.
+# Fuel for the CSV's headerless blocks comes from block order and is validated against the fuel
+# table (sum of unit MC per fuel); a mismatch fails the fetch rather than mislabel units.
+# Research: docs/research/power.md section 3.2. Terms: personal use, docs/research/DECISIONS.md.
+id: aeso_ets_units
+name: AESO ETS unit generation (gas-fired, wind, solar)
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 5m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: fast
+params:
+  report: csd_units
+  # wind/solar/hydro: per-asset MW for the map's farms and AB dams (network/power/{wind,solar,hydro_ab}.geojson).
+  # They are never in gas burn (that uses the CSD fuel table, sources/aeso_csd.yaml).
+  fuels: [simple_cycle, cogeneration, combined_cycle, gas_fired_steam, wind, solar, hydro]
+  # Warn (fetch warning, non-gating) when AESO lists a wind/solar asset the map doesn't account for.
+  watch_assets: {fuels: [wind, solar, hydro], network: [network/power/wind.geojson, network/power/solar.geojson,
+                                                  network/power/hydro_ab.geojson]}
+  extra_units: [GPEC, DAI1]   # Grande Prairie EcoPower, Daishowa: biomass/other, never in gas burn
+# Plant-level sums for multi-unit plants and the oil-sands clusters (network/power/plants.geojson).
+# A sum is only produced when every unit is in the report, so a renamed/retired unit shows up
+# as a missing plant value rather than a silently smaller one.
+derive:
+  - id: aeso.plant.cascade.tng
+    label: "Cascade Power Project net gen (CAS1+CAS2)"
+    sum: [aeso.unit.cas1.tng, aeso.unit.cas2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.cascade.mc
+    label: "Cascade Power Project max capability (CAS1+CAS2)"
+    sum: [aeso.unit.cas1.mc, aeso.unit.cas2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.genesee.tng
+    label: "Genesee net gen (GNR1+GNR2+GN3)"
+    sum: [aeso.unit.gnr1.tng, aeso.unit.gnr2.tng, aeso.unit.gn3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.genesee.mc
+    label: "Genesee max capability (GNR1+GNR2+GN3)"
+    sum: [aeso.unit.gnr1.mc, aeso.unit.gnr2.mc, aeso.unit.gn3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.keephills.tng
+    label: "Keephills net gen (KH2+KH3)"
+    sum: [aeso.unit.kh2.tng, aeso.unit.kh3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.keephills.mc
+    label: "Keephills max capability (KH2+KH3)"
+    sum: [aeso.unit.kh2.mc, aeso.unit.kh3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.sheerness.tng
+    label: "Sheerness net gen (SH1+SH2)"
+    sum: [aeso.unit.sh1.tng, aeso.unit.sh2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.sheerness.mc
+    label: "Sheerness max capability (SH1+SH2)"
+    sum: [aeso.unit.sh1.mc, aeso.unit.sh2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.battle_river.tng
+    label: "Battle River net gen (BR4+BR5)"
+    sum: [aeso.unit.br4.tng, aeso.unit.br5.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.battle_river.mc
+    label: "Battle River max capability (BR4+BR5)"
+    sum: [aeso.unit.br4.mc, aeso.unit.br5.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.clover_bar.tng
+    label: "Clover Bar net gen (ENC1+ENC2+ENC3)"
+    sum: [aeso.unit.enc1.tng, aeso.unit.enc2.tng, aeso.unit.enc3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.clover_bar.mc
+    label: "Clover Bar max capability (ENC1+ENC2+ENC3)"
+    sum: [aeso.unit.enc1.mc, aeso.unit.enc2.mc, aeso.unit.enc3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.crossfield.tng
+    label: "Crossfield Energy Centre net gen (CRS1+CRS2+CRS3)"
+    sum: [aeso.unit.crs1.tng, aeso.unit.crs2.tng, aeso.unit.crs3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.crossfield.mc
+    label: "Crossfield Energy Centre max capability (CRS1+CRS2+CRS3)"
+    sum: [aeso.unit.crs1.mc, aeso.unit.crs2.mc, aeso.unit.crs3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.valley_view.tng
+    label: "Valley View net gen (VVW1+VVW2)"
+    sum: [aeso.unit.vvw1.tng, aeso.unit.vvw2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.valley_view.mc
+    label: "Valley View max capability (VVW1+VVW2)"
+    sum: [aeso.unit.vvw1.mc, aeso.unit.vvw2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.bear_creek.tng
+    label: "Bear Creek Cogen net gen (BCRK+BCR2)"
+    sum: [aeso.unit.bcrk.tng, aeso.unit.bcr2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.bear_creek.mc
+    label: "Bear Creek Cogen max capability (BCRK+BCR2)"
+    sum: [aeso.unit.bcrk.mc, aeso.unit.bcr2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.rainbow_lake.tng
+    label: "Rainbow Lake net gen (RL1+RB5)"
+    sum: [aeso.unit.rl1.tng, aeso.unit.rb5.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.rainbow_lake.mc
+    label: "Rainbow Lake max capability (RL1+RB5)"
+    sum: [aeso.unit.rl1.mc, aeso.unit.rb5.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.heartland_cogen.tng
+    label: "Industrial Heartland cogen (Dow, Scotford, Heartland, Redwater) net gen (DOWG+APS1+ALS1+HRT1+TC02)"
+    sum: [aeso.unit.dowg.tng, aeso.unit.aps1.tng, aeso.unit.als1.tng, aeso.unit.hrt1.tng, aeso.unit.tc02.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.heartland_cogen.mc
+    label: "Industrial Heartland cogen (Dow, Scotford, Heartland, Redwater) max capability (DOWG+APS1+ALS1+HRT1+TC02)"
+    sum: [aeso.unit.dowg.mc, aeso.unit.aps1.mc, aeso.unit.als1.mc, aeso.unit.hrt1.mc, aeso.unit.tc02.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.oilsands_athabasca.tng
+    label: "Athabasca oil sands cogen (Suncor, Syncrude, CNRL, Fort Hills, Kearl, Muskeg) net gen (SCR1+SCR5+SCR6+SCL1+MKRC+CNR5+FH1+MKR1+IOR3)"
+    sum: [aeso.unit.scr1.tng, aeso.unit.scr5.tng, aeso.unit.scr6.tng, aeso.unit.scl1.tng, aeso.unit.mkrc.tng, aeso.unit.cnr5.tng, aeso.unit.fh1.tng, aeso.unit.mkr1.tng, aeso.unit.ior3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.oilsands_athabasca.mc
+    label: "Athabasca oil sands cogen (Suncor, Syncrude, CNRL, Fort Hills, Kearl, Muskeg) max capability (SCR1+SCR5+SCR6+SCL1+MKRC+CNR5+FH1+MKR1+IOR3)"
+    sum: [aeso.unit.scr1.mc, aeso.unit.scr5.mc, aeso.unit.scr6.mc, aeso.unit.scl1.mc, aeso.unit.mkrc.mc, aeso.unit.cnr5.mc, aeso.unit.fh1.mc, aeso.unit.mkr1.mc, aeso.unit.ior3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.oilsands_south.tng
+    label: "South Athabasca SAGD cogen (Long Lake, Christina Lake) net gen (NX01+NX02+MEG1+CL01)"
+    sum: [aeso.unit.nx01.tng, aeso.unit.nx02.tng, aeso.unit.meg1.tng, aeso.unit.cl01.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.oilsands_south.mc
+    label: "South Athabasca SAGD cogen (Long Lake, Christina Lake) max capability (NX01+NX02+MEG1+CL01)"
+    sum: [aeso.unit.nx01.mc, aeso.unit.nx02.mc, aeso.unit.meg1.mc, aeso.unit.cl01.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.cold_lake.tng
+    label: "Cold Lake SAGD cogen (Mahkeses, Nabiye, Primrose, Foster Creek) net gen (IOR1+IOR2+PR1+EC04)"
+    sum: [aeso.unit.ior1.tng, aeso.unit.ior2.tng, aeso.unit.pr1.tng, aeso.unit.ec04.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+  - id: aeso.plant.cold_lake.mc
+    label: "Cold Lake SAGD cogen (Mahkeses, Nabiye, Primrose, Foster Creek) max capability (IOR1+IOR2+PR1+EC04)"
+    sum: [aeso.unit.ior1.mc, aeso.unit.ior2.mc, aeso.unit.pr1.mc, aeso.unit.ec04.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants
+# Wind and solar sites with several AESO assets (network/power/{wind,solar}.geojson).
+  - id: aeso.plant.wind_bull_creek.tng
+    label: "Bull Creek Wind net gen (BUL1+BUL2)"
+    sum: [aeso.unit.bul1.tng, aeso.unit.bul2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_bull_creek.mc
+    label: "Bull Creek Wind max capability (BUL1+BUL2)"
+    sum: [aeso.unit.bul1.mc, aeso.unit.bul2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_buffalo_atlee.tng
+    label: "Buffalo Atlee Wind net gen (BFL1+BFL2+BFL3+BFL4)"
+    sum: [aeso.unit.bfl1.tng, aeso.unit.bfl2.tng, aeso.unit.bfl3.tng, aeso.unit.bfl4.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_buffalo_atlee.mc
+    label: "Buffalo Atlee Wind max capability (BFL1+BFL2+BFL3+BFL4)"
+    sum: [aeso.unit.bfl1.mc, aeso.unit.bfl2.mc, aeso.unit.bfl3.mc, aeso.unit.bfl4.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_castle_rock_ridge.tng
+    label: "Castle Rock Ridge Wind net gen (CRR1+CRR2)"
+    sum: [aeso.unit.crr1.tng, aeso.unit.crr2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_castle_rock_ridge.mc
+    label: "Castle Rock Ridge Wind max capability (CRR1+CRR2)"
+    sum: [aeso.unit.crr1.mc, aeso.unit.crr2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_cypress.tng
+    label: "Cypress Wind net gen (CYP1+CYP2)"
+    sum: [aeso.unit.cyp1.tng, aeso.unit.cyp2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_cypress.mc
+    label: "Cypress Wind max capability (CYP1+CYP2)"
+    sum: [aeso.unit.cyp1.mc, aeso.unit.cyp2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_jenner.tng
+    label: "Jenner Wind net gen (JNR1+JNR2+JNR3)"
+    sum: [aeso.unit.jnr1.tng, aeso.unit.jnr2.tng, aeso.unit.jnr3.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_jenner.mc
+    label: "Jenner Wind max capability (JNR1+JNR2+JNR3)"
+    sum: [aeso.unit.jnr1.mc, aeso.unit.jnr2.mc, aeso.unit.jnr3.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_summerview.tng
+    label: "Summerview Wind net gen (IEW1+IEW2)"
+    sum: [aeso.unit.iew1.tng, aeso.unit.iew2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.wind_summerview.mc
+    label: "Summerview Wind max capability (IEW1+IEW2)"
+    sum: [aeso.unit.iew1.mc, aeso.unit.iew2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (wind)
+  - id: aeso.plant.solar_brooks_2.tng
+    label: "Brooks Solar II net gen (BRK1+BRK2)"
+    sum: [aeso.unit.brk1.tng, aeso.unit.brk2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_brooks_2.mc
+    label: "Brooks Solar II max capability (BRK1+BRK2)"
+    sum: [aeso.unit.brk1.mc, aeso.unit.brk2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_clydesdale.tng
+    label: "Clydesdale Solar net gen (CLY1+CLY2)"
+    sum: [aeso.unit.cly1.tng, aeso.unit.cly2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_clydesdale.mc
+    label: "Clydesdale Solar max capability (CLY1+CLY2)"
+    sum: [aeso.unit.cly1.mc, aeso.unit.cly2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_wrentham.tng
+    label: "Wrentham Solar (Conrad) net gen (CRD1+CRD2)"
+    sum: [aeso.unit.crd1.tng, aeso.unit.crd2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_wrentham.mc
+    label: "Wrentham Solar (Conrad) max capability (CRD1+CRD2)"
+    sum: [aeso.unit.crd1.mc, aeso.unit.crd2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_strathmore.tng
+    label: "Strathmore Solar net gen (STR1+STR2)"
+    sum: [aeso.unit.str1.tng, aeso.unit.str2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_strathmore.mc
+    label: "Strathmore Solar max capability (STR1+STR2)"
+    sum: [aeso.unit.str1.mc, aeso.unit.str2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_joffre.tng
+    label: "Joffre Solar net gen (JFS1+JFS2)"
+    sum: [aeso.unit.jfs1.tng, aeso.unit.jfs2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_joffre.mc
+    label: "Joffre Solar max capability (JFS1+JFS2)"
+    sum: [aeso.unit.jfs1.mc, aeso.unit.jfs2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_kisikaw_pisim.tng
+    label: "kisikaw pisim Solar (E.L. Smith) net gen (KKP1+KKP2)"
+    sum: [aeso.unit.kkp1.tng, aeso.unit.kkp2.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+  - id: aeso.plant.solar_kisikaw_pisim.mc
+    label: "kisikaw pisim Solar (E.L. Smith) max capability (KKP1+KKP2)"
+    sum: [aeso.unit.kkp1.mc, aeso.unit.kkp2.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (solar)
+# P5b implied gas burn per plant node (MMcf/d), ESTIMATE with an HR x HHV band.
+# Weights = HR x 24 / HHV / 1000, written down in docs/research/v2/power-heat-rates.md (test-enforced).
+  - id: power.plant.shepard.gas_burn.est
+    label: "Shepard Energy Centre implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.egc1.tng: 0.16087
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.shepard.gas_burn.lo
+    label: "Shepard Energy Centre implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.egc1.tng: 0.154409
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.shepard.gas_burn.hi
+    label: "Shepard Energy Centre implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.egc1.tng: 0.182031
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cascade.gas_burn.est
+    label: "Cascade Power Project implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.cas1.tng: 0.163261
+      aeso.unit.cas2.tng: 0.163261
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cascade.gas_burn.lo
+    label: "Cascade Power Project implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cas1.tng: 0.156559
+      aeso.unit.cas2.tng: 0.156559
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cascade.gas_burn.hi
+    label: "Cascade Power Project implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cas1.tng: 0.184666
+      aeso.unit.cas2.tng: 0.184666
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.genesee.gas_burn.est
+    label: "Genesee implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.gnr1.tng: 0.163043
+      aeso.unit.gnr2.tng: 0.163043
+      aeso.unit.gn3.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.genesee.gas_burn.lo
+    label: "Genesee implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.gnr1.tng: 0.150538
+      aeso.unit.gnr2.tng: 0.150538
+      aeso.unit.gn3.tng: 0.225806
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.genesee.gas_burn.hi
+    label: "Genesee implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.gnr1.tng: 0.188838
+      aeso.unit.gnr2.tng: 0.188838
+      aeso.unit.gn3.tng: 0.27667
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.keephills.gas_burn.est
+    label: "Keephills implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.kh2.tng: 0.230435
+      aeso.unit.kh3.tng: 0.230435
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.keephills.gas_burn.lo
+    label: "Keephills implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.kh2.tng: 0.221075
+      aeso.unit.kh3.tng: 0.221075
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.keephills.gas_burn.hi
+    label: "Keephills implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.kh2.tng: 0.26064
+      aeso.unit.kh3.tng: 0.26064
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sundance.gas_burn.est
+    label: "Sundance implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.sd6.tng: 0.263043
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sundance.gas_burn.lo
+    label: "Sundance implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.sd6.tng: 0.252473
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sundance.gas_burn.hi
+    label: "Sundance implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.sd6.tng: 0.29753
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sheerness.gas_burn.est
+    label: "Sheerness implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.sh1.tng: 0.249348
+      aeso.unit.sh2.tng: 0.249348
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sheerness.gas_burn.lo
+    label: "Sheerness implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.sh1.tng: 0.239355
+      aeso.unit.sh2.tng: 0.239355
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.sheerness.gas_burn.hi
+    label: "Sheerness implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.sh1.tng: 0.282159
+      aeso.unit.sh2.tng: 0.282159
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.battle_river.gas_burn.est
+    label: "Battle River implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.br4.tng: 0.271739
+      aeso.unit.br5.tng: 0.271739
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.battle_river.gas_burn.lo
+    label: "Battle River implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.br4.tng: 0.260645
+      aeso.unit.br5.tng: 0.260645
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.battle_river.gas_burn.hi
+    label: "Battle River implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.br4.tng: 0.307411
+      aeso.unit.br5.tng: 0.307411
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.joffre.gas_burn.est
+    label: "Joffre Cogeneration site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.jof1.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.joffre.gas_burn.lo
+    label: "Joffre Cogeneration site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.jof1.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.joffre.gas_burn.hi
+    label: "Joffre Cogeneration site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.jof1.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.calgary_energy_centre.gas_burn.est
+    label: "ENMAX Calgary Energy Centre implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.cal1.tng: 0.163913
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.calgary_energy_centre.gas_burn.lo
+    label: "ENMAX Calgary Energy Centre implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cal1.tng: 0.157204
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.calgary_energy_centre.gas_burn.hi
+    label: "ENMAX Calgary Energy Centre implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cal1.tng: 0.185325
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.milner.gas_burn.est
+    label: "H.R. Milner implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.hrm.tng: 0.181304
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.milner.gas_burn.lo
+    label: "H.R. Milner implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.hrm.tng: 0.173978
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.milner.gas_burn.hi
+    label: "H.R. Milner implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.hrm.tng: 0.205087
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.medicine_hat.gas_burn.est
+    label: "Medicine Hat implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.cmh1.tng: 0.163043
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.medicine_hat.gas_burn.lo
+    label: "Medicine Hat implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cmh1.tng: 0.150538
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.medicine_hat.gas_burn.hi
+    label: "Medicine Hat implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.cmh1.tng: 0.188838
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.clover_bar.gas_burn.est
+    label: "Clover Bar implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.enc1.tng: 0.216304
+      aeso.unit.enc2.tng: 0.216304
+      aeso.unit.enc3.tng: 0.216304
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.clover_bar.gas_burn.lo
+    label: "Clover Bar implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.enc1.tng: 0.207527
+      aeso.unit.enc2.tng: 0.207527
+      aeso.unit.enc3.tng: 0.207527
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.clover_bar.gas_burn.hi
+    label: "Clover Bar implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.enc1.tng: 0.244611
+      aeso.unit.enc2.tng: 0.244611
+      aeso.unit.enc3.tng: 0.244611
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.crossfield.gas_burn.est
+    label: "Crossfield Energy Centre implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.crs1.tng: 0.223913
+      aeso.unit.crs2.tng: 0.223913
+      aeso.unit.crs3.tng: 0.223913
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.crossfield.gas_burn.lo
+    label: "Crossfield Energy Centre implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.crs1.tng: 0.214839
+      aeso.unit.crs2.tng: 0.214839
+      aeso.unit.crs3.tng: 0.214839
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.crossfield.gas_burn.hi
+    label: "Crossfield Energy Centre implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.crs1.tng: 0.253394
+      aeso.unit.crs2.tng: 0.253394
+      aeso.unit.crs3.tng: 0.253394
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.northern_prairie.gas_burn.est
+    label: "Northern Prairie Power Project implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.npp1.tng: 0.265217
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.northern_prairie.gas_burn.lo
+    label: "Northern Prairie Power Project implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.npp1.tng: 0.254409
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.northern_prairie.gas_burn.hi
+    label: "Northern Prairie Power Project implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.npp1.tng: 0.299945
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.valley_view.gas_burn.est
+    label: "Valley View implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.vvw1.tng: 0.269565
+      aeso.unit.vvw2.tng: 0.269565
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.valley_view.gas_burn.lo
+    label: "Valley View implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.vvw1.tng: 0.25871
+      aeso.unit.vvw2.tng: 0.25871
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.valley_view.gas_burn.hi
+    label: "Valley View implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.vvw1.tng: 0.304995
+      aeso.unit.vvw2.tng: 0.304995
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.fort_nelson.gas_burn.est
+    label: "Fort Nelson (BC Hydro) implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.fng1.tng: 0.163043
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.fort_nelson.gas_burn.lo
+    label: "Fort Nelson (BC Hydro) implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.fng1.tng: 0.150538
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.fort_nelson.gas_burn.hi
+    label: "Fort Nelson (BC Hydro) implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.fng1.tng: 0.188838
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.bear_creek.gas_burn.est
+    label: "Bear Creek Cogen site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.bcrk.tng: 0.245652
+      aeso.unit.bcr2.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.bear_creek.gas_burn.lo
+    label: "Bear Creek Cogen site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.bcrk.tng: 0.182796
+      aeso.unit.bcr2.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.bear_creek.gas_burn.hi
+    label: "Bear Creek Cogen site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.bcrk.tng: 0.329369
+      aeso.unit.bcr2.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.rainbow_lake.gas_burn.est
+    label: "Rainbow Lake implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.rl1.tng: 0.245652
+      aeso.unit.rb5.tng: 0.234783
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.rainbow_lake.gas_burn.lo
+    label: "Rainbow Lake implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.rl1.tng: 0.182796
+      aeso.unit.rb5.tng: 0.212903
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.rainbow_lake.gas_burn.hi
+    label: "Rainbow Lake implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.rl1.tng: 0.329369
+      aeso.unit.rb5.tng: 0.274474
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.heartland_cogen.gas_burn.est
+    label: "Industrial Heartland cogen (Dow, Scotford, Heartland, Redwater) site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.dowg.tng: 0.245652
+      aeso.unit.aps1.tng: 0.245652
+      aeso.unit.als1.tng: 0.245652
+      aeso.unit.hrt1.tng: 0.245652
+      aeso.unit.tc02.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.heartland_cogen.gas_burn.lo
+    label: "Industrial Heartland cogen (Dow, Scotford, Heartland, Redwater) site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.dowg.tng: 0.182796
+      aeso.unit.aps1.tng: 0.182796
+      aeso.unit.als1.tng: 0.182796
+      aeso.unit.hrt1.tng: 0.182796
+      aeso.unit.tc02.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.heartland_cogen.gas_burn.hi
+    label: "Industrial Heartland cogen (Dow, Scotford, Heartland, Redwater) site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.dowg.tng: 0.329369
+      aeso.unit.aps1.tng: 0.329369
+      aeso.unit.als1.tng: 0.329369
+      aeso.unit.hrt1.tng: 0.329369
+      aeso.unit.tc02.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.carseland.gas_burn.est
+    label: "Carseland Cogen site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.tc01.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.carseland.gas_burn.lo
+    label: "Carseland Cogen site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.tc01.tng: 0.235699
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.carseland.gas_burn.hi
+    label: "Carseland Cogen site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.tc01.tng: 0.277987
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_athabasca.gas_burn.est
+    label: "Athabasca oil sands cogen (Suncor, Syncrude, CNRL, Fort Hills, Kearl, Muskeg) site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.scr1.tng: 0.245652
+      aeso.unit.scr5.tng: 0.245652
+      aeso.unit.scr6.tng: 0.245652
+      aeso.unit.scl1.tng: 0.245652
+      aeso.unit.mkrc.tng: 0.245652
+      aeso.unit.cnr5.tng: 0.245652
+      aeso.unit.fh1.tng: 0.245652
+      aeso.unit.mkr1.tng: 0.245652
+      aeso.unit.ior3.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_athabasca.gas_burn.lo
+    label: "Athabasca oil sands cogen (Suncor, Syncrude, CNRL, Fort Hills, Kearl, Muskeg) site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.scr1.tng: 0.182796
+      aeso.unit.scr5.tng: 0.182796
+      aeso.unit.scr6.tng: 0.182796
+      aeso.unit.scl1.tng: 0.182796
+      aeso.unit.mkrc.tng: 0.182796
+      aeso.unit.cnr5.tng: 0.182796
+      aeso.unit.fh1.tng: 0.182796
+      aeso.unit.mkr1.tng: 0.182796
+      aeso.unit.ior3.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_athabasca.gas_burn.hi
+    label: "Athabasca oil sands cogen (Suncor, Syncrude, CNRL, Fort Hills, Kearl, Muskeg) site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.scr1.tng: 0.329369
+      aeso.unit.scr5.tng: 0.329369
+      aeso.unit.scr6.tng: 0.329369
+      aeso.unit.scl1.tng: 0.329369
+      aeso.unit.mkrc.tng: 0.329369
+      aeso.unit.cnr5.tng: 0.329369
+      aeso.unit.fh1.tng: 0.329369
+      aeso.unit.mkr1.tng: 0.329369
+      aeso.unit.ior3.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_south.gas_burn.est
+    label: "South Athabasca SAGD cogen (Long Lake, Christina Lake) site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.nx01.tng: 0.163043
+      aeso.unit.nx02.tng: 0.245652
+      aeso.unit.meg1.tng: 0.245652
+      aeso.unit.cl01.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_south.gas_burn.lo
+    label: "South Athabasca SAGD cogen (Long Lake, Christina Lake) site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.nx01.tng: 0.150538
+      aeso.unit.nx02.tng: 0.182796
+      aeso.unit.meg1.tng: 0.182796
+      aeso.unit.cl01.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.oilsands_south.gas_burn.hi
+    label: "South Athabasca SAGD cogen (Long Lake, Christina Lake) site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.nx01.tng: 0.188838
+      aeso.unit.nx02.tng: 0.329369
+      aeso.unit.meg1.tng: 0.329369
+      aeso.unit.cl01.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cold_lake.gas_burn.est
+    label: "Cold Lake SAGD cogen (Mahkeses, Nabiye, Primrose, Foster Creek) site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.ior1.tng: 0.245652
+      aeso.unit.ior2.tng: 0.245652
+      aeso.unit.pr1.tng: 0.245652
+      aeso.unit.ec04.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cold_lake.gas_burn.lo
+    label: "Cold Lake SAGD cogen (Mahkeses, Nabiye, Primrose, Foster Creek) site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.ior1.tng: 0.182796
+      aeso.unit.ior2.tng: 0.182796
+      aeso.unit.pr1.tng: 0.182796
+      aeso.unit.ec04.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.cold_lake.gas_burn.hi
+    label: "Cold Lake SAGD cogen (Mahkeses, Nabiye, Primrose, Foster Creek) site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.ior1.tng: 0.329369
+      aeso.unit.ior2.tng: 0.329369
+      aeso.unit.pr1.tng: 0.329369
+      aeso.unit.ec04.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.wembley.gas_burn.est
+    label: "Wembley site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.wem1.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.wembley.gas_burn.lo
+    label: "Wembley site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.wem1.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.wembley.gas_burn.hi
+    label: "Wembley site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.wem1.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.kaybob.gas_burn.est
+    label: "Kaybob 3 Cogen South site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.kas1.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.kaybob.gas_burn.lo
+    label: "Kaybob 3 Cogen South site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.kas1.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.kaybob.gas_burn.hi
+    label: "Kaybob 3 Cogen South site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.kas1.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.elmworth.gas_burn.est
+    label: "NPC3 Elmworth implied gas burn, estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.npc3.tng: 0.234783
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.elmworth.gas_burn.lo
+    label: "NPC3 Elmworth implied gas burn, lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.npc3.tng: 0.212903
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.elmworth.gas_burn.hi
+    label: "NPC3 Elmworth implied gas burn, hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.npc3.tng: 0.274474
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.empress.gas_burn.est
+    label: "Empress site fuel (cogen), estimate (MW x HR / HHV)"
+    weights:
+      aeso.unit.eps1.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.empress.gas_burn.lo
+    label: "Empress site fuel (cogen), lo band (MW x HR / HHV)"
+    weights:
+      aeso.unit.eps1.tng: 0.182796
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+  - id: power.plant.empress.gas_burn.hi
+    label: "Empress site fuel (cogen), hi band (MW x HR / HHV)"
+    weights:
+      aeso.unit.eps1.tng: 0.329369
+    unit: MMcf/d
+    freq: 5min
+    group: AESO / Gas burn (plants)
+# AB hydro (network/power/hydro_ab.geojson): Raymond Reservoir + Irrican Drops 4-6 share one map node.
+  - id: aeso.plant.hydro_raymond.tng
+    label: "Raymond-area irrigation hydro net gen (RYMD+ICP1)"
+    sum: [aeso.unit.rymd.tng, aeso.unit.icp1.tng]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (hydro)
+  - id: aeso.plant.hydro_raymond.mc
+    label: "Raymond-area irrigation hydro max capability (RYMD+ICP1)"
+    sum: [aeso.unit.rymd.mc, aeso.unit.icp1.mc]
+    unit: MW
+    freq: 5min
+    group: AESO / Plants (hydro)
+# Step 4b: today's estimate per NGTL power-plant delivery station (contract with Gas: ngtl.station.<n>.delivery_est,
+# mirroring Gas's receipt_est). = the plant's live implied burn (site fuel for cogen) x the station's share.
+# Shares: single-station plants 1. Keephills and Genesee use the trailing 12 complete months of TC deliveries
+# (Oct 2025 - Sep 2026). The monthly split swings, so _lo/_hi carry the share's range: _lo = plant burn lo x the
+# MINIMUM monthly share, _hi = plant burn hi x the MAXIMUM (Reviewer, #198). share est [min, max]:
+#   Keephills 6142 0.529 [0.325, 0.704]; 32759 0.470 [0.296, 0.674]; 31046 0.002 [0.000, 0.004]
+#   Genesee  32745 0.985 [0.963, 0.999]; 31037 0.015 [0.001, 0.037]
+# Refresh by hand when the split shifts. MMcf/d, 5 min.
+  - id: ngtl.station.31127.delivery_est
+    label: "NGTL 31127 (shepard) delivery, today's estimate"
+    weights:
+      aeso.unit.egc1.tng: 0.16087
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31127.delivery_est_lo
+    label: "NGTL 31127 (shepard) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.egc1.tng: 0.154409
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31127.delivery_est_hi
+    label: "NGTL 31127 (shepard) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.egc1.tng: 0.182031
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31016.delivery_est
+    label: "NGTL 31016 (calgary energy centre) delivery, today's estimate"
+    weights:
+      aeso.unit.cal1.tng: 0.163913
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31016.delivery_est_lo
+    label: "NGTL 31016 (calgary energy centre) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.cal1.tng: 0.157204
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31016.delivery_est_hi
+    label: "NGTL 31016 (calgary energy centre) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.cal1.tng: 0.185325
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3686.delivery_est
+    label: "NGTL 3686 (sheerness) delivery, today's estimate"
+    weights:
+      aeso.unit.sh1.tng: 0.249348
+      aeso.unit.sh2.tng: 0.249348
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3686.delivery_est_lo
+    label: "NGTL 3686 (sheerness) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.sh1.tng: 0.239355
+      aeso.unit.sh2.tng: 0.239355
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3686.delivery_est_hi
+    label: "NGTL 3686 (sheerness) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.sh1.tng: 0.282159
+      aeso.unit.sh2.tng: 0.282159
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31021.delivery_est
+    label: "NGTL 31021 (clover bar) delivery, today's estimate"
+    weights:
+      aeso.unit.enc1.tng: 0.216304
+      aeso.unit.enc2.tng: 0.216304
+      aeso.unit.enc3.tng: 0.216304
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31021.delivery_est_lo
+    label: "NGTL 31021 (clover bar) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.enc1.tng: 0.207527
+      aeso.unit.enc2.tng: 0.207527
+      aeso.unit.enc3.tng: 0.207527
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31021.delivery_est_hi
+    label: "NGTL 31021 (clover bar) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.enc1.tng: 0.244611
+      aeso.unit.enc2.tng: 0.244611
+      aeso.unit.enc3.tng: 0.244611
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31017.delivery_est
+    label: "NGTL 31017 (carseland) delivery, today's estimate"
+    weights:
+      aeso.unit.tc01.tng: 0.245652
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31017.delivery_est_lo
+    label: "NGTL 31017 (carseland) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.tc01.tng: 0.235699
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31017.delivery_est_hi
+    label: "NGTL 31017 (carseland) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.tc01.tng: 0.277987
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6142.delivery_est
+    label: "NGTL 6142 (keephills) delivery, today's estimate"
+    weights:
+      aeso.unit.kh2.tng: 0.1219
+      aeso.unit.kh3.tng: 0.1219
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6142.delivery_est_lo
+    label: "NGTL 6142 (keephills) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.kh2.tng: 0.071849
+      aeso.unit.kh3.tng: 0.071849
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6142.delivery_est_hi
+    label: "NGTL 6142 (keephills) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.kh2.tng: 0.183491
+      aeso.unit.kh3.tng: 0.183491
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32759.delivery_est
+    label: "NGTL 32759 (keephills) delivery, today's estimate"
+    weights:
+      aeso.unit.kh2.tng: 0.108304
+      aeso.unit.kh3.tng: 0.108304
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32759.delivery_est_lo
+    label: "NGTL 32759 (keephills) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.kh2.tng: 0.065438
+      aeso.unit.kh3.tng: 0.065438
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32759.delivery_est_hi
+    label: "NGTL 32759 (keephills) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.kh2.tng: 0.175671
+      aeso.unit.kh3.tng: 0.175671
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31046.delivery_est
+    label: "NGTL 31046 (keephills) delivery, today's estimate"
+    weights:
+      aeso.unit.kh2.tng: 0.000461
+      aeso.unit.kh3.tng: 0.000461
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31046.delivery_est_lo
+    label: "NGTL 31046 (keephills) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.kh2.tng: 0.0
+      aeso.unit.kh3.tng: 0.0
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31046.delivery_est_hi
+    label: "NGTL 31046 (keephills) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.kh2.tng: 0.001043
+      aeso.unit.kh3.tng: 0.001043
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6103.delivery_est
+    label: "NGTL 6103 (milner) delivery, today's estimate"
+    weights:
+      aeso.unit.hrm.tng: 0.181304
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6103.delivery_est_lo
+    label: "NGTL 6103 (milner) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.hrm.tng: 0.173978
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.6103.delivery_est_hi
+    label: "NGTL 6103 (milner) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.hrm.tng: 0.205087
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3682.delivery_est
+    label: "NGTL 3682 (battle river) delivery, today's estimate"
+    weights:
+      aeso.unit.br4.tng: 0.271739
+      aeso.unit.br5.tng: 0.271739
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3682.delivery_est_lo
+    label: "NGTL 3682 (battle river) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.br4.tng: 0.260645
+      aeso.unit.br5.tng: 0.260645
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.3682.delivery_est_hi
+    label: "NGTL 3682 (battle river) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.br4.tng: 0.307411
+      aeso.unit.br5.tng: 0.307411
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32745.delivery_est
+    label: "NGTL 32745 (genesee) delivery, today's estimate"
+    weights:
+      aeso.unit.gnr1.tng: 0.160597
+      aeso.unit.gnr2.tng: 0.160597
+      aeso.unit.gn3.tng: 0.241967
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32745.delivery_est_lo
+    label: "NGTL 32745 (genesee) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.gnr1.tng: 0.144968
+      aeso.unit.gnr2.tng: 0.144968
+      aeso.unit.gn3.tng: 0.217451
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.32745.delivery_est_hi
+    label: "NGTL 32745 (genesee) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.gnr1.tng: 0.188649
+      aeso.unit.gnr2.tng: 0.188649
+      aeso.unit.gn3.tng: 0.276393
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31037.delivery_est
+    label: "NGTL 31037 (genesee) delivery, today's estimate"
+    weights:
+      aeso.unit.gnr1.tng: 0.002446
+      aeso.unit.gnr2.tng: 0.002446
+      aeso.unit.gn3.tng: 0.003685
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31037.delivery_est_lo
+    label: "NGTL 31037 (genesee) delivery, today's estimate lo band"
+    weights:
+      aeso.unit.gnr1.tng: 0.000151
+      aeso.unit.gnr2.tng: 0.000151
+      aeso.unit.gn3.tng: 0.000226
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)
+  - id: ngtl.station.31037.delivery_est_hi
+    label: "NGTL 31037 (genesee) delivery, today's estimate hi band"
+    weights:
+      aeso.unit.gnr1.tng: 0.006987
+      aeso.unit.gnr2.tng: 0.006987
+      aeso.unit.gn3.tng: 0.010237
+    unit: MMcf/d
+    freq: 5min
+    group: NGTL / Station deliveries (today's estimate)

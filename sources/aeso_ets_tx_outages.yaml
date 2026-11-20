@@ -1,0 +1,16 @@
+# AESO transmission outages affecting the interties (BC, MATL, SK): the approved 7-day System
+# Co-ordination Plan plus the 24-month significant-outage list, as list/ticker Events with refs to
+# power.intertie.*. v1.1, list only: the intertie flag doesn't mean ATC is cut, so no line colouring
+# until the ITC ATC API is verified (docs/research/DECISIONS.md). Full set each fetch: outages that
+# AESO drops or reschedules are withdrawn (event_scopes).
+id: aeso_ets_tx_outages
+name: AESO intertie transmission outages
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 6h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention: events
+params:
+  report: tx_outages

@@ -1,0 +1,138 @@
+# Manitoba & NW Ontario (Erik's "MT & Western Ont"; MT read as Manitoba, docs/QUESTIONS.md Q-R3).
+# NW Ontario arrives by the clip in sont.yaml.
+id: mbnwo
+name: Manitoba & NW Ontario
+color: "#2ec4b6"          # region border + tint on the map (Erik, 2026-11-07)
+members: [CA-MB]
+anchor: [-94.5, 53.8]
+tz: America/Winnipeg
+budget_region: ont
+coverage: standard
+gas:
+  # L-106 8c: Manitoba + NW Ontario (sont's clip) on the TC Mainline. Research: docs/research/regions/mbnwo.md
+  production: {none: true, note: "no gas production in Manitoba or NW Ontario"}
+  imports: {parts: [tcm.area.sk.outflow_est, tcm.emerson.receipts, tcm.area.on.receipts], covers: [CA-MB, CA-ON],
+            quality: estimate,
+            note: "TC Mainline in from Saskatchewan (wcan's exit, ±6 %) + Emerson receipts (US) + Great Lakes at the
+              Sault (TC's SS. Marie receipt)"}
+  exports: {parts: [tcm.emerson.deliveries, tcm.area.on.outflow_est], covers: [CA-MB, CA-ON], quality: estimate,
+            derived: true,
+            note: "Emerson to Viking + Great Lakes (US) + the Northern Ontario Line arriving at North Bay Junction (into
+              sont). TC computes that arrival from these same receipts and deliveries, so the balance closes by
+              construction (no implied storage shown)"}
+  demand: {parts: [tcm.area.mb.deliveries, tcm.area.on.deliveries], covers: [CA-MB, CA-ON], quality: scheduled,
+           note: "TC deliveries in Manitoba (Centra) + Ontario west of North Bay Junction (WDA, NDA, the Sault). The NDA
+             towns east of the curve (Cochrane, Timmins, Sudbury) are sont's, so this reads a little high"}
+oil:
+  production: {parts: [{series: statcan.mb.crude_production, fill: latest}], covers: [CA-MB],
+               note: "Manitoba crude, StatCan monthly (NW Ontario produces none)"}
+power:
+  # Manitoba Hydro publishes no live load or generation: StatCan 25-10-0015 monthly generation by type (statcan.gen.mb.*,
+  # ~2-3 months late), the newest month held forward (fill: latest, so est.). No load or interchange line: neither is
+  # public for Manitoba. Ontario's NW + NE zones (in this region's outline) are inside sont's IESO lines (REGIONS rule 2).
+  fuels_note: "Manitoba only, StatCan monthly (held forward, est.); gas = StatCan's non-renewable combustible fuels."
+  generation: {parts: [{series: statcan.gen.mb.total, fill: latest}], covers: [CA-MB],
+               note: "Manitoba (StatCan monthly); NW Ontario is in sont's IESO lines"}
+  fuels:
+    hydro: {parts: [{series: statcan.gen.mb.hydro, fill: latest}], covers: [CA-MB]}
+    wind: {parts: [{series: statcan.gen.mb.wind, fill: latest}], covers: [CA-MB]}
+    gas: {parts: [{series: statcan.gen.mb.fossil, fill: latest}], covers: [CA-MB],
+          note: "StatCan's non-renewable combustible fuels: gas + oil in Manitoba (no coal since 2018)"}
+    biomass: {parts: [{series: statcan.gen.mb.biomass, fill: latest}], covers: [CA-MB]}
+    solar: {parts: [{series: statcan.gen.mb.solar, fill: latest}], covers: [CA-MB]}
+    other: {parts: [{series: statcan.gen.mb.other, fill: latest}], covers: [CA-MB]}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.winnipeg.tmean
+    - wx.brandon.tmean
+    - wx.thunder_bay.tmean
+    - wx.kenora.tmean
+  hdd: wx.region.mbnwo.hdd
+  cdd: wx.region.mbnwo.cdd
+  normals: [wx.region.mbnwo.hdd_normal, wx.region.mbnwo.cdd_normal]
+  realized: [wx.region.mbnwo.hdd.realized, wx.region.mbnwo.cdd.realized]
+  outlook: [wx.region.mbnwo.hdd_1_7, wx.region.mbnwo.hdd_8_15, wx.region.mbnwo.cdd_1_7, wx.region.mbnwo.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/mbnwo.md (shown on the page)
+  - "Emerson deliveries vs capability, split Great Lakes / Viking: cold in Chicago or Michigan pulls more south"
+  - "NOL arrival at North Bay Junction vs NOL capability: the long-haul constraint to eastern Canada"
+  - "Manitoba deliveries vs the HDD outlook: Centra load doubles or triples in a cold snap, all off TC"
+  - "1-7 and 8-15 day HDD outlook: Arctic cold drives the Manitoba winter peak and Mainline demand at Emerson"
+  - "Ontario-Manitoba tie flow (+ is Ontario export): the only live number at the Manitoba border"
+  - "NW Ontario demand: mining and pulp-and-paper load in the north"
+  - "Lake Winnipeg level vs normal and the inflow index: low water means fewer Manitoba Hydro exports"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: imports_by_point
+      title: Imports by point
+      of: imports
+      rows:
+        - {label: "TC Mainline from Saskatchewan (Welwyn)", series: tcm.area.sk.outflow_est}
+        - {label: "Emerson receipts (from the US)", series: tcm.emerson.receipts}
+        - {label: "Great Lakes at the Sault (from Michigan)", series: tcm.area.on.receipts}
+    - id: exports_by_point
+      title: Exports by point
+      rows:
+        - {label: "Emerson 1 (to Viking, Minnesota)", series: tcm.emerson.viking_deliveries}
+        - {label: "Emerson 2 (to Great Lakes)", series: tcm.emerson.glgt_deliveries}
+        - {label: "TC Mainline at North Bay Junction (to the east)", series: tcm.area.on.outflow_est}
+    - id: pipelines
+      title: Pipelines (flow vs capacity)
+      rows:
+        - {label: "TC Emerson deliveries (1 + 2)", series: tcm.emerson.deliveries}
+        - {label: "TC Emerson Extension capability", series: tcm.emerson.capability}
+        - {label: "TC Northern Ontario Line flow (east of Station 41)", series: tcm.area.mb.outflow_est}
+        - {label: "TC Northern Ontario Line capability", series: tcm.nol.capability}
+        - {label: "TC Manitoba deliveries", series: tcm.area.mb.deliveries}
+        - {label: "TC NW Ontario deliveries (NOL, Sault)", series: tcm.area.on.deliveries}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      rows:
+        - {label: "Manitoba crude (StatCan monthly)", series: statcan.mb.crude_production}
+  power:
+    - id: load_by_zone
+      title: "NW Ontario (IESO zones; in sont's lines)"
+      note: "Manitoba Hydro publishes no load. Ontario's Northwest + Northeast zones sit in this region's outline but in IESO's balancing authority (sont)."
+      rows:
+        - {label: "IESO Northwest zone", series: ieso.zone.northwest.demand}
+        - {label: "IESO Northeast zone", series: ieso.zone.northeast.demand}
+    - id: interchange_by_tie
+      title: "Manitoba–Ontario tie (IESO, + = Ontario export)"
+      rows:
+        - {label: "Ontario → Manitoba", series: ieso.intertie.manitoba.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW from the map's plant inventory (OpenStreetMap, ODbL): the operator publishes no per-plant output, so these are capacities, not live output."
+      rows:
+        - {label: "Limestone Generating Station (hydro)", value: 1340, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Kettle Generating Station (hydro)", value: 1220, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Long Spruce Generating Station (hydro)", value: 1010, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Keeyask Generating Station (hydro)", value: 695, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Grand Rapids Generating Station (hydro)", value: 472, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Abitibi Canyon Generating Station (hydro)", value: 349, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Brandon Generating Station (gas)", value: 333, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Smoky Falls Generating Station (hydro)", value: 268, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Kelsey Generating Station (hydro)", value: 250, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Little Long Generating Station (hydro)", value: 233, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+    - id: capacity_by_fuel
+      title: Installed capacity by type
+      unit: MW
+      note: "StatCan 25-10-0022-01 (annual, by turbine type: combustion isn't split by fuel), all producers, MW; Manitoba only (northwestern Ontario's plants are in sont's all-Ontario figure)"
+      rows:
+        - {label: "Hydro (incl. pumped storage)", series: cap.mbnwo.hydro}
+        - {label: "Wind", series: cap.mbnwo.wind}
+        - {label: "Solar", series: cap.mbnwo.solar}
+        - {label: "Steam turbine (coal, gas, oil, biomass)", series: cap.mbnwo.thermal_steam}
+        - {label: "Combustion turbine (mostly gas)", series: cap.mbnwo.thermal_ct}
+        - {label: "Engines (diesel, gas)", series: cap.mbnwo.thermal_ic}
+        - {label: Total, series: cap.mbnwo.total}
+    - id: data_centres
+      title: Data centres
+      note: "Manitoba Hydro publishes no operating data-centre or crypto load; new crypto connections are paused (since Nov 2022). Nothing found for NW Ontario."
+      rows:
+        - {label: Crypto connection requests at the pause (queued), value: 371, unit: MW, as_of: "2022-11",
+           source: "Manitoba Hydro, 2022-11 release: 17 operators; + 4,600 MW of expressed interest"}

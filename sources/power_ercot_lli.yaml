@@ -1,0 +1,19 @@
+# ERCOT large loads energized since 2022 (>90 % data centres + crypto), MONTHLY, for the tx region page (PLAN 9 data
+# centres). One sentence of the ERCOT Monthly Operational Overview's "Loads Approved to Energize - Observations" slide:
+# the observed non-simultaneous monthly peak of the approved large loads, and the MW approved to energize. No real-time
+# data-centre series exists. The PDF (~1.4 MB, posted ~mid-month for the month before) is discovered from the Board of
+# Directors page https://www.ercot.com/committees/board (and /committees/board/<YYYY> for a past year): its URL is dated
+# and its filename varies. Requests: the board page 1/day (a 304 when unchanged, ~74 KB otherwise) + each new PDF once
+# (parsed results cached in <home>/cache/ercot_lli); the first run back-fills from April 2025 (~21 PDFs, ~25 MB, once).
+# Details: montney/connectors/power_ercot_lli.py.
+id: power_ercot_lli
+name: ERCOT large loads approved to energize, observed peak (monthly)
+type: python
+module: montney.connectors.power_ercot_lli
+class: ErcotLargeLoads
+mode: cached
+interval: 1d
+region: tx           # sources/BUDGET.yaml
+retention: daily
+params:
+  from_year: 2025    # the slide starts with the April 2025 issue

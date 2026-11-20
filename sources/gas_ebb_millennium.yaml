@@ -1,0 +1,29 @@
+# Millennium Pipeline (TC eConnects SSRS, asset 26): Pennsylvania gas into New York's Southern Tier, on to Ramapo
+# (Algonquin) -> ebb.millennium.nyc.<category> (MMcf/d) + ebb.millennium.pa.receipts. Timely cycle only (the report's
+# default). Research: docs/research/pipelines/east_and_rockies.md §2; method, requests and traps:
+# montney/connectors/gas_ebb_east.py.
+# Requests: 2 once per day (viewer + CSV export; other runs skip), +1 a week (location file): ~2/day on
+# ebb.tceconnects.com.
+id: gas_ebb_millennium
+name: Millennium Pipeline (New York)
+type: python
+module: montney.connectors.gas_ebb_east
+class: EbbTce
+mode: cached
+interval: 2h
+region: rest          # multi-region family (nyc)
+retention: daily
+params:
+  boards:
+    - pipe: millennium
+      label: Millennium
+      asset: 26
+      regions: [nyc]
+      overrides:
+        "640168": {category: int_in, note: "Stagecoach receipt (STR): mostly Pennsylvania gas off the Stagecoach / MARC header"}
+        "642638": {category: int_in, note: "Sanford (typed WHD): Bluestone gathering of Pennsylvania Marcellus gas"}
+        "640608": {category: int_in, note: "Laser Midstream (GTH): Pennsylvania gas"}
+      named:
+        ebb.millennium.pa.receipts:
+          label: "Pennsylvania gas received (Stagecoach, Sanford, Laser)"
+          plus: ["640168:R", "642638:R", "640608:R"]

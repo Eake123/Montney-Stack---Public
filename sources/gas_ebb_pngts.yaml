@@ -1,0 +1,28 @@
+# Portland Natural Gas Transmission System (PNGTS): Canadian gas into New England at East Hereford, Maine / New
+# Hampshire deliveries -> ebb.pngts.upne.<category> (MMcf/d) + ebb.pngts.east_hereford.receipts. Research:
+# docs/research/pipelines/east_and_rockies.md §2; method, requests and traps: montney/connectors/gas_ebb_east.py.
+# Requests: 1 per run (every cycle of the gas day in one POST) + 1 a day (previous gas day) + 1 a week (locations):
+# ~13/day on web-prd.myquorumcloud.com.
+id: gas_ebb_pngts
+name: PNGTS (East Hereford, Maine, New Hampshire)
+type: python
+module: montney.connectors.gas_ebb_east
+class: EbbPngts
+mode: cached
+interval: 2h
+region: rest          # multi-region family (upne)
+retention: daily
+params:
+  boards:
+    - pipe: pngts
+      label: PNGTS
+      tspno: 17
+      regions: [upne]
+      overrides:
+        "012723": {category: import_canada, note: "Pittsburg / East Hereford: TQM -> PNGTS at the Québec border"}
+        "230007": {category: power, note: "Newington PSNH (Newington Station)"}
+        "230022": {category: power, note: "Newington EP (Essential Power Newington)"}
+      named:
+        ebb.pngts.east_hereford.receipts:
+          label: "receipts from Canada at East Hereford"
+          plus: ["012723:R"]

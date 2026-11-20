@@ -1,0 +1,120 @@
+name: ci
+
+# Private repo, and Erik doesn't pay for Actions (LOG L-052): the merge gate is the local CI on Erik's PC
+# (scripts/ci/local-ci.ps1 posting a `local-ci` commit status). This workflow runs only on demand, for reference.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --extra dev
+      - name: Tests (includes spec validation and API tests)
+        run: uv run pytest -q
+      - name: Repo hygiene (no data files committed)
+        run: |
+          bad=$(git ls-files | grep -Ei '\.(csv|duckdb|xlsx|parquet)$' | grep -v '^tests/fixtures/' || true)
+          if [ -n "$bad" ]; then echo "Data files must not be committed:"; echo "$bad"; exit 1; fi
+
+  # Postgres 18 + TimescaleDB 2.31 for tests/test_db* (PLAN P3, L-033). The Community build, never
+  # the -oss tag: -oss is the Apache build without columnstore/rollups/policies, and `montney db check`
+  # fails on it (timescaledb.license must be 'timescale'). MONTNEY_DB_REQUIRED=1: no database = FAIL.
+  db:
+    runs-on: ubuntu-latest
+    services:
+      timescale:
+        image: timescale/timescaledb:2.31.0-pg18
+        env:
+          POSTGRES_USER: montney
+          POSTGRES_PASSWORD: ci-throwaway-not-a-secret
+          POSTGRES_DB: montney
+          TIMESCALEDB_TELEMETRY: "off"
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U montney -d montney"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      MONTNEY_DB_HOST: localhost
+      MONTNEY_DB_PASSWORD: ci-throwaway-not-a-secret
+      MONTNEY_DB_REQUIRED: "1"
+      # The service container is throwaway: its `montney` database (POSTGRES_DB, then `db init` below) is not a
+      # live store. Without this the DB test helpers refuse a server that holds any database besides
+      # `postgres` and their scratch ones (montney/db/testing.py), which is what protects Erik's machine.
+      MONTNEY_DB_TESTS_SERVER_IS_THROWAWAY: "1"
+      # Backups (docs/db/BACKUPS.md): pg_dump/pg_restore must be >= the server's 18; the runner image ships an
+      # older client, so the PGDG 18 client is installed below. Backups go to a throwaway folder.
+      MONTNEY_PG_BIN: /usr/lib/postgresql/18/bin
+      MONTNEY_BACKUP_DIR: /tmp/montney-backups
+      # The restore test's superuser (role "restore"; on Erik's machine `postgres`). Here it is the container's
+      # own superuser, with the same throwaway password.
+      MONTNEY_DB_RESTORE_USER: montney
+      POSTGRES_SUPERUSER_PASSWORD: ci-throwaway-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --extra dev
+      - name: PostgreSQL 18 client (pg_dump / pg_restore)
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          "$MONTNEY_PG_BIN/pg_dump" --version
+      # TimescaleDB's worker pool for CI's load (docs/db/INSTALL.md section 3 has Erik's values). Measured on
+      # #134: the container already runs max_worker_processes 21 (the image's timescaledb-tune), so the warnings
+      # (254-262 "failed to launch job ... out of background workers" per db job on main) come from
+      # timescaledb.max_background_workers = 16. Every test creates a scratch database whose 19 jobs all fire
+      # at once, a churn Erik's single database never has (3 warnings in his log, all at the db init burst).
+      # So CI gets a larger pool: 64 TimescaleDB workers inside max_worker_processes 80 (+ 8 parallel + launcher).
+      # Restart required; the step fails if the values didn't take.
+      - name: Postgres worker pool for the test churn
+        env:
+          PGC: ${{ job.services.timescale.id }}
+        run: |
+          docker exec "$PGC" psql -U montney -d montney -Atc "SHOW max_worker_processes" -c "SHOW timescaledb.max_background_workers"
+          docker exec "$PGC" psql -U montney -d montney -c "ALTER SYSTEM SET max_worker_processes = 80" -c "ALTER SYSTEM SET timescaledb.max_background_workers = 64"
+          docker restart "$PGC"
+          for i in $(seq 1 60); do docker exec "$PGC" pg_isready -U montney -d montney && break; sleep 1; done
+          docker exec "$PGC" psql -U montney -d montney -Atc "SHOW max_worker_processes" | grep -qx 80
+          docker exec "$PGC" psql -U montney -d montney -Atc "SHOW timescaledb.max_background_workers" | grep -qx 64
+          docker exec "$PGC" psql -U montney -d montney -Atc "SHOW max_worker_processes" -c "SHOW timescaledb.max_background_workers"
+      - name: montney db init + check + du
+        run: |
+          uv run montney db init
+          uv run montney db check
+          uv run montney du
+      - name: backup + restore test against the service container
+        run: |
+          uv run montney db backup
+          uv run montney db restore-test
+          uv run montney db backups
+      - name: Database tests
+        if: success() || failure()   # still run (and report) when the db step failed
+        run: uv run pytest -rs -rP -v tests/test_db*.py --junitxml=db-tests.xml   # -rP: show passing tests' counts
+      - name: Database tests actually ran (none skipped, none missing)
+        if: success() || failure()
+        run: >-
+          uv run python -c "import xml.etree.ElementTree as E; s = E.parse('db-tests.xml').getroot();
+          s = s if s.tag == 'testsuite' else s[0]; t, k = int(s.get('tests')), int(s.get('skipped'));
+          print(f'db tests: {t} collected, {k} skipped'); assert t > 0 and k == 0"
+
+  windows:
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --extra dev
+      - name: eccodes loads on Windows (bundled DLLs)
+        run: >-
+          uv run python -c "import eccodes as e; print('eccodes', e.codes_get_api_version());
+          h = e.codes_grib_new_from_samples('GRIB2'); e.codes_set(h, 'shortName', '2t');
+          print('decoded sample, edition', e.codes_get(h, 'edition')); e.codes_release(h)"
+      - name: Tests
+        run: uv run pytest -q

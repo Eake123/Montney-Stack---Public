@@ -1,0 +1,18 @@
+# US state gas + oil, monthly (L-106 8b): marketed production, deliveries to consumers (total, and the residential /
+# commercial / industrial / electric power split that gas_region_demand uses), storage working gas and net
+# withdrawals, crude oil production, for every member state of the 9 US regions (+ Illinois). NINE public EIA dnav
+# summary pages per run (every state on one page each, ~35-45 KB), every 3 days. Supersedes gas_eia_midwest and
+# gas_eia_mist (same measures and series ids). Details: montney/connectors/eia_states.py
+id: gas_eia_states
+name: EIA state gas and oil (monthly)
+type: python
+module: montney.connectors.eia_states
+class: GasEiaStates
+mode: cached
+interval: 3d          # EIA releases monthly (~2 months behind): 9 requests per 3 days
+region: rest          # every US region at once
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values; each EIA release (as_of = its release date) is a vintage.
+retention: daily
+params:
+  months: 6

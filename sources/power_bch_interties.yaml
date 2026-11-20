@@ -1,0 +1,13 @@
+# BC Hydro BC-US and BC-AB actual flow, hourly means of the 5-min file (L-106, PLAN 8c wcan). Keyless BC Hydro file; 1 request/h (~180 KB, the last 7 days at 5 min). PST all year (fixed UTC-8).
+# Details: montney/connectors/power_bch.py.
+id: power_bch_interties
+name: BC Hydro BC-US and BC-AB actual flow, hourly means of the 5-min file
+type: python
+module: montney.connectors.power_bch
+class: BcHydro
+mode: cached
+interval: 1h
+region: ab_nebc      # wcan (sources/BUDGET.yaml)
+retention: hourly
+params:
+  report: interties

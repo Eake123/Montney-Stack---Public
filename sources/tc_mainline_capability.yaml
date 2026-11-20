@@ -1,0 +1,16 @@
+# TC Canadian Mainline daily capability (Prairies Line, Emerson Extension, NOL, EDA, downstream Stn 148) from the
+# weekly "TC Energy Planned Maintenance" bulletin's table (TJ at 38.5 MJ/m³ → MMcf/d) (L-077, Erik).
+# Same Customer Express API as ngtl_bulletins. Details: montney/connectors/tc_mainline.py
+id: tc_mainline_capability
+name: TC Mainline capability (maintenance bulletins)
+type: python
+module: montney.connectors.tc_mainline
+class: TcMainlineCapability
+mode: cached
+interval: 1d   # L-081: the bulletin is weekly (plus the odd update)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# A forecast by gas day; each bulletin is a vintage (as_of = its publication time).
+retention: daily
+params:
+  page_size: 100      # newest 100 bulletins across all TC providers (~1 week)
+  max_bulletins: 3    # the newest maintenance bulletins read (each covers 11 days)

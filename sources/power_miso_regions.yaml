@@ -1,0 +1,15 @@
+# MISO load by region (L-100): Midwest (North + Central, LRZ 1-7) and South (LRZ 8-10), from MISO's daily
+# "Forecasted and Actual Load" report (df_al.xls, keyless): this hour's MTLF forecast, the day's forecast peak, and
+# yesterday's actual mean + peak. The public real-time API has no regional split, and no regional fuel mix exists.
+# Today's file is read once it's published and cached; the other runs of the day cost nothing (~1 request/day).
+# LIVE ONLY (never persisted). MISO time is EST all year. Details: montney/connectors/power_miso_regions.py.
+id: power_miso_regions
+name: MISO load by region (Midwest, South), forecast + yesterday's actual (live)
+type: python
+module: montney.connectors.power_miso_regions
+class: MisoRegions
+mode: live
+interval: 6h
+region: midwest      # sources/BUDGET.yaml (L-095/L-100)
+# Retention tier (docs/db/RETENTION.md spec contract): live = mode: live, held in obs_live (the last fetch only).
+retention: live

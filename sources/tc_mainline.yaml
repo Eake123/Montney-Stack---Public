@@ -1,0 +1,18 @@
+# TC Canadian Mainline scheduled volumes, summed on ingest into province areas (L-077, Erik): Empress (AB),
+# Saskatchewan, Manitoba (+ Emerson exports), Ontario west of North Bay Junction, and the Eastern Delivery Area endpoint.
+# ONE request per run to TC's public Mainline EBB (GCTS Gas Day Summary Report, a gas-day range); no per-point rows.
+# GJ → MMcf/d at 39.2 MJ/m³. Details and back-test: montney/connectors/tc_mainline.py
+# Back-fill: uv run python -m montney.importers.tc_mainline --from 2024-11-01
+id: tc_mainline
+name: TC Mainline scheduled volumes by area (GCTS)
+type: python
+module: montney.connectors.tc_mainline
+class: TcMainline
+mode: cached
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily scheduled values; each fetch that changes a gas day is a vintage.
+retention: daily
+params:
+  url: https://www.gcts.tcenergy.com/nominations/pipelines/ML/gasdaysummaryreport
+  days_back: 7

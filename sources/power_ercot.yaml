@@ -1,0 +1,16 @@
+# Texas (ERCOT) generation by fuel, demand and DC-tie flows, hourly MW (PLAN 9 item 1: the tx box's generation < 2 h
+# old instead of EIA-930's ~33 h). Source: ERCOT's keyless dashboard JSONs, https://www.ercot.com/api/1/services/read/
+# dashboards/{fuel-mix,supply-demand,dc-tie-flows}.json (5-min rows, explicit UTC offsets; Imperva-fronted).
+# Requests: the 3 files every 15 min = 12 req/h, each a conditional GET (ETag -> 304), 1 s apart; plus
+# system-wide-demand.json only to fill a load gap (~1/day). Lag ~6 min; an hour is complete ~5 min after it ends.
+# Details: montney/connectors/power_ercot.py.
+id: power_ercot
+name: ERCOT generation by fuel, demand and DC ties, hourly
+type: python
+module: montney.connectors.power_ercot
+class: ErcotGeneration
+mode: cached
+interval: 15m
+region: tx           # sources/BUDGET.yaml
+retention: hourly
+stale_after: 150m     # the snapshot's stale threshold (docs/SOURCES.md): the newest hour start is up to ~2.3 h old

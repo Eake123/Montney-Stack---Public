@@ -1,0 +1,15 @@
+# EIA-930 hourly DEMAND for every US balancing authority (L-106, PLAN 8b): eia930.<ba>.demand, summed into the US
+# regions' power: sections. Keyless JSON behind EIA's Grid Monitor: 3 requests/h, one per batch of <= 15 BAs (an
+# unfiltered all-BA request hangs; 38 BAs, 72 h window). Demand is ~1-2 h behind real time. Undocumented service: the
+# documented fallback (EIA API v2 + a free key) is in the connector header. Details: montney/connectors/power_eia930.py.
+id: power_eia930_demand
+name: EIA-930 demand, every US balancing authority (hourly)
+type: python
+module: montney.connectors.power_eia930
+class: Eia930
+mode: cached
+interval: 1h
+region: rest         # each request covers several US regions (sources/BUDGET.yaml note)
+retention: hourly
+params:
+  report: demand

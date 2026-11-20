@@ -1,0 +1,15 @@
+# USGS daily mean streamflow (NWIS daily values, statistic 00003) for the same 2 sites, 1995 -> yesterday: the history
+# behind "% of normal" (weather_flow_normal). ONE bulk request per run (~1.5 MB), every 30 days (it re-reads the whole
+# range; change-only writes store only what's new or revised). Recent days are provisional ("P").
+# Units: cfs -> m3/s. Region: pnw (L-085). Details: montney/connectors/weather_usgs.py.
+id: weather_usgs_daily
+name: Rivers - USGS Columbia (The Dalles, International Boundary), daily means
+region: pnw
+type: python
+module: montney.connectors.weather_usgs
+class: USGSDaily
+mode: cached
+interval: 30d
+retention: daily       # actuals (as_of = ts), kept forever
+params:
+  start: "1995-01-01"

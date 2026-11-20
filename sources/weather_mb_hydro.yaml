@@ -1,0 +1,13 @@
+# Manitoba Hydro water at a glance (L-091): Lake Winnipeg (% of the 711-715 ft operating range, vs normal), Southern
+# Indian Lake, and an inflow index (Saskatchewan at The Pas + Churchill above Granville Falls, % of normal). WSC gauges
+# (ECCC licence), no key. ONE realtime request a day for all 8 stations (pipe filter); normals from HYDAT daily means,
+# cached 30 d (~16 requests a month). No `region:`: SK/MB count in ab_nebc (L-091).
+# Details and the stated gaps (Nelson, Winnipeg River discharge): montney/connectors/weather_mb_hydro.py.
+id: weather_mb_hydro
+name: Rivers - Manitoba Hydro at a glance (Lake Winnipeg, inflow index)
+type: python
+module: montney.connectors.weather_mb_hydro
+class: ManitobaHydro
+mode: cached
+interval: 1d
+retention: daily       # daily summaries of actuals (as_of = ts), kept forever

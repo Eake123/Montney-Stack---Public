@@ -1,0 +1,14 @@
+.git
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.claude
+*.duckdb
+*.duckdb.wal
+*.csv
+*.dump
+data/
+private/
+.env
+.env.*

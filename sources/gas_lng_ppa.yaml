@@ -1,0 +1,20 @@
+# LNG Canada feed gas from cargo departures at Kitimat (PLAN 5c item 1; Q5 / L-041: personal use, at most 1 poll / 15 min,
+# never redistributed). Source: Pacific Pilotage Authority live traffic (public, no auth, undocumented).
+# Writes lng.kitimat.cargo (one point per loaded departure), lng.kitimat.ppa_poll (hourly heartbeat) and
+# lng.kitimat.feed_30d (MMcf/d, ±10 %; NO-RESULT until 30 days of near-unbroken polling are stored, i.e. from ~Dec 1 2026).
+# Method, constants and their calibration: montney/connectors/gas_lng_ppa.py
+id: gas_lng_ppa
+name: LNG Canada cargoes (Pacific Pilotage, Kitimat)
+type: python
+module: montney.connectors.gas_lng_ppa
+class: GasLngPpa
+mode: cached
+interval: 15m
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Cargo points and the daily estimate are actuals kept forever (daily). The poll heartbeat is hourly (only the last
+# 30 days are ever read back).
+retention:
+  default: daily
+  "lng.kitimat.ppa_poll": hourly
+params:
+  api: https://ppaportal.portlink.co/api/pdams/GetCurrentVesselTraffic

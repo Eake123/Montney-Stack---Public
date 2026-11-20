@@ -1,0 +1,15 @@
+# Westcoast (Enbridge) scheduled volumes by segment: the informational posting's Operationally Available Capacity CSV
+# (PLAN step 6, PR 6A). Public page, reached by ASP.NET postbacks. GJ/d → MMcf/d at Westcoast's 40 GJ/10³m³.
+# Details: montney/connectors/gas_westcoast_oa.py. Back-fill: uv run python -m montney.importers.gas_westcoast_oa --from 2025-11-01
+id: gas_westcoast_oa
+name: Westcoast scheduled volumes by segment (OA)
+type: python
+module: montney.connectors.gas_westcoast_oa
+class: GasWestcoastOa
+mode: cached
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily scheduled values; each later cycle on a gas day is a vintage (as_of = the cycle stamp), kept forever.
+retention: daily
+params:
+  url: https://rtba.enbridge.com/InformationalPosting/Default.aspx?bu=WE&Type=OA

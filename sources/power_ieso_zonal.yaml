@@ -1,0 +1,15 @@
+# Ontario (IESO) hourly demand by zone (L-106, PLAN 8c sont + mbnwo): Northwest + Northeast = mbnwo's Ontario part,
+# the other eight zones = sont. Keyless IESO DemandZonal CSV, year to date (~0.55 MB, updated daily, ~1 day late),
+# 1 request/day; past years from from_year cached once. EST all year (fixed UTC-5). Details:
+# montney/connectors/power_ieso_zonal.py.
+id: power_ieso_zonal
+name: IESO demand by zone, hourly (published daily)
+type: python
+module: montney.connectors.power_ieso_zonal
+class: IesoZonal
+mode: cached
+interval: 1d
+region: ont          # sources/BUDGET.yaml
+retention: hourly
+params:
+  from_year: 2025

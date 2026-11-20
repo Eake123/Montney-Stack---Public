@@ -1,0 +1,16 @@
+# Quebec (Hydro-Quebec) demand + generation by source, DAILY SUMS (MWh/d): the stored history (L-091). Each run reads
+# the two rolling exports (2 requests/day) for the latest complete days; the first run also reads the two history
+# exports once (hourly 2019-2025, ~2 x 9 MB) and keeps the daily sums from `from_date` in <home>/cache/hq.
+# Details: montney/connectors/power_hq.py.
+id: power_hq_daily
+name: Hydro-Quebec demand and generation by source, daily sums
+type: python
+module: montney.connectors.power_hq
+class: HqGeneration
+mode: cached
+interval: 1d
+region: qc           # sources/BUDGET.yaml; the source -> region mapping is Database's (L-091)
+retention: daily
+params:
+  report: daily
+  from_date: "2020-01-01"

@@ -1,0 +1,14 @@
+# The Chicago drop-off (L-095): Alliance's receipts + Northern Border's Chicago-market net deliveries, summed per gas
+# day from the store. No requests. Details: montney/connectors/midwest_gas.py
+id: gas_midwest_balance
+name: Midwest gas (Chicago drop-off, derived)
+type: python
+module: montney.connectors.midwest_gas
+class: GasMidwestBalance
+mode: cached
+interval: 1h
+region: midwest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  days: 7

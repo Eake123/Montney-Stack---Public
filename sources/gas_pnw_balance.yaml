@@ -1,0 +1,18 @@
+# PacNW summary (L-086, Erik): imports (GTN Kingsgate + NWP Sumas + NWP Baker, the Rockies entry, + GTN's other
+# receipts: Turquoise Flats off Ruby, Ridge Road, RNG), exits (Malin,
+# Tuscarora), storage (Jackson Prairie + Plymouth LNG daily; Mist from EIA monthly) and the derived demand
+# (imports − exits + storage, ±10 %, back-tested against EIA WA + OR). No requests: it reads gas_nwp, gas_gtn and
+# gas_eia_mist back from the store. Method: montney/connectors/pnw_gas.py
+id: gas_pnw_balance
+name: PacNW imports, demand and storage (derived)
+type: python
+module: montney.connectors.pnw_gas
+class: GasPnwBalance
+mode: cached
+interval: 1h
+region: pnw
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily estimates; each run that changes a gas day is a vintage.
+retention: daily
+params:
+  days: 7      # gas days recomputed each run (NWP and GTN post later cycles over the following day)

@@ -1,0 +1,229 @@
+id: umw
+name: Upper Midwest
+color: "#64b5f6"          # region border + tint on the map (Erik, 2026-11-07)
+members: [US-MN, US-WI, US-MI]
+anchor: [-90.5, 45.6]
+tz: America/Chicago
+budget_region: midwest
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/umw.md
+  # production: Michigan's monthly marketed production is withheld on EIA's state page (MN and WI produce none)
+  why: {production: "Michigan's output is withheld by EIA and enters local systems, not a posted pipe"}
+  imports: {parts: [tcm.emerson.glgt_deliveries, tcm.emerson.viking_deliveries], scope: Canada, quality: scheduled,
+            note: "from Canada only: TC's deliveries at Emerson to Great Lakes and Viking (mbnwo's exit). The supply from
+              the south (ANR, Guardian, Northern Natural, Vector, Panhandle / Trunkline) has no public daily total"}
+  exports: {parts: [glgt.st_clair.net_deliveries, vector.st_clair.deliveries, pepl.ojibway.deliveries,
+                    tcm.area.on.receipts], scope: Canada, quality: scheduled,
+            note: "to Ontario: Great Lakes and Vector at St. Clair, Panhandle at Ojibway (sont's Dawn inflows)
+              and Great Lakes at the Sault (mbnwo's)"}
+  demand: {parts: [gas.umw.demand_est], quality: estimate, unproven: true,
+           note: "MN + WI + MI: a daily model (gas_region_demand, est.): EIA-930 gas generation x a fitted heat rate
+             + residential/commercial from population-weighted HDD + industrial (same month last year); back-test
+             monthly p90 3.9 %; power = a fitted share of MISO. Unproven until checked against daily measured demand,
+             so no storage implied yet"}
+  storage: {lag: 100d, parts: [{series: eia.mi.storage.net_withdrawal, sign: -1, fill: month},
+                    {series: eia.mn.storage.net_withdrawal, sign: -1, fill: month}],
+            note: "EIA monthly net injection (+ in), MI + MN"}
+  inventory: {parts: [{series: eia.mi.storage.working_gas, fill: latest},
+                      {series: eia.mn.storage.working_gas, fill: latest}], unit: Bcf}
+oil:
+  production: {parts: [{series: eia.mi.crude_production, fill: latest}],
+               note: "crude + condensate (EIA); MN and WI produce none"}
+power:
+  # No balancing authority fits MN + WI + MI: MISO runs all three but straddles 15 states, and publishes NO real-time
+  # load or generation by region or zone (its regional load posts ~01:20 EST the next day; its regional fuel mix 07:00
+  # EST the next day; Power research, PLAN 9). So umw has no generation line (the box shows none, by design) and a
+  # day-late load line: MISO's actual hourly load for LRZ1 + LRZ2_7 (MN, WI, MI plus North Dakota, which sits in LRZ1).
+  load: {parts: [miso.umw.load.actual], lag: 2d, scope: "LRZ 1+2+7 (+ND)",
+         note: "MISO's actual load for LRZ1 + LRZ2_7, yesterday's 24 hours (df_al, ~01:20 EST); includes North Dakota"}
+  why: {generation: "MISO publishes no generation by region or zone"}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_umw.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_umw
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.minneapolis.tmean
+    - wx.detroit.tmean
+    - wx.milwaukee.tmean
+    - wx.grand_rapids.tmean
+    - wx.madison.tmean
+    - wx.green_bay.tmean
+    - wx.duluth.tmean
+  hdd: wx.region.umw.hdd
+  cdd: wx.region.umw.cdd
+  normals: [wx.region.umw.hdd_normal, wx.region.umw.cdd_normal]
+  realized: [wx.region.umw.hdd.realized, wx.region.umw.cdd.realized]
+  outlook: [wx.region.umw.hdd_1_7, wx.region.umw.hdd_8_15, wx.region.umw.cdd_1_7, wx.region.umw.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/umw.md (shown on the page)
+  - "1-7 and 8-15 day HDD outlook vs normal and yesterday: cold revisions lead Michigan storage withdrawals"
+  - "Great Lakes at St. Clair, its sign: a flip in direction is the Dawn-Michigan spread in one number"
+  - "Emerson deliveries split Great Lakes / Viking: the pull on Canadian gas vs Emerson Extension capability"
+  - "Michigan storage when the EIA month lands: it sets the winter supply cushion for the region and for Dawn"
+  - "ANR deliveries into Wisconsin: a cold Midwest pulls ANR and Guardian full"
+  - "MISO load forecast and peak for the umw zones vs yesterday actual: the demand read for MN, WI, MI plus ND"
+  - "Nuclear units by NRC daily power level: outages and restarts (Palisades) change the fleet"
+  - "Ontario ties at Michigan and Minnesota: + is Ontario exporting into the region"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "Modelled rows first (est., EIA's 'delivered to consumers' basis), then measured deliveries on the
+        interstate boards (scheduled; a part of demand, not a split of it)."
+      rows:
+        - {label: "Power burn (EIA-930 x heat rate)", series: gas.umw.power_burn_est}
+        - {label: "Residential + commercial (weather)", series: gas.umw.rescom_est}
+        - {label: "Industrial (same month last year)", series: gas.umw.industrial_est}
+        - {label: "LDC citygates on Panhandle (Michigan)", series: ebb.pepl.umw.ldc}
+        - {label: "Industrial on Panhandle (Michigan)", series: ebb.pepl.umw.industrial}
+        - {label: "LDC citygates on NGPL (Wisconsin)", series: ebb.ngpl.umw.ldc}
+        - {label: "ANR deliveries in Wisconsin", series: anr.wisconsin.deliveries}
+        - {label: "Northern Natural Zone EF (MN, NW WI, MI UP)", series: ebb.nng.zone.ef}
+        - {label: "  of which LDC citygates (posted points)", series: ebb.nng.umw.ldc}
+        - {label: "  of which power plants (posted points)", series: ebb.nng.umw.power}
+        - {label: "  of which industrial (posted points)", series: ebb.nng.umw.industrial}
+        - {label: "LDC citygates on Viking", series: ebb.viking.umw.ldc}
+        - {label: "Power plants on Viking", series: ebb.viking.umw.power}
+    - id: production_by_area
+      title: Production by area
+      note: "No daily source: Michigan's Antrim and Niagaran gas enters local systems, not the interstate boards."
+      rows:
+        - {label: "Michigan marketed production (EIA monthly)", series: eia.mi.marketed_production}
+    - id: imports_by_point
+      title: Imports by point
+      note: "Northern Natural's two rows are allocation-group proxies (Ventura North + Welcome North; Galena East),
+        each with a few towns on the wrong side. Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Alliance North Dakota → Minnesota", series: ebb.alliance.border.nd_mn}
+        - {label: "Viking at Emerson (from Canada)", series: tcm.emerson.viking_deliveries}
+        - {label: "Great Lakes at Emerson (from Canada)", series: glgt.emerson.net_receipts}
+        - {label: "Rover → Vector (Ohio → Michigan)", series: ebb.rover.border.oh_mi}
+        - {label: "Panhandle Ohio → Michigan", series: ebb.pepl.border.oh_mi}
+        - {label: "Trunkline at Elkhart (Indiana → Michigan)", series: ebb.tgc.border.in_mi}
+        - {label: "Northern Natural Iowa → Minnesota (proxy)", series: ebb.nng.border.ia_mn}
+        - {label: "Northern Natural Illinois → Wisconsin (proxy)", series: ebb.nng.border.il_wi}
+        - {label: "Guardian Illinois → Wisconsin (Bluff Creek)", series: ebb.guardian.border.il_wi}
+    - id: exports_by_point
+      title: Exports by point
+      note: "Scheduled quantities on the interstate boards (FERC postings), gas day."
+      rows:
+        - {label: "Alliance Minnesota → Iowa", series: ebb.alliance.border.mn_ia}
+        - {label: "Great Lakes at St. Clair (to Ontario)", series: glgt.st_clair.net_deliveries}
+        - {label: "Vector at St. Clair (to Ontario)", series: vector.st_clair.deliveries}
+        - {label: "Panhandle at Ojibway (to Ontario)", series: pepl.ojibway.deliveries}
+        - {label: "Viking Minnesota → North Dakota", series: ebb.viking.border.mn_nd}
+    - id: storage
+      title: Storage
+      note: "Michigan's fields (Consumers, DTE) post nothing daily: EIA monthly working gas (Bcf). The two NNG rows
+        are only its storage points inside MN / WI / MI (scheduled, MMcf/d, often 0); NNG's main fields (Redfield,
+        Lyons, Cunningham) are in Iowa and Kansas, outside the region, so 0 here doesn't mean NNG storage is idle."
+      rows:
+        - {label: "Michigan working gas (EIA monthly, Bcf)", series: eia.mi.storage.working_gas}
+        - {label: "Minnesota working gas (EIA monthly, Bcf)", series: eia.mn.storage.working_gas}
+        - {label: "NNG in-region storage points: injections", series: ebb.nng.umw.storage_inj}
+        - {label: "NNG in-region storage points: withdrawals", series: ebb.nng.umw.storage_wd}
+  power:
+    - id: load_by_zone
+      title: MISO load for the umw zones (LRZ1 + LRZ2_7)
+      note: "MISO publishes these zones' load a day late; the forecast is MISO's MTLF for this hour (a forecast, not a
+        measurement). LRZ1 includes North Dakota."
+      rows:
+        - {label: "Forecast, this hour (MTLF)", series: miso.umw.load.forecast}
+        - {label: "Forecast peak, today", series: miso.umw.load.forecast_peak}
+        - {label: "Actual, yesterday's mean", series: miso.umw.load.actual_mean}
+        - {label: "Actual, yesterday's peak hour", series: miso.umw.load.actual_peak}
+    - id: interchange_by_tie
+      title: "Ties to Ontario (IESO, + = Ontario export into the region)"
+      note: "The only live border flows: IESO's interties into Michigan and Minnesota. Manitoba Hydro's ties into
+        Minnesota / North Dakota (~2-3 GW) aren't published live."
+      rows:
+        - {label: "Ontario → Michigan", series: ieso.intertie.michigan.flow}
+        - {label: "Ontario → Minnesota", series: ieso.intertie.minnesota.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW, operating + standby generators summed per plant (EIA-860M, Sep 2026, via the map's plant inventory). The fuel is each plant's largest technology. No live per-plant output is published here; nuclear units' daily output is in the nuclear group."
+      rows:
+        - {label: "Monroe (MI) (coal)", value: 3293, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Donald C Cook (nuclear)", value: 2285, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Ludington (pumped storage)", value: 1979, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Midland Cogeneration Venture (gas)", value: 1854, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Sherburne County (coal)", value: 1704, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Belle River (coal)", value: 1664, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "J H Campbell (coal)", value: 1561, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Elm Road Generating Station (coal)", value: 1403, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Dan E Karn (gas)", value: 1402, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+        - {label: "Point Beach Nuclear Plant (nuclear)", value: 1311, unit: MW, as_of: "2026-09", source: "EIA-860M Sep 2026 (operating + standby, summed per plant)"}
+    - id: nuclear_units
+      title: Nuclear units (NRC daily power level)
+      note: "NRC Power Reactor Status (collected 4-8 am ET, posted by ~09:30 ET): each unit's % of licensed thermal power x its EIA-860M net summer capacity (est.; 9 units, 6,933 MW). Daily, so it changes once a day."
+      rows:
+        - {label: "D.C. Cook 1 (MW est.)", series: nrc.dc_cook_1.mw_est}
+        - {label: "D.C. Cook 2 (MW est.)", series: nrc.dc_cook_2.mw_est}
+        - {label: "Fermi 2 (MW est.)", series: nrc.fermi_2.mw_est}
+        - {label: "Monticello (MW est.)", series: nrc.monticello.mw_est}
+        - {label: "Palisades (MW est.)", series: nrc.palisades.mw_est}
+        - {label: "Point Beach 1 (MW est.)", series: nrc.point_beach_1.mw_est}
+        - {label: "Point Beach 2 (MW est.)", series: nrc.point_beach_2.mw_est}
+        - {label: "Prairie Island 1 (MW est.)", series: nrc.prairie_island_1.mw_est}
+        - {label: "Prairie Island 2 (MW est.)", series: nrc.prairie_island_2.mw_est}
+    - id: capacity_by_fuel
+      title: Installed capacity by fuel
+      unit: MW
+      note: "EIA-860M (monthly, ~2 months behind), operating + standby generators at plants >= 1 MW, net summer MW; the whole of each state"
+      rows:
+        - {label: "Gas", series: cap.umw.gas}
+        - {label: "Coal", series: cap.umw.coal}
+        - {label: "Wind", series: cap.umw.wind}
+        - {label: "Solar", series: cap.umw.solar}
+        - {label: "Nuclear", series: cap.umw.nuclear}
+        - {label: "Pumped storage", series: cap.umw.pumped_storage}
+        - {label: "Oil", series: cap.umw.oil}
+        - {label: "Biomass", series: cap.umw.biomass}
+        - {label: "Hydro", series: cap.umw.hydro}
+        - {label: "Battery storage", series: cap.umw.battery}
+        - {label: "Other", series: cap.umw.other}
+        - {label: Total, series: cap.umw.total}
+    - id: data_centres
+      title: Data centres
+      note: "No live data-centre series exists for MISO. EPRI's 2023 estimate is likely well below 2026: two new frontier
+        AI sites alone show ≥547 MW of IT power (Epoch AI, Nov 2026)."
+      rows:
+        - {label: Estimated data-centre load (avg), value: 171, unit: MW, as_of: "2023",
+           source: "EPRI, Powering Intelligence (2024), Table A1: MN 94, MI 60, WI 17 avg MW"}
+        - {label: "Frontier AI campuses, IT power (Epoch AI)", series: dc.epoch.umw.it_mw}
+    - id: miso_fuel_mix
+      title: "MISO fuel mix (all of MISO, 15 states: not the region)"
+      note: "MISO's live footprint-wide fuel mix, shown for context: MISO publishes no fuel mix by region in real time."
+      rows:
+        - {label: "Coal (all MISO)", series: miso.gen.coal}
+        - {label: "Gas (all MISO)", series: miso.gen.gas}
+        - {label: "Nuclear (all MISO)", series: miso.gen.nuclear}
+        - {label: "Wind (all MISO)", series: miso.gen.wind}
+        - {label: "Solar (all MISO)", series: miso.gen.solar}
+        - {label: "Battery (all MISO)", series: miso.gen.storage}
+        - {label: "Other (all MISO)", series: miso.gen.other}
+        - {label: "Imports (all MISO)", series: miso.gen.imports}
+  oil:
+    - id: production_by_area
+      title: Production by area
+      note: "EIA monthly, crude incl. lease condensate (~2 months behind). Minnesota and Wisconsin produce none."
+      rows:
+        - {label: "Michigan crude incl. lease condensate (EIA)", series: eia.mi.crude_production}
+    - id: refinery_runs
+      title: Refinery runs, PADD 2 Midwest (15 states)
+      note: "EIA weekly, week ending Friday. PADD 2 = IL, IN, IA, KS, KY, MI, MN, MO, NE, ND, OH, OK, SD, TN, WI: far
+        wider than MN + WI + MI."
+      rows:
+        - {label: PADD 2 crude oil input, series: oil.padd2.refinery_crude_input}
+        - {label: PADD 2 gross input, series: oil.padd2.refinery_gross_input}
+        - {label: PADD 2 operable capacity, series: oil.padd2.refinery_capacity}
+        - {label: PADD 2 utilization, series: oil.padd2.utilization}
+    - id: stocks
+      title: Stocks, PADD 2 Midwest (15 states)
+      note: "EIA weekly, end of week. Crude is commercial (excl. SPR); Cushing, OK is inside PADD 2's crude."
+      rows:
+        - {label: "PADD 2 crude oil", series: oil.padd2.crude_stocks}
+        - {label: "  of which Cushing, OK", series: oil.cushing.crude_stocks}
+        - {label: PADD 2 total motor gasoline, series: oil.padd2.gasoline_stocks}
+        - {label: PADD 2 distillate fuel oil, series: oil.padd2.distillate_stocks}

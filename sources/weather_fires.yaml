@@ -1,0 +1,27 @@
+# Wildfire alerts from CWFIS (NRCan): satellite hotspots (last 24 h) grouped into ~0.1 deg cells,
+# plus fire perimeters updated in the last 7 days, as map alert events with severity by distance
+# to gas/power network features. Open Government Licence - Canada; no key. Seasonal: empty results
+# outside fire season are normal. Details: montney/connectors/fire_cwfis.py.
+id: weather_fires
+name: Wildfire hotspots and perimeters (CWFIS)
+type: python
+module: montney.connectors.fire_cwfis
+class: CWFISFires
+mode: cached
+interval: 1h
+retention: events      # emits only alert events (no observations); see tests/test_weather_retention.py
+params:
+  lon_min: -140        # same extent as the map / GFS overlay
+  lon_max: -95
+  lat_min: 44
+  lat_max: 65
+  cell_deg: 0.1        # hotspot grouping cell
+  near_km: 10          # critical within this distance of a network node/link
+  watch_km: 30         # warn within this; refs list features inside it
+  corridor_km: 25      # schematic (drawn) links: refs + wording only, never raise severity
+  context_km: 100      # drop fires farther than this from every network feature
+  pile_frp: 10         # a cell whose max FRP (MW) is below this drops one level (pile burns)
+  perimeters: true
+  perimeter_days: 7    # only perimeters updated this recently (keeps the payload small)
+  max_vertices: 300    # per ring, after rounding to ~100 m
+  max_points: 100      # hotspot points kept per cell in the event

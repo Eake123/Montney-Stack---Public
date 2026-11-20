@@ -1,0 +1,159 @@
+# Guardian (Joliet IL -> Wisconsin) and Viking (Emerson, Canada -> Minnesota -> Wisconsin; Fargo / Grand Forks ND),
+# DT Midstream's Trellis infopost -> ebb.<guardian|viking>.<umw|bakken>.<category> (MMcf/d = Dth / 1,037) + named
+# borders. Gas day = ts, as_of = Trellis's post time, all SCHEDULED. Research: docs/research/pipelines/east_and_rockies.md
+# §7; method, requests and traps: montney/connectors/gas_ebb_dtm.py.
+# Requests: 2 session pages + 2 report lists per run + 1 XML per pipe per new cycle (~8/day) + 2/day (yesterday's
+# Intraday 3): ~58/day on dtmidstream.trellisenergy.com.
+# No location file: the hand map below is every posted point (2026-11-13). States from the pipes' routes and the
+# counterparties' own postings (NNG's location file names Viking at Pierz = Genola, Chisago, Polk; Guardian at Bluff
+# Creek); points marked "inferred" are small and their state is a best reading of the route.
+id: gas_ebb_dtm
+name: Guardian and Viking (Illinois / Canada into Minnesota, Wisconsin)
+type: python
+module: montney.connectors.gas_ebb_dtm
+class: EbbDtm
+mode: cached
+interval: 2h
+region: rest          # multi-region (umw, bakken: Viking's North Dakota deliveries)
+retention: daily
+params:
+  boards:
+    - pipe: guardian
+      label: Guardian
+      code: GPL
+      tsp: 11
+      regions: [umw]
+      overrides:
+        # Illinois (outside every region): Joliet interconnects and the DeKalb landfill
+        "352446": {state: IL, type: INT, note: Joliet Alliance}
+        "338687": {state: IL, type: INT, note: Joliet ANR}
+        "359485": {state: IL, type: INT, note: Joliet Midwestern}
+        "359487": {state: IL, type: INT, note: Joliet Northern Border}
+        "359508": {state: IL, type: INT, note: Joliet Peoples}
+        "394756": {state: IL, type: INT, note: Joliet Vector}
+        "880066": {state: IL, type: RNG, note: WM DeKalb landfill receipt}
+        "880069": {state: IL, type: END, note: WM DeKalb delivery}
+        # Wisconsin
+        "359491": {state: WI, type: INT, note: "Bluff Creek NNG (Northern Natural at Walworth)"}
+        "359490": {state: WI, type: LDC, note: "Bluff Creek WG (We Energies)"}
+        "359493": {state: WI, type: LDC, note: Walworth}
+        "359488": {state: WI, type: LDC, note: "Rockvale (downstream of Bluff Creek CS: the CS flow equals the WI net with it)"}
+        "379832": {state: WI, type: LDC, note: Ixonia}
+        "778102": {state: WI, type: LDC, note: Fox Valley}
+        "778106": {state: WI, type: LDC, note: Chilton}
+        "778110": {state: WI, type: LDC, note: Denmark}
+        "778098": {state: WI, type: LDC, note: Rubicon}
+        "778122": {state: WI, type: LDC, note: Sheboygan}
+        "778114": {state: WI, type: LDC, note: SW Green Bay}
+        "778118": {state: WI, type: LDC, note: West Green Bay}
+        "880022": {state: WI, type: LDC, note: Kaukauna}
+        "880042": {state: WI, type: LDC, note: "Kaukauna #2"}
+        "880033": {state: WI, type: LDC, note: Eden}
+        "880039": {state: WI, type: LDC, note: Mayville}
+        "880054": {state: WI, type: RNG, note: BC Organics receipt (dairy RNG)}
+        "880060": {state: WI, type: END, note: BC Organics delivery}
+        "880045": {state: WI, type: RNG, note: Glacier Ridge landfill}
+        "880048": {state: WI, type: RNG, note: Holsum Dairy}
+        "880051": {state: WI, type: RNG, note: Mallard Ridge landfill}
+        # pooling points (MLQ): virtual
+        "473454": {drop: true, note: Wisconsin Electric Pool}
+        "359505": {drop: true, note: Wisconsin Gas Pool}
+        "799139": {drop: true, note: WPS Pool}
+      named:
+        ebb.guardian.border.il_wi:
+          label: "Illinois -> Wisconsin (Bluff Creek CS, Walworth County WI)"
+          plus: ["BLUFF CRK:S:R"]
+    - pipe: viking
+      label: Viking
+      code: VGT
+      tsp: 9
+      regions: [umw, bakken]
+      overrides:
+        "33973": {state: MN, type: INT, category: import_canada, note: "Emerson (TC at the Manitoba border)"}
+        "174672": {state: MN, type: INT, note: "St. Vincent (Great Lakes, at the border)"}
+        "11856": {state: MN, type: INT, note: "Chisago Zn1 (Northern Natural)"}
+        "179031": {state: MN, type: INT, note: "Chisago Zn2 (Northern Natural)"}
+        "11971": {state: MN, type: INT, note: "Genola (Northern Natural at Pierz)"}
+        "880019": {state: MN, type: INT, note: "Felton, Clay County (bidirectional MLQ; counterparty not posted)"}
+        "880063": {state: MN, type: RNG, note: "Fair Haven receipt (RNG; state inferred)"}
+        "288038": {state: MN, type: END, note: Camp Ripley}
+        "11975": {state: MN, type: LDC, note: Ada}
+        "1400745": {state: MN, type: LDC, note: Ada GMT}
+        "11939": {state: MN, type: LDC, note: Argyle}
+        "11816": {state: MN, type: LDC, note: Audubon}
+        "880005": {state: MN, type: LDC, note: Beltrami}
+        "12027": {state: MN, type: LDC, note: Bertha}
+        "288042": {state: MN, type: LDC, note: Clarissa}
+        "12002": {state: MN, type: LDC, note: Crookston}
+        "11896": {state: MN, type: LDC, note: Dalbo}
+        "11818": {state: MN, type: LDC, note: Detroit Lakes}
+        "11861": {state: MN, type: LDC, note: Dilworth}
+        "880030": {state: MN, type: LDC, note: Donaldson}
+        "12001": {state: MN, type: LDC, note: East Grand Forks}
+        "11979": {state: MN, type: LDC, note: Fergus Falls}
+        "1400748": {state: MN, type: LDC, note: Fergus Falls GMG}
+        "11977": {state: MN, type: LDC, note: Frazee}
+        "288037": {state: MN, type: LDC, note: "Green Lake (inferred)"}
+        "11910": {state: MN, type: LDC, note: Hallock}
+        "11859": {state: MN, type: LDC, note: Hawley}
+        "1395011": {state: MN, type: LDC, note: Hawley 2}
+        "11815": {state: MN, type: LDC, note: Lake Park}
+        "288040": {state: MN, type: LDC, note: Little Falls}
+        "11967": {state: MN, type: LDC, note: Milaca}
+        "15224": {state: MN, type: LDC, note: Moorhead}
+        "288036": {state: MN, type: LDC, note: North Branch}
+        "1250238": {state: MN, type: LDC, note: "Northstar (inferred)"}
+        "11981": {state: MN, type: LDC, note: New York Mills}
+        "11980": {state: MN, type: LDC, note: Perham}
+        "288041": {state: MN, type: LDC, note: "Pine Lake (inferred)"}
+        "288039": {state: MN, type: LDC, note: Randall}
+        "1387607": {state: MN, type: LDC, note: Randall GMG}
+        "880008": {state: MN, type: LDC, note: Red Lake Falls}
+        "27867": {state: MN, type: LDC, note: South Cambridge}
+        "1400751": {state: MN, type: LDC, note: "Saint Clair (inferred)"}
+        "12028": {state: MN, type: LDC, note: Staples}
+        "11938": {state: MN, type: LDC, note: Stephen}
+        "288035": {state: MN, type: LDC, note: Taylors Falls}
+        "11982": {state: MN, type: LDC, note: Wadena}
+        "880016": {state: MN, type: LDC, note: Wadena GMT}
+        "11940": {state: MN, type: LDC, note: Warren}
+        # Wisconsin (past the St. Croix)
+        "28872": {state: WI, type: INT, note: "ANR Marshfield (bidirectional)"}
+        "218305": {state: WI, type: INT, note: "Polk (Northern Natural)"}
+        "288044": {state: WI, type: EGN, note: "Wheaton Generation (Xcel's Wheaton plant, Chippewa County)"}
+        "288046": {state: WI, type: EGN, note: "Dairyland (Dairyland Power; Elk Mound station inferred)"}
+        "288045": {state: WI, type: LDC, note: Wheaton}
+        "288050": {state: WI, type: LDC, note: Blackbrook}
+        "28689": {state: WI, type: LDC, note: Boyceville}
+        "28694": {state: WI, type: LDC, note: Cadott}
+        "288047": {state: WI, type: LDC, note: Chili}
+        "28664": {state: WI, type: LDC, note: Chippewa Falls}
+        "28789": {state: WI, type: LDC, note: Dresser}
+        "28693": {state: WI, type: LDC, note: Eau Claire}
+        "288049": {state: WI, type: LDC, note: Fall Creek}
+        "28667": {state: WI, type: LDC, note: Greenwood}
+        "880025": {state: WI, type: LDC, note: Hammond}
+        "474554": {state: WI, type: LDC, note: "Hay Creek (inferred; 4.7k Dth on 2026-11-13)"}
+        "28691": {state: WI, type: LDC, note: Menomonie}
+        "362785": {state: WI, type: LDC, note: Midwest Kinnickinnic}
+        "362788": {state: WI, type: LDC, note: NSPWI Kinnickinnic}
+        "362796": {state: WI, type: LDC, note: St. Croix Kinnickinnic}
+        "288048": {state: WI, type: LDC, note: North Colfax}
+        "28692": {state: WI, type: LDC, note: South Colfax}
+        "362799": {state: WI, type: LDC, note: New Richmond}
+        "362793": {state: WI, type: LDC, note: Wheeler}
+        "1400841": {state: WI, type: LDC, note: Wilson}
+        "288051": {state: WI, type: LDC, note: Wisc Gas Marshfield}
+        # North Dakota (bakken)
+        "15225": {state: ND, type: LDC, note: Fargo}
+        "15274": {state: ND, type: LDC, note: Grand Forks}
+      named:
+        ebb.viking.border.canada_mn:
+          label: "Canada -> Minnesota (Emerson receipt)"
+          plus: ["33973:R"]
+        ebb.viking.border.mn_wi:
+          label: "Minnesota -> Wisconsin (Osceola CS, just past the St. Croix)"
+          plus: ["OSCEOLA:S:R"]
+        ebb.viking.border.mn_nd:
+          label: "Minnesota -> North Dakota (Fargo + Grand Forks deliveries)"
+          plus: ["15225:D", "15274:D"]

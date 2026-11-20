@@ -1,0 +1,15 @@
+# California gas totals (L-090, Erik): demand (PG&E + SoCalGas incl. SDG&E), northern / southern imports, storage net
+# and inventory. No requests: it reads gas_pge and gas_socalgas back from the store. Method: montney/connectors/cal_gas.py
+id: gas_cal_balance
+name: California gas totals (derived)
+type: python
+module: montney.connectors.cal_gas
+class: GasCalBalance
+mode: cached
+interval: 1h
+region: cal
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily sums; each run that changes a gas day is a vintage.
+retention: daily
+params:
+  days: 7

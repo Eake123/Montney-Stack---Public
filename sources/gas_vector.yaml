@@ -1,0 +1,15 @@
+# Vector Pipeline at St. Clair: into Canada toward Dawn, NEXUS gas included (L-093 part 2). ONE ~580 KB public page per
+# run (gasnom.com's Operationally Available, linked from vector-pipeline.com; every point and cycle, last few days).
+# Details: montney/connectors/ont_dawn.py
+id: gas_vector
+name: Vector Pipeline (St. Clair into Canada)
+type: python
+module: montney.connectors.ont_dawn
+class: GasVector
+mode: cached
+interval: 12h         # the page carries every cycle of the last few gas days: 2 requests/day
+region: ont
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://www.gasnom.com/ip/vector/cap_operationally_available.cfm

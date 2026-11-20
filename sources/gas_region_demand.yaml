@@ -1,0 +1,191 @@
+# Daily gas demand for the US regions, estimated: power burn (EIA-930 gas generation × fitted heat rate) + residential /
+# commercial (fitted on the Weather agent's population-weighted HDD) + industrial (EIA monthly, same month last year).
+# ZERO requests: reads power_eia930_gen, weather_<r> and gas_eia_states back from the store. Method, back-tests and how
+# to refit: docs/research/pipelines/daily_demand_methods.md. Code: montney/connectors/gas_region_demand.py
+id: gas_region_demand
+name: Regions gas demand, est. (power burn + weather + industrial; US regions + SK, MB, QC, ON)
+type: python
+module: montney.connectors.gas_region_demand
+class: GasRegionDemand
+mode: cached
+interval: 1h
+region: rest          # multi-region, reads the store (0 requests)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily estimates stamped as_of = the day (today re-stamped each run until it ends, like gas_midwest_weather).
+retention: daily
+params:
+  days: 10            # local days written each run (EIA-930 generation lands 11-38 h late)
+  fitted:
+    power: "HR on 2025-09..2026-08 (latest 12 published EIA months); tx affine on 2023-01..2026-08"
+    rescom: "2021-01..2026-08, EIA residential + commercial vs Open-Meteo archive (ERA5) at the region's cities"
+    industrial: "EIA monthly industrial (N3035) per state, newest published year per calendar month, as of 2026-11-13"
+    refit: "yearly, or when a region's monthly miss leaves its band: see the research note (scripts + keyless data)"
+  # rt: per BA, the ISO real-time gas series (summed) that stand in for EIA-930's late hours, × a ratio refitted every
+  # run on the stored overlap (refused when unstable); a small BA (< 10 % of its group) short of a day takes its 7-day
+  # mean. Complete local days only. See "Current days" in montney/connectors/gas_region_demand.py.
+  # Per region: tz = the region file's; power = groups of EIA-930 BAs (lower case) with a heat rate (MMBtu/MWh) and an
+  # optional base (MMcf/d); rescom = a + b x HDD at base_c (°C); band = monthly p90 miss of the 2024-01..2026-08
+  # back-test. The cities and weights come from the weather source's `region.<r>` composite.
+  regions:
+    tx:
+      name: Texas
+      tz: America/Chicago
+      states: [TX]
+      power: [{bas: [erco, epe], hr: 9.113, base: 747.1, rt: {erco: [ercot.gen.gas]}}]   # EPE (2.5 %) holds
+      rescom: {base_c: 18, a: 601.9, b: 236.5}
+      weather: {source: weather_tx, composite: region.tx}
+      band: 0.057
+      note: "ERCOT + El Paso Electric; the fitted base and heat rate carry SPP's Panhandle and MISO's SE Texas plants."
+    mtnw:
+      name: Mountain West
+      tz: America/Denver
+      states: [WY, UT, CO]
+      power: [{bas: [pace, psco, swpw], hr: 11.666, rt: {swpw: [sppw.gen.gas]}}]   # PACE + PSCO (82 %) have no RT feed
+      rescom: {base_c: 16, a: 269.2, b: 86.8}
+      weather: {source: weather_mtnw, composite: region.mtnw}
+      band: 0.167
+      note: "2026 drift: EIA's UT/CO/WY power burn rose 30-80 % on flat EIA-930 output (LDWP's Intermountain units in
+        Utah sit in LDWP; WY unexplained); heat rate refitted on the latest 12 months."
+    sunbelt:
+      name: Upper Sunbelt
+      tz: America/Phoenix
+      states: [NV, AZ, NM]
+      power: [{bas: [azps, srp, tepc, walc, nevp, pnm, deaa], hr: 10.205}]
+      rescom: {base_c: 20, a: 288.3, b: 85.5}
+      weather: {source: weather_sunbelt, composite: region.sunbelt}
+      band: 0.082
+      note: "EIA withholds Nevada and New Mexico industrial; those take the newest published year."
+    nyc:
+      name: New York
+      tz: America/New_York
+      states: [NY]
+      power: [{bas: [nyis], hr: 7.704, rt: {nyis: [nyiso.gen.gas, nyiso.gen.dual_fuel]}}]   # EIA NG = gas + dual fuel
+      rescom: {base_c: 15, a: 826.7, b: 208.0}
+      weather: {source: weather_nyc, composite: region.nyc}
+      band: 0.082
+      note: "On the coldest days EIA-930 gas seems to include dual-fuel oil burn: the power term reads high."
+    upne:
+      name: Upper NE (New England)
+      tz: America/New_York
+      states: [ME, NH, VT, MA, RI, CT]
+      power: [{bas: [isne], hr: 7.26, rt: {isne: [isone.gen.gas]}}]   # landfill gas is not in EIA NG
+      rescom: {base_c: 15, a: 394.3, b: 111.9}
+      weather: {source: weather_upne, composite: region.upne}
+      band: 0.032
+      note: "On the coldest days EIA-930 gas seems to include dual-fuel oil burn: the power term reads high."
+    umw:
+      name: Upper Midwest
+      tz: America/Chicago
+      states: [MN, WI, MI]
+      power: [{bas: [miso], hr: 2.838}]
+      rescom: {base_c: 16, a: 704.7, b: 232.1}
+      weather: {source: weather_umw, composite: region.umw}
+      band: 0.039
+      note: "Power = a fitted share of all of MISO's gas generation (MISO straddles 15 states), not a umw measurement."
+    bakken:
+      name: Bakken
+      tz: America/Denver
+      states: [MT, ND]
+      power: [{bas: [nwmt], hr: 12.268}, {bas: [miso, swpp], hr: 0.088}]
+      rescom: {base_c: 14, a: 66.2, b: 17.0}
+      weather: {source: weather_bakken, composite: region.bakken}
+      band: 0.058
+      note: "Montana from NorthWestern; North Dakota's power as a fitted share of MISO + SPP."
+    pnw:
+      name: PacNW
+      tz: America/Los_Angeles
+      role: cross_check
+      states: [WA, OR, ID]
+      power: [{bas: [bpat, pacw, pge, psei, ava, ipco, avrn, grid], hr: 8.671}]
+      rescom: {base_c: 14, a: 267.5, b: 111.6}
+      weather: {source: weather_pnw, composite: region.pnw}
+      band: 0.058
+      note: "WA + OR + ID only (no BC Lower Mainland); the region line is pnw.demand_est."
+    cal:
+      name: California
+      tz: America/Los_Angeles
+      role: cross_check
+      states: [CA]
+      power: [{bas: [ciso, banc, ldwp, iid, tidc], hr: 6.01}]
+      rescom: {base_c: 18, a: 1168.4, b: 279.6}
+      weather: {source: weather_cal, composite: region.cal}
+      band: 0.117
+      note: "LDWP's Intermountain units (Utah) are in LDWP; the region line is the measured cal.demand.total."
+    # ---- Canadian provinces (orchestrator, L-107): the same recipe fitted to StatCan 25-10-0086 deliveries to
+    # consumers (2019-01..2026-08). StatCan counts gas burned for power generation as industrial consumption, so a
+    # province without a daily power series holds it inside industrial (last year's month). Ontario counts it daily
+    # from IESO (heat rate fitted Apr-Oct 2023-2026 on StatCan industrial vs IESO gas MWh, R2 0.90) and takes last
+    # year's month of it back out of industrial (industrial_less_power).
+    sk:
+      name: Saskatchewan
+      tz: America/Regina
+      province: SK
+      rescom: {base_c: 15, a: 38.9, b: 10.89}
+      weather: {source: weather, composite: region.wcan, cities: [regina, saskatoon]}
+      band: 0.063
+      note: "Industrial (potash, oil, upgraders, SaskPower's ~1.5 GW of gas plants) is ~80 % and held at last year's
+        month; saskpower.gen.gas has no stored history to fit or split it yet."
+    mb:
+      name: Manitoba
+      tz: America/Winnipeg
+      province: MB
+      rescom: {base_c: 16, a: 24.4, b: 7.49}
+      weather: {source: weather, composite: region.mbnwo, cities: [winnipeg, brandon]}
+      band: 0.181
+      note: "Manitoba only (NW Ontario is in Ontario's StatCan total); no gas-fired power to speak of; StatCan's monthly
+        industrial swings (p90 32 % year on year) set the band."
+    qc:
+      name: Québec
+      tz: America/Toronto
+      province: QC
+      rescom: {base_c: 15, a: 73.4, b: 16.55}
+      weather: {source: weather_qc, composite: region.qc}
+      band: 0.084
+      note: "Hydro-Québec's thermal output is ~0, so no power term."
+    "on":            # quoted: a bare `on` is YAML true
+      name: Ontario
+      tz: America/Toronto
+      province: "ON"   # quoted, as above
+      industrial_less_power: true
+      power:
+        - series: ieso.gen.gas.daily
+          label: IESO
+          hr: 6.66
+          # IESO gas MWh/d per calendar month, the newest complete year (kraken's ieso.gen.gas.daily, 2026-11-13);
+          # used until the store holds last year's month
+          power_ly: [[131630, 2026], [139441, 2026], [84041, 2026], [60310, 2026], [47494, 2026], [81234, 2026], [127367, 2026], [138036, 2026], [117492, 2026], [109355, 2026], [95877, 2025], [124302, 2025]]
+      rescom: {base_c: 15, a: 446.9, b: 125.67}
+      weather: {source: weather_ont, composite: region.sont}
+      band: 0.102
+      note: "All of Ontario (StatCan); weather from the south (sont cities). IESO days are EST dates."
+  # Monthly industrial consumption per state (EIA) or province (StatCan, CA-<pv>), MMcf/d: [value, year] per calendar
+  # month (Jan..Dec), the newest published year (NA / W / withheld cells skipped). Used until the store holds last
+  # year's month.
+  industrial:
+    CA-SK: [[711.8, 2026], [702.9, 2026], [705.6, 2026], [662.6, 2026], [605.8, 2026], [614.9, 2026], [613.8, 2026], [658.5, 2026], [622.3, 2025], [611.1, 2025], [689.5, 2025], [722.8, 2025]]
+    CA-MB: [[101.3, 2026], [98.5, 2026], [95.3, 2026], [83.3, 2026], [73.2, 2026], [73.6, 2026], [74.4, 2026], [75.8, 2026], [25.4, 2025], [72.9, 2025], [89.9, 2025], [99.1, 2025]]
+    CA-QC: [[457.9, 2026], [459.5, 2026], [451.2, 2026], [362.2, 2026], [329.6, 2026], [310.1, 2026], [327.8, 2026], [305.3, 2026], [313.1, 2025], [313.3, 2025], [405.6, 2025], [460.6, 2025]]
+    CA-ON: [[2574.4, 2026], [2615.0, 2026], [1904.7, 2026], [1559.1, 2026], [1287.1, 2026], [1477.5, 2026], [1858.8, 2026], [1973.0, 2026], [1684.9, 2025], [1786.3, 2025], [2045.5, 2025], [2408.9, 2025]]
+    TX: [[5787.5, 2026], [5705.9, 2026], [5653.2, 2026], [5719.5, 2026], [5633.8, 2026], [5672.3, 2026], [5519.4, 2026], [5784.2, 2026], [5562.3, 2025], [5351.8, 2025], [5802.2, 2025], [5930.0, 2025]]
+    WY: [[233.4, 2026], [214.8, 2026], [196.8, 2026], [194.6, 2026], [175.5, 2026], [176.9, 2026], [178.1, 2026], [175.9, 2026], [184.8, 2025], [213.3, 2025], [224.9, 2025], [232.0, 2025]]
+    UT: [[108.7, 2026], [120.1, 2026], [99.4, 2026], [111.5, 2026], [108.2, 2026], [110.8, 2026], [97.5, 2026], [99.9, 2026], [87.5, 2025], [81.9, 2025], [104.8, 2025], [100.7, 2025]]
+    CO: [[398.8, 2026], [390.9, 2026], [343.3, 2026], [315.1, 2026], [267.4, 2026], [203.7, 2025], [202.7, 2025], [295.0, 2026], [212.1, 2025], [220.9, 2024], [339.4, 2025], [318.2, 2025]]
+    NV: [[61.3, 2024], [53.5, 2026], [60.6, 2024], [57.3, 2024], [47.5, 2026], [50.5, 2024], [49.5, 2024], [52.0, 2024], [52.4, 2024], [48.7, 2025], [49.2, 2025], [56.5, 2024]]
+    AZ: [[78.0, 2026], [83.6, 2026], [74.2, 2026], [74.8, 2026], [71.8, 2026], [58.7, 2025], [65.3, 2025], [62.0, 2025], [62.4, 2025], [68.0, 2025], [75.8, 2025], [80.3, 2025]]
+    NM: [[63.2, 2025], [34.1, 2025], [56.9, 2025], [68.5, 2025], [63.9, 2025], [64.3, 2025], [59.2, 2025], [60.4, 2025], [61.9, 2025], [61.6, 2025], [65.4, 2025], [57.7, 2025]]
+    NY: [[312.9, 2026], [331.5, 2026], [254.1, 2026], [246.8, 2026], [203.5, 2026], [203.7, 2026], [200.0, 2026], [191.9, 2026], [196.0, 2025], [224.5, 2025], [262.5, 2025], [289.4, 2025]]
+    ME: [[84.4, 2026], [76.2, 2026], [73.6, 2026], [70.0, 2026], [60.9, 2026], [51.8, 2026], [37.0, 2026], [47.5, 2026], [38.8, 2025], [45.8, 2025], [68.4, 2025], [80.8, 2025]]
+    NH: [[33.1, 2026], [36.8, 2026], [32.3, 2026], [28.3, 2025], [25.8, 2026], [23.8, 2025], [21.6, 2025], [20.3, 2025], [21.0, 2025], [23.7, 2025], [28.1, 2025], [33.3, 2025]]
+    VT: [[7.0, 2026], [7.7, 2026], [6.4, 2026], [5.4, 2026], [4.8, 2026], [4.2, 2026], [4.0, 2026], [3.8, 2026], [4.7, 2025], [5.1, 2025], [6.2, 2025], [7.2, 2025]]
+    MA: [[187.0, 2026], [200.9, 2026], [162.2, 2026], [140.7, 2026], [111.8, 2026], [91.6, 2026], [98.2, 2026], [88.3, 2026], [90.8, 2025], [103.6, 2025], [123.0, 2025], [170.2, 2025]]
+    RI: [[21.0, 2026], [19.5, 2025], [17.4, 2026], [21.8, 2026], [15.2, 2025], [15.1, 2025], [18.2, 2026], [11.0, 2026], [10.8, 2025], [12.9, 2025], [13.8, 2025], [15.9, 2025]]
+    CT: [[73.7, 2026], [75.2, 2026], [65.5, 2026], [52.6, 2026], [49.0, 2026], [48.9, 2026], [48.3, 2026], [51.7, 2026], [49.5, 2025], [50.8, 2025], [63.7, 2025], [71.3, 2025]]
+    MN: [[496.4, 2026], [511.4, 2026], [399.3, 2026], [406.3, 2026], [356.0, 2026], [366.1, 2026], [310.8, 2025], [329.4, 2026], [339.9, 2025], [373.9, 2025], [354.0, 2025], [455.6, 2025]]
+    WI: [[562.7, 2026], [534.8, 2026], [462.9, 2026], [400.3, 2026], [347.9, 2026], [329.1, 2026], [307.7, 2026], [331.1, 2026], [323.4, 2025], [374.3, 2025], [447.7, 2025], [536.3, 2025]]
+    MI: [[557.7, 2026], [597.1, 2026], [486.9, 2026], [364.0, 2026], [333.6, 2026], [340.6, 2026], [317.7, 2026], [345.5, 2026], [348.8, 2025], [403.1, 2025], [446.2, 2025], [553.1, 2025]]
+    MT: [[84.1, 2026], [78.4, 2026], [60.2, 2026], [61.1, 2026], [67.4, 2026], [70.4, 2026], [67.4, 2026], [70.5, 2026], [68.9, 2025], [76.3, 2025], [80.0, 2025], [80.4, 2025]]
+    ND: [[106.6, 2026], [138.9, 2026], [129.9, 2026], [124.3, 2026], [111.6, 2026], [105.9, 2025], [105.4, 2026], [119.9, 2026], [77.4, 2025], [106.5, 2025], [129.4, 2025], [123.6, 2025]]
+    WA: [[215.3, 2026], [246.0, 2026], [216.3, 2026], [187.6, 2026], [200.5, 2026], [172.0, 2026], [182.4, 2026], [179.0, 2026], [190.4, 2024], [206.2, 2024], [223.6, 2025], [227.8, 2024]]
+    OR: [[159.3, 2026], [158.4, 2026], [147.2, 2026], [144.9, 2026], [134.0, 2026], [124.1, 2026], [126.3, 2026], [122.4, 2026], [133.6, 2025], [143.2, 2025], [137.1, 2025], [150.9, 2025]]
+    ID: [[106.0, 2026], [103.1, 2026], [101.3, 2026], [97.8, 2026], [80.9, 2026], [80.4, 2026], [69.3, 2026], [78.7, 2026], [83.9, 2025], [97.6, 2025], [96.6, 2025], [102.6, 2025]]
+    CA: [[1238.8, 2026], [1355.3, 2026], [1339.6, 2026], [1375.4, 2026], [1364.9, 2026], [1424.9, 2026], [1511.5, 2026], [1616.3, 2026], [1679.6, 2025], [1447.8, 2025], [1452.8, 2025], [1346.4, 2025]]

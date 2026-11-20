@@ -1,0 +1,17 @@
+# Quebec (Hydro-Quebec) net flows per neighbouring market, hourly MW (+ = Quebec exports), for the qc region's
+# interchange line (L-106, PLAN 8c qc). LIVE ONLY like power_hq_hourly: never persisted (the region line built from it
+# is). Source: Hydro-Quebec open data, the rolling ~48 h `importations-exportations-avec-transits` export = 1 request/h.
+# Keyless. HQ compiles it from the neighbours' public data; New Brunswick is null, so the net is ON + NY + NE.
+# Details: montney/connectors/power_hq.py.
+id: power_hq_interchange
+name: Hydro-Quebec net flows per market (ON, NY, NE), hourly (live, not stored)
+type: python
+module: montney.connectors.power_hq
+class: HqGeneration
+mode: live
+interval: 1h
+region: qc           # sources/BUDGET.yaml
+retention: live
+stale_after: 6h       # the snapshot's stale threshold (docs/SOURCES.md): HQ's per-market file runs ~2-3 h behind
+params:
+  report: interchange

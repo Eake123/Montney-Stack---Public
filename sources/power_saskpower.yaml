@@ -1,0 +1,13 @@
+# SaskPower demand, generation, net interchange (+ import) and generation by type (L-106, PLAN 8c wcan). Keyless JSON
+# behind SaskPower's dashboard; one 24 h average per day (~1.5 days behind), held across that day's hours for the
+# hourly region lines. No history in the feed; polled hourly (~8 KB) so the *_best series hold the latest day to now
+# (PLAN 9). Details: montney/connectors/power_saskpower.py.
+id: power_saskpower
+name: SaskPower daily supply mix (demand, generation, net interchange, by type)
+type: python
+module: montney.connectors.power_saskpower
+class: SaskPower
+mode: cached
+interval: 1h
+region: ab_nebc      # wcan (sources/BUDGET.yaml)
+retention: hourly

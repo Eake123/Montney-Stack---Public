@@ -1,0 +1,16 @@
+# Midwest gas demand, computed from weather (L-101 part 2): Illinois / Wisconsin / Michigan, base + HDD + CDD terms
+# fitted to EIA's monthly state deliveries (Sep 2021 - Aug 2026; coefficients in code, nothing re-fetched). ONE
+# Open-Meteo forecast request per run for Chicago, Milwaukee and Detroit (yesterday + today's mean temperature).
+# Details: montney/connectors/midwest_demand.py
+id: gas_midwest_weather
+name: Midwest gas demand (est. from weather)
+type: python
+module: montney.connectors.midwest_demand
+class: GasMidwestWeather
+mode: cached
+interval: 6h          # 4 requests/day
+region: midwest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily
+params:
+  url: https://api.open-meteo.com/v1/forecast

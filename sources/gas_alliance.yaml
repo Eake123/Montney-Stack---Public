@@ -1,0 +1,19 @@
+# Alliance Pipeline (Canada): daily scheduled receipts and capacity by zone (PLAN 4b item 3, L-058).
+# Source: Pembina's Alliance informational-postings API (POST, no auth). Mcf/d → MMcf/d (no heating value).
+# Zone 1 = Montney receipts upstream of the Blueberry compressor (NE BC + NW AB); Zone 2 = Alberta receipts south of it.
+# Details: montney/connectors/gas_alliance.py
+id: gas_alliance
+name: Alliance Pipeline daily receipts (Zone 1 / Zone 2)
+type: python
+module: montney.connectors.gas_alliance
+class: GasAlliance
+mode: cached
+interval: 1h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily report values; intraday re-postings are vintages (as_of = Alliance's create time), kept forever.
+retention: daily
+params:
+  api: https://content.alliancepipeline.pembina.com/api/dailyThroughputCapacities/search
+  days_back: 3
+  history_days: 100      # rolling re-read of older days, 4 per run (gas_alliance.py): full regulator months for ngtl_split
+  backfill_per_run: 4

@@ -1,0 +1,21 @@
+# Northwest Pipeline (Williams) at Sumas (the Huntingdon export), Jackson Prairie storage (net flow + inventory) and
+# Stanfield (from GTN), plus the derived Lower Mainland (Vancouver) demand (L-085). Public EBB, no key.
+# One ~350 KB OA report per run (the current gas day's latest cycle); yesterday's final "Storage Realignment" cycle
+# once a day; Jackson Prairie inventory once a day (one small GWT call). MMBtu -> MMcf/d at 1,037 Btu/cf.
+# Details, back-test and band: montney/connectors/pnw_gas.py
+id: gas_nwp
+name: Northwest Pipeline (Sumas, Jackson Prairie, Stanfield) + Lower Mainland demand
+type: python
+module: montney.connectors.pnw_gas
+class: GasNwp
+mode: cached
+# NWP posts 5 nomination cycles a day plus the next morning's realignment: every 3 h is within one cycle of each.
+# PLAN 9: every 2 h, so the Lower Mainland estimate follows Westcoast's daily post (~15:00 UTC) within 2 h, not 3
+# (~12 requests/day, ~6 MB; was ~8, ~4 MB).
+interval: 2h
+region: pnw          # sources/BUDGET.yaml; the source -> region mapping is Database's (L-085)
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Daily scheduled values; each cycle's posting is a vintage (as_of = posting time, ahead of the day for early cycles).
+retention: daily
+params:
+  url: https://www.northwest.williams.com/NWP_Portal/CapacityResultsScrollable.action

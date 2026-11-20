@@ -1,0 +1,17 @@
+# BPA balancing authority (the largest BA in pnw): load, generation by type (hydro, VER = wind + solar,
+# fossil/biomass, nuclear) and net interchange, hourly means of 5-min SCADA snapshots (PLAN 9 item 1).
+# Source: https://transmission.bpa.gov/business/operations/wind/baltwg3.txt (keyless; baltwg3, not baltwg, which has
+# no interchange), tab-separated, last 7 days, ~90 KB. 1 request per run, every 15 min = 4 req/h, with
+# If-Modified-Since (BPA's IIS honours it). Lag: newest row ~4.5 min, newest complete hour ~1 h 10 min after its start.
+# Prevailing Pacific time (PST/PDT; checked against BPA's YTD workbook's UTC column). Details:
+# montney/connectors/power_bpa.py.
+id: power_bpa
+name: BPA BA load, generation by type and net interchange, hourly
+type: python
+module: montney.connectors.power_bpa
+class: BpaBalancingAuthority
+mode: cached
+interval: 15m
+region: pnw          # sources/BUDGET.yaml
+retention: hourly
+stale_after: 3h       # the snapshot's stale threshold (docs/SOURCES.md): an hour lands ~5 min after it ends

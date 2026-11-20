@@ -1,0 +1,13 @@
+# USGS real-time streamflow for the Columbia hydro box (L-085): The Dalles (system benchmark) + the International
+# Boundary. Public domain (USGS NWIS), no key. ONE bulk instantaneous-values request per run (`sites=` list), 25 h
+# window, hourly (USGS posts 15-min values roughly hourly; hosts send max-age=900, no validators). A few KB a run.
+# Units: cfs -> m3/s on ingest. % of normal: weather_flow_normal. Details: montney/connectors/weather_usgs.py.
+id: weather_usgs
+name: Rivers - USGS Columbia (The Dalles, International Boundary), real-time
+region: pnw            # budget/attribution region (sources/BUDGET.yaml); the runner reads it once Database wires it
+type: python
+module: montney.connectors.weather_usgs
+class: USGSRealtime
+mode: cached
+interval: 1h
+retention: fast        # 15-min actuals (as_of = ts)

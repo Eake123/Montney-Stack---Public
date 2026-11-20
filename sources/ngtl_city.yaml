@@ -1,0 +1,14 @@
+# City gas demand (PLAN 4b item 6, L-058): Calgary, Edmonton, Lethbridge, Red Deer (ATCO Gas districts in TC's NGTL delivery
+# files) and Fort Saskatchewan (industrial plants). Monthly actuals (GJ → MMcf/d at TC's area heat value) and today's
+# estimate (utility: a + b × HDD; Fort Sask: last month's share of intra-AB deliveries). Weather: Open-Meteo (personal use).
+# Method, mapping evidence and bands: montney/connectors/ngtl_city.py
+id: ngtl_city
+name: City gas demand (Calgary, Edmonton, Lethbridge, Red Deer, Fort Sask)
+type: python
+module: montney.connectors.ngtl_city
+class: NgtlCity
+mode: cached
+interval: 1d   # L-081: daily estimates; once a day is its publish cadence
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+# Monthly report values and daily estimates (as_of = file stamp / fetch day), kept forever.
+retention: daily

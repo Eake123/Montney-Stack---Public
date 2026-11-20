@@ -1,0 +1,45 @@
+# 16-day city forecasts for Ontario (L-091) via Open-Meteo, the same connector and terms as sources/weather.yaml (free,
+# no key, personal use): wx.toronto.* / wx.ottawa.* (tmax, tmin, tmean, precip, wind, hdd, cdd, normals, HDD windows,
+# realized) and the composite wx.ont.* (population-weighted). Thunder Bay, Sudbury and North Bay stay in weather.yaml.
+# Named zone America/Toronto (DST observed): local days follow Ontario's own clock.
+# Lean (Erik: requests as limited as possible): every 6 h, ONE batched request a run for all 6 cities (~0.17 req/h,
+# L-106); normals one batched request per 30 d. + the region composite wx.region.sont.* (L-106).
+id: weather_ont
+name: Weather - Ontario cities (Toronto, Ottawa), 16 day forecast
+region: ont
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:             # as sources/weather.yaml: run vintages are `forecast`; ended-day actuals `daily` (L-038/L-039)
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true          # L-106: one request per run for every location (was one per location)
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Toronto
+  locations:
+    - {name: Toronto, lat: 43.65, lon: -79.38}
+    - {name: Ottawa,  lat: 45.42, lon: -75.70}
+    - {name: Hamilton,           lat: 43.26, lon: -79.87}   # L-106: the rest of S. Ontario (sont)
+    - {name: Kitchener-Waterloo, lat: 43.45, lon: -80.49}
+    - {name: London ON,          lat: 42.98, lon: -81.25}
+    - {name: Windsor,            lat: 42.31, lon: -83.04}
+  composites:
+    # Weights = 2021 Census population of each census metropolitan area (Statistics Canada; Ottawa-Gatineau is the
+    # whole CMA, both sides of the river). Only the ratios matter.
+    - id: ont
+      name: Ontario (Toronto + Ottawa pop. wtd)
+      weights: {toronto: 6202225, ottawa: 1488307}
+    # L-106 region composite (wx.region.sont.*): 2021 Census CMA population; Ottawa = the ONTARIO part of Ottawa-Gatineau
+    # (Gatineau is in qc). Sudbury and North Bay are sont too but live in sources/weather.yaml (2.4 % of the population),
+    # so they're left out rather than fetched twice. wx.ont above is unchanged.
+    - id: region.sont
+      name: Toronto (S. Ontario) (6-city pop. wtd)
+      weights: {toronto: 6202225, ottawa: 1135014, hamilton: 785184, kitchener_waterloo: 575847, london_on: 543551,
+                windsor: 422630}

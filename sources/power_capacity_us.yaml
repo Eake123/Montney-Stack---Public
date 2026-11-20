@@ -1,0 +1,18 @@
+# Installed generating capacity by fuel for the nine US regions, MONTHLY (PLAN 9, region page capacity_by_fuel), from
+# EIA-860M (https://www.eia.gov/electricity/data/eia860m/, keyless, public domain): operating + standby generators at
+# plants >= 1 MW, net summer MW. One GET of the 860M page a day (~94 KB); a month's ~14 MB workbook only when it's new
+# (newest first, then a 12-month back-fill at <= 2 a run), parsed to totals in <home>/cache/eia860m_capacity.json.
+# EIA posts a month ~3-4 weeks after it ends. Details: montney/connectors/power_capacity_us.py.
+id: power_capacity_us
+name: EIA-860M installed capacity by fuel, US regions (monthly)
+type: python
+module: montney.connectors.power_capacity_us
+class: CapacityUS
+mode: cached
+interval: 1d
+region: rest             # one file covers every US region (sources/BUDGET.yaml note)
+retention: daily
+stale_after: 100d        # ts = the month's 1st; a month posts ~55 d after its 1st and the next ~30 d later (max ~86 d)
+params:
+  backfill_months: 12
+  max_downloads: 2

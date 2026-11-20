@@ -1,0 +1,46 @@
+# Enbridge US interstates (Algonquin, Texas Eastern, Maritimes & Northeast US): scheduled quantities by point, summed by
+# region and category -> ebb.<pipe>.<region>.<category> (MMcf/d) + named border points. Research:
+# docs/research/pipelines/east_and_rockies.md §1; method, requests and traps: montney/connectors/gas_ebb_enbridge.py.
+# Requests per run (3 boards): 3 when no board has a new cycle, up to 6 when all do; +6 once a day (previous gas day's
+# final, after 10:00 CT); +3 per week (location files). Every 2 h: ~40-75/day, all on rtba.enbridge.com.
+id: gas_ebb_enbridge
+name: Enbridge US pipelines (Algonquin, Texas Eastern, M&NE)
+type: python
+module: montney.connectors.gas_ebb_enbridge
+class: EbbEnbridge
+mode: cached
+interval: 2h
+region: rest          # multi-region (upne, nyc)
+# Retention tier (docs/db/RETENTION.md spec contract): daily series, as_of = the cycle's post time.
+retention: daily
+params:
+  boards:
+    - pipe: algonquin
+      label: Algonquin
+      bu: AG
+      points_id: AG
+      regions: [upne, nyc]
+    - pipe: tetco
+      label: Texas Eastern
+      bu: TE
+      points_id: TE
+      regions: [nyc]          # tx later
+      overrides:
+        "73722": {region: nyc, note: "ConEd-Manhattan delivery: the meter is coded NJ / Hudson but it is Con Edison's NYC supply"}
+        "74059": {state: NY, type: LDC, note: "Brooklyn Union Gas (National Grid NY): missing from the location file"}
+        "75131": {drop: true, note: "Accident storage field, MD: missing from the location file"}
+    - pipe: mne
+      label: Maritimes & Northeast (US)
+      bu: mn                  # rtba's code; the location API calls it MNUS
+      points_id: MNUS
+      regions: [upne]
+      overrides:
+        "30012": {category: import_canada, note: "Baileyville border, in (from M&NE Canada)"}
+        "30014": {category: export_canada, note: "Baileyville border, out (to M&NE Canada)"}
+        "30029": {category: import_canada, note: "Brunswick Pipeline meter (Canaport LNG gas from New Brunswick)"}
+        "30009": {category: power, note: "Casco Bay Energy (Veazie power plant), typed END"}
+      named:
+        ebb.mne.baileyville.net_exports:
+          label: "net exports to Canada at Baileyville (out − in − Brunswick)"
+          plus: ["30014:D"]
+          minus: ["30012:R", "30029:R"]

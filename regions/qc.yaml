@@ -1,0 +1,141 @@
+id: qc
+name: Québec
+color: "#b39ddb"          # region border + tint on the map (Erik, 2026-11-07)
+members: [CA-QC]
+anchor: [-72.5, 50.5]
+box: {dir: NE}            # PLAN 9: where its box goes when the region is too small on screen (Frontend)
+tz: America/Toronto
+budget_region: qc
+coverage: standard
+gas:
+  # L-106 8c. Research: docs/research/regions/qc.md
+  production: {none: true, note: "no gas production in Québec"}
+  imports: {parts: [tcm.energir.deliveries, tcm.qc.exports], quality: scheduled,
+            note: "TC into Québec (sont's exit): deliveries to Énergir + the gas that passes through to the US"}
+  exports: {parts: [tcm.qc.exports], quality: scheduled,
+            note: "East Hereford (PNGTS), Philipsburg and Napierville"}
+  demand: {parts: [gas.qc.demand_est], quality: estimate, unproven: true,
+           note: "Québec: residential/commercial from HDD + industrial (same month last year, incl. power), fitted on
+             StatCan (monthly p90 8.4 %; gas_region_demand, est.). Unproven until checked against daily measured
+             demand, so no storage implied yet. Énergir off the TC Mainline (demand.qc.implied_est) is on the page"}
+  storage: {lag: 100d, parts: [{series: statcan.qc.storage_net_withdrawal, sign: -1, fill: month}],
+            note: "Pointe-du-Lac + Saint-Flavien (StatCan monthly, + injection)"}
+  inventory: {parts: [{series: statcan.qc.storage, fill: latest}], unit: Bcf}
+power:
+  # Hydro-Quebec is the one balancing authority for all of Quebec (an asynchronous grid: every tie is HVDC, a back-to-back
+  # converter or a radial plant). Live from HQ's open data: demand ~25 min behind; generation and the per-market flows
+  # ~3-4 h, the thermal value ~6.5 h (only the "other" line waits for it), hence the line lags. Generation + net imports balances
+  # demand to within ~1 GW (2026-11-06/07).
+  fuels_note: "Hydro-Québec's mix: hydro includes Churchill Falls (Labrador); other = the Bécancour peaker + independent producers (biomass, biogas, small hydro)."
+  load: {parts: [hq.demand.hourly], note: "Hydro-Quebec demand (all of Quebec's grid)"}
+  generation: {parts: [hq.gen.total.hourly], lag: 4h, scope: incl. Churchill,
+               note: "HQ + producers under contract, incl. Churchill Falls in Labrador (~5.4 GW, sold to HQ)"}
+  interchange: {parts: [-hq.intertie.net.flow], lag: 6h, scope: excl. NB tie,
+                note: "HQ's net flows to Ontario + New York + New England negated (+ import); New Brunswick isn't
+                  published"}
+  fuels:
+    hydro: {parts: [hq.gen.hydro.hourly], lag: 4h}
+    wind: {parts: [hq.gen.wind.hourly], lag: 4h}
+    solar: {parts: [hq.gen.solar.hourly], lag: 4h}
+    other: {parts: [hq.gen.thermal.hourly, hq.gen.other.hourly], lag: 8h,
+            note: "HQ's Becancour gas-turbine peaker + independent biomass, biogas and small hydro (HQ's 'autres')"}
+# Weather (L-106): the region's population-weighted degree days (base 18 degC) and its cities. Weather owns
+# this section; generated from sources/weather_qc.yaml (docs/research/v2/weather-regions.md).
+weather:
+  source: weather_qc
+  cities:                     # each city's daily mean temperature; wx.<city>.hdd / cdd / normals share the prefix
+    - wx.montreal.tmean
+    - wx.quebec_city.tmean
+    - wx.gatineau.tmean
+    - wx.sherbrooke.tmean
+    - wx.saguenay.tmean
+    - wx.trois_rivieres.tmean
+  hdd: wx.region.qc.hdd
+  cdd: wx.region.qc.cdd
+  normals: [wx.region.qc.hdd_normal, wx.region.qc.cdd_normal]
+  realized: [wx.region.qc.hdd.realized, wx.region.qc.cdd.realized]
+  outlook: [wx.region.qc.hdd_1_7, wx.region.qc.hdd_8_15, wx.region.qc.cdd_1_7, wx.region.qc.cdd_8_15]
+watch:                      # what to watch daily, from docs/research/regions/qc.md (shown on the page)
+  - "Hydro-Québec net exports and their sign: imports in November mean low water and a tighter winter"
+  - "Québec demand vs the 1-7 day HDD outlook: the winter peak risk"
+  - "1-7 and 8-15 day HDD outlook vs normal: a cold snap cuts exports to New England, New York and Ontario"
+  - "Other generation rising (thermal sits inside it): Bécancour runs only when the system is tight"
+  - "Énergir deliveries vs the HDD outlook: load roughly doubles from shoulder to design day"
+  - "US exits via Québec vs Station 148 capability: Station 148 binds in cold snaps"
+  - "Northern inflow index vs normal: low inflows mean fewer exports this season and next"
+# The region page's groups (REGIONS.md §5b): Gas owns detail.gas and detail.oil, Power owns detail.power.
+detail:
+  gas:
+    - id: demand_by_sector
+      title: Demand by sector
+      note: "StatCan counts gas for power as industrial (est.)."
+      rows:
+        - {label: "Residential + commercial (weather)", series: gas.qc.rescom_est}
+        - {label: "Industrial incl. power (last year)", series: gas.qc.industrial_est}
+        - {label: "Énergir off the TC Mainline (implied)", series: demand.qc.implied_est}
+    - id: imports_by_point
+      title: Imports by point
+      rows:
+        - {label: "TC to Énergir (EDA + NDA)", series: tcm.energir.deliveries}
+        - {label: "TC transit to the US border (via Québec)", series: tcm.qc.exports}
+    - id: exports_by_point
+      title: Exports by point
+      of: exports
+      rows:
+        - {label: "East Hereford (to PNGTS, New England)", series: tcm.east_hereford.exports}
+        - {label: "Philipsburg (to Vermont Gas)", series: tcm.philipsburg.exports}
+        - {label: "Napierville (to New York)", series: tcm.napierville.exports}
+    - id: storage
+      title: Storage
+      note: "StatCan monthly (Énergir's Pointe-du-Lac and Saint-Flavien); no daily public storage flow."
+      rows:
+        - {label: "Québec storage net withdrawal (monthly)", series: statcan.qc.storage_net_withdrawal}
+        - {label: "Québec inventory (month end)", series: statcan.qc.storage}
+    - id: pipelines
+      title: Pipelines (flow vs capacity)
+      rows:
+        - {label: "TC Eastern Delivery Area deliveries", series: tcm.eda.deliveries}
+        - {label: "TC Eastern Delivery Area capability", series: tcm.eda.capability}
+        - {label: "TC capability past Station 148 (Les Cèdres)", series: tcm.stn148.capability}
+  power:
+    - id: interchange_by_tie
+      title: "Net flows by market (Hydro-Québec, + = Québec export)"
+      note: "HQ's own per-market file (compiled from the neighbours' data); New Brunswick is null in it."
+      rows:
+        - {label: Ontario, series: hq.intertie.ontario.flow}
+        - {label: New York, series: hq.intertie.new_york.flow}
+        - {label: New England, series: hq.intertie.new_england.flow}
+    - id: plants
+      title: Largest plants (nameplate)
+      note: "Nameplate MW from the map's plant inventory (OpenStreetMap, ODbL): the operator publishes no per-plant output, so these are capacities, not live output."
+      rows:
+        - {label: "Centrale Robert-Bourassa (hydro)", value: 5616, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale La Grande-4 (hydro)", value: 2779, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "La Grande-3 (hydro)", value: 2418, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale La Grande-2A (hydro)", value: 2106, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale de Beauharnois (hydro)", value: 1903, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale Manic-5 (hydro)", value: 1596, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale La Grande-1 (hydro)", value: 1436, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale René-Lévesque (hydro)", value: 1183, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale Bersimis 1 (hydro)", value: 1178, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+        - {label: "Centrale Shipshaw (hydro)", value: 1145, unit: MW, as_of: "2026-11", source: "OpenStreetMap contributors (ODbL), via the map's plant inventory"}
+    - id: capacity_by_fuel
+      title: Installed capacity by type
+      unit: MW
+      note: "StatCan 25-10-0022-01 (annual, by turbine type: combustion isn't split by fuel), all producers, MW; Québec"
+      rows:
+        - {label: "Hydro (incl. pumped storage)", series: cap.qc.hydro}
+        - {label: "Wind", series: cap.qc.wind}
+        - {label: "Solar", series: cap.qc.solar}
+        - {label: "Steam turbine (coal, gas, oil, biomass)", series: cap.qc.thermal_steam}
+        - {label: "Combustion turbine (mostly gas)", series: cap.qc.thermal_ct}
+        - {label: "Engines (diesel, gas)", series: cap.qc.thermal_ic}
+        - {label: Total, series: cap.qc.total}
+    - id: data_centres
+      title: Data centres
+      note: "Hydro-Québec's own figures for the sector; no live series. Data centres could reach ~1,000 MW of peak by 2035 (HQ); crypto is flat."
+      rows:
+        - {label: Data-centre load (Hydro-Québec), value: 200, unit: MW, as_of: "2026-02",
+           source: "Hydro-Québec press release 2026-02-19 (rate case R-4333-2026): ~190 MW of it above 5 MW"}
+        - {label: Crypto / blockchain load (Hydro-Québec), value: 115, unit: MW, as_of: "2026-02",
+           source: "Hydro-Québec press release 2026-02-19"}

@@ -1,0 +1,16 @@
+# Alberta Rivers (rivers.alberta.ca, Government of Alberta) TransAlta reservoirs: hourly dam outflow, level and live
+# storage for the 10 reservoirs on the Bow chain and N. Saskatchewan + Brazeau (docs/research/v2/weather-p5d.md §3.1).
+# The only live source for TransAlta dam releases, including Ghost (the Ghost -> Bearspaw reach in winter, when WSC
+# 05BH005 is off). Terms: alberta.ca disclaimer, non-commercial (personal use, L-041). No key. 10 small files an hour.
+# Timestamps: hour-ending means on Alberta's PRE-2026 clock (the site still falls back to UTC-7), DST stamps -1 h
+# (L-034); every fetch checks the site clock and writes nothing from a file that disagrees. After 2026-11-01 the
+# convention is inferred, not P5-verified: no MW fits on post-switch values yet. Details:
+# montney/connectors/weather_abrivers.py.
+id: weather_abrivers
+name: Rivers - Alberta Rivers reservoirs (TransAlta)
+type: python
+module: montney.connectors.weather_abrivers
+class: ABRiversReservoirs
+mode: cached
+interval: 1h
+retention: hourly     # hourly actuals (as_of = ts): kept 2 years, then daily

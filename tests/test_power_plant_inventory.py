@@ -1,0 +1,147 @@
+"""Plant inventory (L-106, REGIONS §8): network/power/build_plants.py and its committed plants_<region>.geojson.
+
+The builder's rules on synthetic records (no download), and the shape of the committed files. Region assignment uses a
+tiny two-square outline set here; the real outlines come from network/region/outlines.geojson (the paradigm PR).
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("build_plants", ROOT / "network" / "power" / "build_plants.py")
+bp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(bp)
+
+SPRITE_FUELS = set(bp.FUELS) | set(bp.GAS_SUBKINDS)
+from montney.regions import region_of as real_region_of  # noqa: E402
+
+
+def square(region, countries, members, x0, y0, x1, y1):
+    props = {"region": region}
+    if countries:
+        props |= {"countries": countries, "members": members}
+    return {"type": "Feature", "properties": props,
+            "geometry": {"type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}}
+
+
+def squares(with_members=True):
+    """Three overlapping test outlines, like the real ones over the St. Clair River and Lake Erie (#408)."""
+    m = with_members
+    return {"type": "FeatureCollection", "features": [
+        square("sont", ["CA"] if m else None, ["CA-ON"], -84, 41, -74, 47),
+        square("umw", ["US"] if m else None, ["US-MN", "US-WI", "US-MI"], -90, 41.7, -82.4, 48),
+        square("tx", ["US"] if m else None, ["US-TX"], -106, 26, -94, 36)]}
+
+
+SQUARES = squares()
+
+
+def rec(source, key, name, lon, lat, mw, group, fuel=None, state=None):
+    return {"source": source, "key": key, "src_id": key, "name": name, "lonlat": (lon, lat), "mw": mw,
+            "fuel": fuel or group, "group": group, "status": "operating", "cite": "test", "state": state,
+            "ba": "ERCO" if source == "eia" else None}
+
+
+def region_of(lon, lat, country, member=None, outlines=SQUARES):
+    return real_region_of(lon, lat, country=country, member=member, outlines=outlines)
+
+
+def test_region_cut_outside_and_small_dropped():
+    by, rep = bp.build([rec("eia", "1", "Comanche Peak", -97.79, 32.30, 2430, "nuclear", state="TX"),
+                        rec("eia", "2", "Chicago Peaker", -87.6, 41.9, 300, "gas", "simple_cycle", state="IL"),   # outside
+                        rec("eia", "3", "Tiny Solar", -97.0, 30.0, 0.5, "solar", state="TX")], region_of, 1.0)
+    assert [f["properties"]["id"] for f in by["tx"]] == ["power.plant.eia_1"]
+    assert rep["outside"] == 1 and rep["small"] == 1
+    p = by["tx"][0]["properties"]
+    assert p["callout"]["priority"] == 2 and p["fuel_group"] == "nuclear" and p["ba"] == "ERCO"
+    assert p["source"].startswith("EIA-860M")
+
+
+def test_canadian_merges_into_existing_but_us_never_does(monkeypatch):
+    existing = [{"id": "power.plant.ont_greenfield", "name": "Greenfield Energy Centre", "group": "gas",
+                 "lonlat": (-82.4525, 42.7622), "file": "ontario_plants.geojson"}]
+    monkeypatch.setattr(bp, "existing_plants", lambda: existing)
+    blue_water = rec("eia", "9", "Blue Water Energy Center", -82.46, 42.770, 1267, "gas", "combined_cycle", state="MI")
+    osm_dup = rec("osm", "w1", "Greenfield Energy Centre", -82.455, 42.763, 1005, "gas")
+    osm_solar = rec("osm", "w2", "Greenfield Solar", -82.451, 42.762, 10, "solar")                         # other fuel
+    by, rep = bp.build([blue_water, osm_dup, osm_solar], region_of, 1.0)
+    assert {f["properties"]["id"] for f in by["sont"]} == {"power.plant.osm_w2"} and len(rep["merged"]) == 1
+    assert [f["properties"]["id"] for f in by["umw"]] == ["power.plant.eia_9"]      # Michigan, not Ontario
+
+
+def test_seeded_red_without_the_country_guard_a_us_plant_merges(monkeypatch):
+    """The check can fail: treat the Michigan plant as Canadian and it is swallowed by the Ontario feature."""
+    existing = [{"id": "power.plant.ont_greenfield", "name": "Greenfield Energy Centre", "group": "gas",
+                 "lonlat": (-82.4525, 42.7622), "file": "ontario_plants.geojson"}]
+    monkeypatch.setattr(bp, "existing_plants", lambda: existing)
+    by, rep = bp.build([rec("osm", "9", "Blue Water Energy Center", -82.46, 42.770, 1267, "gas")], region_of, 1.0)
+    assert not by.get("sont") and rep["merged"]
+
+
+def test_every_eia_technology_maps_to_a_sprite_fuel():
+    for tech, (fuel, group) in bp.EIA_TECH.items():
+        assert group in bp.FUELS and fuel in SPRITE_FUELS, tech
+    assert bp.parse_mw("1,200 MW") == 1200 and bp.parse_mw("500 kW") == 0.5 and bp.parse_mw("yes") is None
+
+
+def test_committed_files_shape():
+    files = sorted((ROOT / "network" / "power").glob("plants_*.geojson"))
+    assert len(files) == 13, [f.name for f in files]
+    ids = set()
+    for f in files:
+        fc = json.loads(f.read_text(encoding="utf-8"))
+        assert fc["_generated"].startswith("generated by network/power/build_plants.py") and fc["_source"]
+        for feat in fc["features"]:
+            p = feat["properties"]
+            assert p["id"] not in ids, p["id"]
+            ids.add(p["id"])
+            assert p["type"] == "plant" and p["fuel_group"] in bp.FUELS and p["fuel"] in SPRITE_FUELS
+            assert p["nameplate_mw"] >= 5 and p["callout"]["priority"] in (2, 3)
+            assert p["source"].startswith(("EIA-860M", "OpenStreetMap contributors (ODbL)"))
+            if "value" in p:                             # PLAN 10b: only US nuclear plants, on their NRC plant series
+                assert p["fuel_group"] == "nuclear" and p["value"].startswith("nrc.plant.eia_") and "util_est" not in p
+            if "util_est" in p:
+                assert p["quality"] == "estimate" and p["util_est"] == f"eia930.{p['ba'].lower()}.util.{p['fuel_group']}"
+    assert len(ids) > 5000
+
+
+def test_us_plants_inside_the_coarse_ontario_outline_go_by_state():
+    """Reviewer on #408: the outlines overshoot the St. Clair River and Lake Erie. Belle River (MI) -> umw, Davis-Besse
+    (OH, in no region) -> out, a Canadian plant never lands in a US-only region."""
+    by, rep = bp.build([rec("eia", "6034", "Belle River", -82.494, 42.774, 1664, "coal", state="MI"),
+                        rec("eia", "6149", "Davis-Besse", -83.087, 41.597, 894, "nuclear", state="OH"),
+                        rec("osm", "w5", "Some Texas Farm", -97.0, 31.0, 50, "wind")], region_of, 1.0)
+    assert [f["properties"]["id"] for f in by["umw"]] == ["power.plant.eia_6034"]
+    assert not by.get("sont") and not by.get("tx") and rep["outside"] == 2
+
+
+def test_seeded_red_outline_only_puts_michigan_and_ohio_in_ontario():
+    """The check can fail: outlines without their countries/members (the outline alone) put both plants in sont."""
+    bare = squares(with_members=False)
+    by, _ = bp.build([rec("eia", "6034", "Belle River", -82.494, 42.774, 1664, "coal", state="MI"),
+                      rec("eia", "6149", "Davis-Besse", -83.087, 41.597, 894, "nuclear", state="OH")],
+                     lambda lon, lat, country, member=None: region_of(lon, lat, country, member, bare), 1.0)
+    assert len(by["sont"]) == 2
+
+
+def test_util_est_and_quality_only_where_the_ba_reports_the_fuel():
+    cap = {"erco": {"wind": 40907.8, "nuclear": 5138.6}}
+    wind = bp.feature(rec("eia", "1", "Some Wind", -100, 32, 200, "wind"), "tx", cap)["properties"]
+    coal = bp.feature(rec("eia", "2", "Some Coal", -96, 31, 600, "coal"), "tx", cap)["properties"]
+    osm = bp.feature(rec("osm", "w9", "Some Hydro", -79, 45, 50, "hydro"), "sont", cap)["properties"]
+    assert wind["util_est"] == "eia930.erco.util.wind" and wind["quality"] == "estimate"
+    assert "util_est" not in coal and "quality" not in coal          # ERCO reports no coal capacity in this table
+    assert "util_est" not in osm and "quality" not in osm            # Canada: no EIA-930
+
+
+def test_offshore_plant_goes_to_its_states_region():
+    """Vineyard Wind 1 sits ~0.4 deg off Martha's Vineyard, beyond region_of's coast tolerance: its state decides."""
+    by, rep = bp.build([rec("eia", "63093", "Vineyard Wind 1", -70.4874, 41.0471, 806, "wind", state="MA"),
+                        rec("eia", "6149", "Davis-Besse", -83.087, 41.597, 894, "nuclear", state="OH")],
+                       lambda lon, lat, country, member=None: None, 1.0)
+    assert [f["properties"]["id"] for f in by["upne"]] == ["power.plant.eia_63093"] and rep["outside"] == 1

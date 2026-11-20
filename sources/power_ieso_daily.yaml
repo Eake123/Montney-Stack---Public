@@ -1,0 +1,16 @@
+# Ontario (IESO) generation, DAILY SUMS (MWh/d) by fuel + total: the stored history (L-078, Erik: "save the data as
+# daily sums"), back-filled from 2020. Source: IESO GenOutputbyFuelHourly, the year-to-date file (updated daily) and
+# each past year's final file (cached under <home>/cache/ieso after the first download). Keyless. A date is the IESO
+# (EST) date. Details: montney/connectors/power_ieso.py.
+id: power_ieso_daily
+name: IESO generation by fuel, daily sums
+type: python
+module: montney.connectors.power_ieso
+class: IesoGeneration
+mode: cached
+interval: 1d
+region: ont          # sources/BUDGET.yaml (L-091: `ont`, not `on`); the source -> region mapping is Database's
+retention: daily
+params:
+  report: daily
+  from_year: 2020

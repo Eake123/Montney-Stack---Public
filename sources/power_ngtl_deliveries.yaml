@@ -1,0 +1,65 @@
+# NGTL delivery stations that feed the 6 GHGRP-validated gas plants (DECISIONS P5b: Shepard, Calgary Energy Centre,
+# Sheerness, Clover Bar, Carseland, Keephills; 2024 station GJ vs GHGRP-implied fuel within 2 %, power.md §1.3-1.4).
+# TC Customer Express "Station Percent Utilization – Delivery" (keyless xlsx, monthly, ~20 days after month end).
+# Stored in MMcf/d with L-031's flagged fallback heat value (39.0 MJ/m3) until the delivery HV source is ruled.
+# Station ids: ngtl.station.<tc_number>.delivery (L-033, Gas's scheme). Details: montney/connectors/power_ngtl_delivery.py.
+# Milner (6103), Battle River (3682) and Genesee (32745, 31037) stay CONTEXT ONLY (network/power/plants.geojson); they
+# are not read.
+id: power_ngtl_deliveries
+name: NGTL deliveries to validated gas plants (TC Station % Utilization)
+type: python
+module: montney.connectors.power_ngtl_delivery
+class: NgtlDeliveries
+mode: cached
+interval: 1d
+# Report vintages (as_of = the file's "As of" stamp): revisions kept in the daily tier, like Gas's receipts.
+retention: daily
+params:
+  years_back: 1
+  hv_mj_m3: 39.0              # L-031 fallback (flagged); L-032 guard 37.5-39.8
+  stations:                   # TC station number -> plant node slug
+    31127: shepard            # SHEPARD ENERGY CENTRE SALES - APS
+    31016: calgary_energy_centre   # CALGARY ENERGY CENTRE SALES APS
+    3686: sheerness           # SHEERNESS NO 2 SALES
+    31021: clover_bar         # CLOVERBAR POWER PLANT SALES APN
+    31017: carseland          # CARSELAND COGEN SALES APS
+    6142: keephills           # KEEPHILLS 4 SALES
+    32759: keephills          # KEEPHILLS EXPANSION DELIVERY APN
+    31046: keephills          # KEEPHILLS 3 SALES APN
+derive:
+  - id: power.plant.shepard.ngtl_delivery
+    label: "Shepard: NGTL delivered (station 31127)"
+    sum: [ngtl.station.31127.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)
+  - id: power.plant.calgary_energy_centre.ngtl_delivery
+    label: "Calgary Energy Centre: NGTL delivered (station 31016)"
+    sum: [ngtl.station.31016.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)
+  - id: power.plant.sheerness.ngtl_delivery
+    label: "Sheerness: NGTL delivered (station 3686)"
+    sum: [ngtl.station.3686.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)
+  - id: power.plant.clover_bar.ngtl_delivery
+    label: "Clover Bar: NGTL delivered (station 31021)"
+    sum: [ngtl.station.31021.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)
+  - id: power.plant.carseland.ngtl_delivery
+    label: "Carseland: NGTL delivered (station 31017)"
+    sum: [ngtl.station.31017.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)
+  - id: power.plant.keephills.ngtl_delivery
+    label: "Keephills: NGTL delivered (stations 6142 + 32759 + 31046)"
+    sum: [ngtl.station.6142.delivery, ngtl.station.32759.delivery, ngtl.station.31046.delivery]
+    unit: MMcf/d
+    freq: M
+    group: NGTL / Station deliveries (power plants)

@@ -1,0 +1,37 @@
+# 16-day city forecasts for the `sunbelt` region (L-106, docs/REGIONS.md): Upper Sunbelt (NV, AZ, NM). Open-Meteo, the same connector and terms
+# as sources/weather.yaml (free, no key, personal use): wx.<city>.* per city (tmax, tmin, tmean, precip, wind, hdd, cdd,
+# their normals, realized days) and the region composite wx.region.sunbelt.* (population-weighted HDD / CDD for Gas and Power's
+# demand estimates). ONE batched request per run for all 6 cities (`batch: true`), every 6 h (~0.17 req/h); normals one
+# batched archive request per 30 d. Each city keeps its own named zone, so local days follow its own clock.
+# HDD/CDD base 18 degC, as for every city here (the US convention is 65 degF = 18.3 degC).
+id: weather_sunbelt
+name: Weather - Upper Sunbelt (NV, AZ, NM) cities, 16 day forecast
+region: sunbelt
+type: python
+module: montney.connectors.open_meteo
+class: OpenMeteo
+mode: cached
+interval: 6h
+retention:             # as sources/weather.yaml: run vintages are `forecast`; ended-day actuals `daily` (L-038/L-039)
+  default: forecast
+  "wx.*.realized": daily
+params:
+  batch: true
+  forecast_days: 16
+  past_days: 7
+  hdd_base: 18
+  normal_years: 10
+  hdd_windows: [[1, 7], [8, 15]]
+  tz: America/Denver
+  locations:
+    - {name: Phoenix, lat: 33.45, lon: -112.07, tz: America/Phoenix}
+    - {name: Tucson, lat: 32.22, lon: -110.97, tz: America/Phoenix}
+    - {name: Las Vegas, lat: 36.17, lon: -115.14, tz: America/Los_Angeles}
+    - {name: Reno, lat: 39.53, lon: -119.81, tz: America/Los_Angeles}
+    - {name: Albuquerque, lat: 35.08, lon: -106.65}
+    - {name: Santa Fe, lat: 35.69, lon: -105.94}
+  composites:
+    # Weights = 2020 US Census MSA population. Only the ratios matter.
+    - id: region.sunbelt
+      name: Upper Sunbelt (NV, AZ, NM) (6-city pop. wtd)
+      weights: {phoenix: 4845832, tucson: 1043433, las_vegas: 2265461, reno: 490596, albuquerque: 916528, santa_fe: 154823}

@@ -1,0 +1,13 @@
+# EIA Weekly Natural Gas Storage Report regions (L-106 8b): working gas (Bcf) and weekly net injection for the Lower 48
+# and the East, Midwest, Mountain, Pacific and South Central regions. ONE public dnav page per run (~12 KB, the last six
+# weeks), daily (EIA publishes Thursdays). Details: montney/connectors/eia_states.py
+id: gas_eia_storage_weekly
+name: EIA weekly storage regions
+type: python
+module: montney.connectors.eia_states
+class: GasEiaStorageWeekly
+mode: cached
+interval: 1d
+region: rest
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by gas; tests/test_gas_retention.py.
+retention: daily

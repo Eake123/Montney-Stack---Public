@@ -1,0 +1,12 @@
+# Alberta supply cushion, estimated (L-106 8c): dispatchable CSD capability - net generation - today's realized
+# outages (wind/solar excluded; not AESO's official supply cushion). ZERO requests: reads aeso_csd and aeso_ets_outages
+# back from the store, like region_balance. Details: montney/connectors/power_ab_cushion.py.
+id: power_ab_cushion
+name: Alberta supply cushion, estimated (derived, 0 requests)
+type: python
+module: montney.connectors.power_ab_cushion
+class: AbCushion
+mode: cached
+interval: 5m
+region: ab_nebc
+retention: fast

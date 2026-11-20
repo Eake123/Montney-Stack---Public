@@ -1,0 +1,17 @@
+# EIA-930 hourly NET GENERATION, TOTAL INTERCHANGE (+ net export) and GENERATION BY FUEL for every US balancing
+# authority (L-106, PLAN 8b). EIA posts these once a day (~15:00-16:00 UTC), through local 23:00 hour-ending yesterday:
+# 8-12 h old just after, ~33-36 h before the next one. Hourly, so the daily drop lands within the hour: 6 requests per
+# run (D/NG/TI + fuel, each in 3 batches of <= 15 BAs; 72 h window, so the late local-midnight hour arrives the next
+# day). The hours since are estimated by power_eia930_nowcast. Keyless JSON behind EIA's Grid Monitor; the documented
+# fallback (EIA API v2 + a free key) is in the connector header. Details: montney/connectors/power_eia930.py.
+id: power_eia930_gen
+name: EIA-930 net generation, interchange and generation by fuel, every US balancing authority (hourly, published daily)
+type: python
+module: montney.connectors.power_eia930
+class: Eia930
+mode: cached
+interval: 1h
+region: rest         # each request covers several US regions (sources/BUDGET.yaml note)
+retention: hourly
+params:
+  report: gen

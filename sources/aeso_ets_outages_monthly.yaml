@@ -1,0 +1,28 @@
+# AESO ETS monthly outage forecast: MW out by fuel per month, ~24 months ahead (forecast tier).
+# The earliest listed month is also kept as `.realized` (last write wins = latest vintage known by month end, L-036), forever.
+id: aeso_ets_outages_monthly
+name: AESO ETS generation outages (monthly)
+type: python
+module: montney.connectors.aeso_ets
+class: AesoEts
+mode: cached
+interval: 6h
+# Retention tier (docs/db/RETENTION.md spec contract), pinned by power; tests/test_power_retention.py.
+retention:
+  default: forecast
+  "aeso.outage.monthly.*.realized": daily
+params:
+  report: outage_monthly
+derive:
+  - id: aeso.outage.monthly.gas_total
+    label: AESO gas-fired MW out, monthly (SC + cogen + CC + GFS)
+    sum: [aeso.outage.monthly.sc, aeso.outage.monthly.cogen, aeso.outage.monthly.cc, aeso.outage.monthly.gfs]
+    unit: MW
+    freq: M
+    group: AESO / Outages (monthly)
+  - id: aeso.outage.monthly.gas_total.realized
+    label: AESO gas-fired MW out, monthly, realized (SC + cogen + CC + GFS)
+    sum: [aeso.outage.monthly.sc.realized, aeso.outage.monthly.cogen.realized, aeso.outage.monthly.cc.realized, aeso.outage.monthly.gfs.realized]
+    unit: MW
+    freq: M
+    group: AESO / Outages (monthly)
